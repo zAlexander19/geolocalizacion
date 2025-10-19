@@ -1,0 +1,25 @@
+{
+  "name": "geolocalizacion-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "packageManager": "npm@10",
+  "engines": {
+    "node": "20.11.1"
+  },
+  "scripts": {
+    "postinstall": "echo workspaces installed",
+    "lint": "npm -ws run lint",
+    "format": "npm -ws run format || echo 'format no definido en algún paquete'",
+    "dev": "concurrently -n WEB,API -c auto \"npm run dev -w apps/web\" \"npm run dev -w apps/api\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "npm -ws run build",
+    "preview": "npm run preview -w apps/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
