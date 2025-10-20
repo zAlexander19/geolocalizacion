@@ -1,0 +1,35 @@
+{
+  "buildings": [
+    {
+      "id_edificio": 1,
+      "nombre_edificio": "Departamento de Física y Tecnología",
+      "acronimo": "DFT",
+      "imagen": "",
+      "cord_latitud": -20.123456,
+      "cord_longitud": -70.123456,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    }
+  ],
+  "floors": [
+    {
+      "id_piso": 1,
+      "id_edificio": 1,
+      "nombre_piso": "Primer Piso",
+      "imagen": "",
+      "codigo_qr": "QR-001",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 2,
+      "id_edificio": 1,
+      "nombre_piso": "Segundo Piso",
+      "imagen": "",
+      "codigo_qr": "QR-002",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    }
+  ],
+  "rooms": []
+}
