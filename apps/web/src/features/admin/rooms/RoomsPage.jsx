@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '../../../lib/api'
 import { queryClient } from '../../../lib/queryClient'
@@ -68,7 +68,14 @@ export default function RoomsPage() {
       setModalOpen(false)
       alert('Created!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
+    onError: (err) => {
+      const details = err.response?.data?.details
+      if (details && Array.isArray(details)) {
+        alert('Error: ' + (err.response?.data?.error || err.message) + '\n' + details.map(d => d.message).join('\n'))
+      } else {
+        alert('Error: ' + (err.response?.data?.error || err.message))
+      }
+    },
   })
 
   const updateMutation = useMutation({
@@ -238,8 +245,19 @@ function RoomForm({ buildings, initialData, onSubmit, isLoading }) {
 
   const handleFormSubmit = (values) => {
     const formData = new FormData()
-    Object.entries(values).forEach(([key, value]) => {
-      if (key !== 'imagen') formData.append(key, value)
+    // Convierte tipos antes de enviar
+    const toNumber = (v) => v === '' ? undefined : Number(v)
+    const toBool = (v) => v === 'true' || v === true
+    const payload = {
+      ...values,
+      id_piso: toNumber(values.id_piso),
+      capacidad: toNumber(values.capacidad),
+      cord_latitud: toNumber(values.cord_latitud),
+      cord_longitud: toNumber(values.cord_longitud),
+      estado: toBool(values.estado),
+    }
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key !== 'imagen' && value !== undefined) formData.append(key, value)
     })
     if (fileRef.current?.files[0]) {
       formData.append('imagen', fileRef.current.files[0])
