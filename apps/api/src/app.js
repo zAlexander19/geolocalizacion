@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import authRoutes from './routes/auth.routes.js'
 import buildingsRoutes from './routes/buildings.routes.js'
@@ -16,8 +18,14 @@ export function createApp() {
   app.use(cors())
   app.use(express.json())
 
-  // Servir archivos estáticos de /uploads
-  app.use('/uploads', express.static(process.cwd() + '/apps/api/uploads'))
+
+  // Servir archivos estáticos de /uploads ANTES de los routers
+  // Siempre apunta a la carpeta uploads relativa a este archivo
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = path.dirname(__filename)
+  // Siempre apunta a apps/api/uploads desde cualquier cwd
+  const uploadsPath = path.resolve(__dirname, '..', 'uploads')
+  app.use('/uploads', express.static(uploadsPath))
 
   app.get('/health', (_req, res) => {
     res.status(200).json({ data: { status: 'ok' }, error: null })

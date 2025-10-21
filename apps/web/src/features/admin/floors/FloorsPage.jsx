@@ -1,31 +1,48 @@
-import { useState, useRef } from 'react'
+﻿import { useState, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import api from '../../../lib/api'
-import { queryClient } from '../../../lib/queryClient'
-import Badge from '../../../components/ui/badge'
-import Button from '../../../components/ui/button'
-import SearchInput from '../../../components/ui/search-input'
-import ActionsMenu from '../../../components/ui/actions-menu'
-import Modal from '../../../components/Modal'
-import FormField from '../../../components/FormField'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-
+import {
+  Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
+  IconButton, Menu, MenuItem, Paper, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, TextField, Typography, Avatar,
+  CircularProgress, FormControl, InputLabel, Select,
+} from '@mui/material'
+import {
+  Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
+  MoreVert as MoreIcon, Search as SearchIcon, Image as ImageIcon,
+} from '@mui/icons-material'
+import api from '../../../lib/api'
+import { queryClient } from '../../../lib/queryClient'
 
 const floorSchema = z.object({
-  id_edificio: z.coerce.number().int(),
   nombre_piso: z.string().min(1).max(100),
-  imagen: z.string().max(200),
-  codigo_qr: z.string().max(200),
+  numero_piso: z.coerce.number(),
+  imagen: z.string().optional(),
+  id_edificio: z.coerce.number(),
   estado: z.coerce.boolean(),
   disponibilidad: z.string().max(20)
 })
 
 export default function FloorsPage() {
+  const [search, setSearch] = useState('')
   const [selectedBuilding, setSelectedBuilding] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
+  const [modalImg, setModalImg] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedRow, setSelectedRow] = useState(null)
+
+  const { data: floors, isLoading } = useQuery({
+    queryKey: ['floors', search, selectedBuilding],
+    queryFn: async () => {
+      if (!selectedBuilding) return []
+      const res = await api.get(`/buildings/${selectedBuilding}/floors`, { params: { search } })
+      return res.data.data
+    },
+    enabled: !!selectedBuilding
+  })
 
   const { data: buildings } = useQuery({
     queryKey: ['buildings'],
@@ -35,19 +52,8 @@ export default function FloorsPage() {
     },
   })
 
-  const { data: floors, isLoading } = useQuery({
-    queryKey: ['floors', selectedBuilding],
-    queryFn: async () => {
-      if (!selectedBuilding) return []
-      const res = await api.get(`/buildings/${selectedBuilding}/floors`)
-      return res.data.data
-    },
-    enabled: !!selectedBuilding,
-  })
-
   const createMutation = useMutation({
     mutationFn: async (payload) => {
-      // payload es FormData
       const res = await api.post('/floors', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -56,35 +62,31 @@ export default function FloorsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['floors'])
       setModalOpen(false)
-      alert('Created!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }) => {
-      const res = await api.put(`/floors/${id}`, payload)
+      const res = await api.put(/floors/, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['floors'])
       setModalOpen(false)
       setEditItem(null)
-      alert('Updated!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await api.delete(`/floors/${id}`)
+      const res = await api.delete(/floors/)
       return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['floors'])
-      alert('Deleted!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const handleCreate = () => {
@@ -95,206 +97,315 @@ export default function FloorsPage() {
   const handleEdit = (item) => {
     setEditItem(item)
     setModalOpen(true)
+    setAnchorEl(null)
   }
 
   const handleDelete = (item) => {
     if (confirm('¿Borrar piso ' + item.nombre_piso + '?')) {
       deleteMutation.mutate(item.id_piso)
     }
+    setAnchorEl(null)
   }
 
-  const columns = [
-    { key: 'id_piso', label: 'ID' },
-    { key: 'id_edificio', label: 'Edificio' },
-    { key: 'nombre_piso', label: 'Nombre' },
-    { 
-      key: 'imagen', 
-      label: 'Imagen',
-      render: (row) => {
-        const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dy=".3em" text-anchor="middle" font-size="10" fill="%23aaa">Sin img</text></svg>'
-        if (!row.imagen || /via\.placeholder\.com/.test(row.imagen)) {
-          return <img src={placeholder} alt="Sin imagen" style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }} />
-        }
-        const imageUrl = row.imagen.startsWith('http') 
-          ? row.imagen 
-          : `http://localhost:4000${row.imagen}`
-        return (
-          <img 
-            src={imageUrl} 
-            alt="Piso" 
-            style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }}
-            onError={(e) => {
-              e.currentTarget.src = placeholder
-            }}
-          />
-        )
-      }
-    },
-    { key: 'codigo_qr', label: 'Código QR' },
-    { 
-      key: 'estado', 
-      label: 'Estado',
-      render: (row) => row.estado ? 'Activo' : 'Inactivo'
-    },
-    { key: 'disponibilidad', label: 'Disponibilidad' },
-  ]
+  const handleMenuOpen = (event, row) => {
+    setAnchorEl(event.currentTarget)
+    setSelectedRow(row)
+  }
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-1">Pisos</h1>
-        <p className="text-base text-gray-600 mb-4">Gestiona los pisos de los edificios.</p>
-        <div className="flex items-center gap-2 mb-2">
-          <select
-            value={selectedBuilding}
-            onChange={e => setSelectedBuilding(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm w-64"
-          >
-            <option value="">-- Selecciona edificio --</option>
-            {buildings?.map((b) => (
-              <option key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</option>
-            ))}
-          </select>
-          <Button onClick={handleCreate} disabled={!selectedBuilding}>+ Crear piso</Button>
-        </div>
-      </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold' }}>
+          Pisos
+        </Typography>
+        <Typography variant='body1' color='text.secondary' sx={{ mb: 3 }}>
+          Gestiona los pisos del sistema.
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+          <FormControl sx={{ minWidth: 250 }} size='small'>
+            <InputLabel>Seleccionar Edificio</InputLabel>
+            <Select
+              value={selectedBuilding}
+              onChange={(e) => setSelectedBuilding(e.target.value)}
+              label='Seleccionar Edificio'
+            >
+              <MenuItem value=''>
+                <em>Ninguno</em>
+              </MenuItem>
+              {buildings?.map(b => (
+                <MenuItem key={b.id_edificio} value={b.id_edificio}>
+                  {b.nombre_edificio} ({b.acronimo})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder='Buscar pisos...'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size='small'
+            sx={{ width: 300 }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'action.active' }} />,
+            }}
+            disabled={!selectedBuilding}
+          />
+          <Button variant='contained' startIcon={<AddIcon />} onClick={handleCreate} disabled={!selectedBuilding}>
+            Crear Piso
+          </Button>
+        </Box>
+      </Box>
+
+      <TableContainer component={Paper} elevation={1}>
         {!selectedBuilding ? (
-          <p className="p-6 text-gray-500">Selecciona un edificio para ver los pisos</p>
+          <Box sx={{ p: 6, textAlign: 'center' }}>
+            <Typography variant='body1' color='text.secondary'>
+              Selecciona un edificio para ver sus pisos
+            </Typography>
+          </Box>
         ) : isLoading ? (
-          <p className="p-6 text-gray-500">Cargando...</p>
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">ID</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Edificio</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Nombre</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Imagen</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Código QR</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Estado</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Disponibilidad</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {floors.map(row => {
-                const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="100%" height="100%" rx="12" fill="%23e5e7eb"/><rect x="12" y="12" width="24" height="24" rx="4" fill="%23222"/><rect x="18" y="18" width="6" height="6" fill="%23fff"/><rect x="24" y="18" width="6" height="6" fill="%23fff"/><rect x="18" y="24" width="6" height="6" fill="%23fff"/><rect x="24" y="24" width="6" height="6" fill="%23fff"/></svg>'
-                const imageUrl = !row.imagen || /via\.placeholder\.com/.test(row.imagen)
-                  ? placeholder
-                  : (row.imagen.startsWith('http') ? row.imagen : `http://localhost:4000${row.imagen}`)
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Imagen</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Número</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Edificio</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Disponibilidad</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }} align='center'>Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {floors?.map((row) => {
+                const imageUrl = row.imagen && !/via\.placeholder\.com/.test(row.imagen)
+                  ? (row.imagen.startsWith('http') ? row.imagen : `http://localhost:4000${row.imagen}`)
+                  : null
+
                 return (
-                  <tr key={row.id_piso} className="border-b last:border-b-0">
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700">{row.id_piso}</td>
-                    <td className="px-4 py-2 text-gray-900 font-medium">{row.id_edificio}</td>
-                    <td className="px-4 py-2 text-gray-900 font-medium">{row.nombre_piso}</td>
-                    <td className="px-4 py-2">
-                      <img src={imageUrl} alt="Piso" style={{ maxWidth: 48, maxHeight: 48, objectFit: 'cover', borderRadius: 12, background: '#e5e7eb' }} />
-                      {!row.imagen && <span className="text-xs text-gray-400 ml-2">Sin imagen</span>}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700">{row.codigo_qr}</td>
-                    <td className="px-4 py-2">
-                      <Badge color={row.estado ? 'green' : 'red'}>{row.estado ? 'Activo' : 'Inactivo'}</Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge color={row.disponibilidad === 'Disponible' ? 'green' : 'gray'}>{row.disponibilidad}</Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <ActionsMenu onEdit={() => handleEdit(row)} onDelete={() => handleDelete(row)} />
-                    </td>
-                  </tr>
+                  <TableRow key={row.id_piso} hover>
+                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                      {row.id_piso}
+                    </TableCell>
+                    <TableCell>
+                      {imageUrl ? (
+                        <Avatar
+                          src={imageUrl}
+                          variant='rounded'
+                          sx={{ width: 48, height: 48, cursor: 'pointer' }}
+                          onClick={() => setModalImg(imageUrl)}
+                        >
+                          <ImageIcon />
+                        </Avatar>
+                      ) : (
+                        <Avatar variant='rounded' sx={{ width: 48, height: 48, bgcolor: 'grey.300' }}>
+                          <ImageIcon />
+                        </Avatar>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'medium' }}>{row.nombre_piso}</TableCell>
+                    <TableCell>{row.numero_piso}</TableCell>
+                    <TableCell>
+                      <Chip label={buildings?.find(b => b.id_edificio === row.id_edificio)?.nombre_edificio || row.id_edificio} size='small' variant='outlined' />
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={row.estado ? 'Activo' : 'Inactivo'} color={row.estado ? 'success' : 'error'} size='small' />
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={row.disponibilidad} color={row.disponibilidad === 'Disponible' ? 'success' : 'default'} size='small' />
+                    </TableCell>
+                    <TableCell align='center'>
+                      <IconButton size='small' onClick={(e) => handleMenuOpen(e, row)}>
+                        <MoreIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-        <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? 'Editar piso' : 'Crear piso'}>
-          <FloorForm
-            buildings={buildings || []}
-            initialData={editItem || { id_edificio: selectedBuilding, nombre_piso: '', imagen: '', codigo_qr: '', estado: true, disponibilidad: 'Disponible' }}
-            onSubmit={(values) => {
-              if (editItem) {
-                updateMutation.mutate({ id: editItem.id_piso, ...values })
-              } else {
-                createMutation.mutate(values)
-              }
-            }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
-        </Modal>
-      </div>
-    </div>
+      </TableContainer>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        <MenuItem onClick={() => handleEdit(selectedRow)}>
+          <EditIcon sx={{ mr: 1 }} fontSize='small' />
+          Editar
+        </MenuItem>
+        <MenuItem onClick={() => handleDelete(selectedRow)} sx={{ color: 'error.main' }}>
+          <DeleteIcon sx={{ mr: 1 }} fontSize='small' />
+          Eliminar
+        </MenuItem>
+      </Menu>
+
+      <FloorFormDialog
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false)
+          setEditItem(null)
+        }}
+        editItem={editItem}
+        buildings={buildings}
+        onSubmit={(values) => {
+          if (editItem) {
+            updateMutation.mutate({ id: editItem.id_piso, ...values })
+          } else {
+            createMutation.mutate(values)
+          }
+        }}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <Dialog open={!!modalImg} onClose={() => setModalImg(null)} maxWidth='md' fullWidth>
+        <DialogTitle>Imagen del piso</DialogTitle>
+        <DialogContent>
+          {modalImg && (
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <img
+                src={modalImg}
+                alt='Piso'
+                style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalImg(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
-function FloorForm({ buildings, initialData, onSubmit, isLoading }) {
+function FloorFormDialog({ open, onClose, editItem, buildings, onSubmit, isLoading }) {
+  const fileRef = useRef()
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: initialData,
+    defaultValues: editItem || {
+      nombre_piso: '',
+      numero_piso: '',
+      imagen: '',
+      id_edificio: '',
+      estado: true,
+      disponibilidad: 'Disponible'
+    },
+    resolver: zodResolver(floorSchema),
   })
-  const fileRef = useRef()
-  const imagenUrl = initialData?.imagen && initialData.imagen.startsWith('/uploads')
-    ? `${window.location.origin}${initialData.imagen}`
-    : initialData?.imagen
+
+  const imagenUrl = editItem?.imagen && editItem.imagen.startsWith('/uploads')
+    ? `http://localhost:4000${editItem.imagen}`
+    : editItem?.imagen
 
   const handleFormSubmit = (values) => {
     const formData = new FormData()
     Object.entries(values).forEach(([key, value]) => {
       if (key !== 'imagen') formData.append(key, value)
     })
-      // Solo agregar imagen si hay un archivo seleccionado
-      if (fileRef.current?.files[0]) {
-        formData.append('imagen', fileRef.current.files[0])
-      }
-      // Si no hay archivo pero hay una URL existente (al editar), mantenerla
-      else if (values.imagen && values.imagen.startsWith('/uploads')) {
-        formData.append('imagen', values.imagen)
-      }
+    
+    if (fileRef.current?.files[0]) {
+      formData.append('imagen', fileRef.current.files[0])
+    } else if (values.imagen && values.imagen.startsWith('/uploads')) {
+      formData.append('imagen', values.imagen)
+    }
+    
     onSubmit(formData)
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} encType="multipart/form-data">
-      <FormField label="Edificio" error={errors.id_edificio?.message}>
-        <select {...register('id_edificio')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value="">-- Selecciona --</option>
-          {buildings.map((b) => (
-            <option key={b.id_edificio} value={b.id_edificio}>
-              {b.nombre_edificio}
-            </option>
-          ))}
-        </select>
-      </FormField>
-      <FormField label="Nombre del Piso" error={errors.nombre_piso?.message}>
-        <input {...register('nombre_piso')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Imagen">
-        <input type="file" ref={fileRef} accept="image/*" style={{ width: '100%', padding: '0.5rem' }} />
-        {imagenUrl && (
-          <div style={{ marginTop: 8 }}>
-            <img src={imagenUrl} alt="Imagen" style={{ maxWidth: '100%', maxHeight: 120 }} />
-          </div>
-        )}
-      </FormField>
-      <FormField label="Código QR" error={errors.codigo_qr?.message}>
-        <input {...register('codigo_qr')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Estado" error={errors.estado?.message}>
-        <select {...register('estado')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value={true}>Activo</option>
-          <option value={false}>Inactivo</option>
-        </select>
-      </FormField>
-      <FormField label="Disponibilidad" error={errors.disponibilidad?.message}>
-        <input {...register('disponibilidad')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <button type="submit" disabled={isLoading} style={{ padding: '0.5rem 1rem' }}>
-        {isLoading ? 'Guardando...' : 'Guardar'}
-      </button>
-    </form>
+    <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
+      <DialogTitle>{editItem ? 'Editar Piso' : 'Crear Piso'}</DialogTitle>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label='Nombre'
+              {...register('nombre_piso')}
+              error={!!errors.nombre_piso}
+              helperText={errors.nombre_piso?.message}
+            />
+            
+            <TextField
+              fullWidth
+              label='Número de Piso'
+              type='number'
+              {...register('numero_piso')}
+              error={!!errors.numero_piso}
+              helperText={errors.numero_piso?.message}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Edificio</InputLabel>
+              <Select
+                {...register('id_edificio')}
+                defaultValue={editItem?.id_edificio ?? ''}
+                label='Edificio'
+              >
+                {buildings?.map(b => (
+                  <MenuItem key={b.id_edificio} value={b.id_edificio}>
+                    {b.nombre_edificio}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box>
+              <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
+                Imagen
+              </Typography>
+              <input type='file' ref={fileRef} accept='image/*' style={{ width: '100%' }} />
+              {imagenUrl && (
+                <Box sx={{ mt: 2 }}>
+                  <img src={imagenUrl} alt='Preview' style={{ maxWidth: '100%', maxHeight: 120, objectFit: 'contain' }} />
+                </Box>
+              )}
+            </Box>
+
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                {...register('estado')}
+                defaultValue={editItem?.estado ?? true}
+                label='Estado'
+              >
+                <MenuItem value={true}>Activo</MenuItem>
+                <MenuItem value={false}>Inactivo</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label='Disponibilidad'
+              {...register('disponibilidad')}
+              error={!!errors.disponibilidad}
+              helperText={errors.disponibilidad?.message}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button
+            type='submit'
+            variant='contained'
+            disabled={isLoading}
+            startIcon={isLoading && <CircularProgress size={20} />}
+          >
+            {isLoading ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }
-

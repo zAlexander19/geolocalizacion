@@ -1,24 +1,53 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import api from '../../../lib/api'
-import { queryClient } from '../../../lib/queryClient'
-import DataTable from '../../../components/DataTable'
-import Modal from '../../../components/Modal'
-import FormField from '../../../components/FormField'
-import Button from '../../../components/ui/button'
-import Card from '../../../components/ui/card'
-import Badge from '../../../components/ui/badge'
-import SearchInput from '../../../components/ui/search-input'
-import ActionsMenu from '../../../components/ui/actions-menu'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  Avatar,
+  CircularProgress,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
+} from '@mui/material'
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreIcon,
+  Search as SearchIcon,
+  Image as ImageIcon,
+} from '@mui/icons-material'
+import api from '../../../lib/api'
+import { queryClient } from '../../../lib/queryClient'
 
 const buildingSchema = z.object({
-  nombre_edificio: z.string().min(1).max(100),
-  acronimo: z.string().min(1).max(50),
-  imagen: z.string().max(200),
+  nombre_edificio: z.string().min(1, 'Nombre requerido').max(100),
+  acronimo: z.string().min(1, 'Acrónimo requerido').max(50),
+  imagen: z.string().optional(),
   cord_latitud: z.coerce.number(),
   cord_longitud: z.coerce.number(),
   estado: z.coerce.boolean(),
@@ -29,6 +58,9 @@ export default function BuildingsPage() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
+  const [modalImg, setModalImg] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedRow, setSelectedRow] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['buildings', search],
@@ -40,7 +72,6 @@ export default function BuildingsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (payload) => {
-      // payload es FormData
       const res = await api.post('/buildings', payload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -49,23 +80,21 @@ export default function BuildingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
       setModalOpen(false)
-      alert('Created!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }) => {
-      const res = await api.put(`/buildings/${id}`, payload)
+      const res = await api.put(`/buildings/${id}`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
       setModalOpen(false)
       setEditItem(null)
-      alert('Updated!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const deleteMutation = useMutation({
@@ -75,9 +104,7 @@ export default function BuildingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
-      alert('Deleted!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const handleCreate = () => {
@@ -88,204 +115,321 @@ export default function BuildingsPage() {
   const handleEdit = (item) => {
     setEditItem(item)
     setModalOpen(true)
+    setAnchorEl(null)
   }
 
   const handleDelete = (item) => {
     if (confirm('¿Borrar edificio ' + item.nombre_edificio + '?')) {
       deleteMutation.mutate(item.id_edificio)
     }
+    setAnchorEl(null)
   }
 
-
-  const columns = [
-    { key: 'id_edificio', label: 'ID' },
-    { key: 'nombre_edificio', label: 'Nombre' },
-    { key: 'acronimo', label: 'Acrónimo' },
-    { 
-      key: 'imagen', 
-      label: 'Imagen',
-      render: (row) => {
-        const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dy=".3em" text-anchor="middle" font-size="10" fill="%23aaa">Sin img</text></svg>'
-        // Si viene una URL de via.placeholder.com (del seed antiguo), evitar pedirla
-        if (!row.imagen || /via\.placeholder\.com/.test(row.imagen)) {
-          return <img src={placeholder} alt="Sin imagen" style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }} />
-        }
-        const imageUrl = row.imagen.startsWith('http') 
-          ? row.imagen 
-          : `http://localhost:4000${row.imagen}`
-        return (
-          <img 
-            src={imageUrl} 
-            alt="Edificio" 
-            style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }}
-            onError={(e) => { e.currentTarget.src = placeholder }}
-          />
-        )
-      }
-    },
-    { key: 'cord_latitud', label: 'Latitud' },
-    { key: 'cord_longitud', label: 'Longitud' },
-    { 
-      key: 'estado', 
-      label: 'Estado',
-      render: (row) => row.estado ? 'Activo' : 'Inactivo'
-    },
-    { key: 'disponibilidad', label: 'Disponibilidad' },
-  ]
+  const handleMenuOpen = (event, row) => {
+    setAnchorEl(event.currentTarget)
+    setSelectedRow(row)
+  }
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-1">Edificios</h1>
-        <p className="text-base text-gray-600 mb-4">Gestiona los edificios del sistema.</p>
-        <div className="flex items-center gap-2 mb-2">
-          <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar edificios..." className="w-64" />
-          <Button onClick={handleCreate} className="ml-auto">+ Crear edificio</Button>
-        </div>
-      </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        {isLoading ? (
-          <p className="p-6 text-gray-500">Cargando...</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">IDENTIFICACIÓN</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Nombre</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Acrónimo</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Imagen</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Coordenadas</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Estado</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Disponibilidad</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map(row => {
-                const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="100%" height="100%" rx="12" fill="%23e5e7eb"/><rect x="12" y="12" width="24" height="24" rx="4" fill="%23222"/><rect x="18" y="18" width="6" height="6" fill="%23fff"/><rect x="24" y="18" width="6" height="6" fill="%23fff"/><rect x="18" y="24" width="6" height="6" fill="%23fff"/><rect x="24" y="24" width="6" height="6" fill="%23fff"/></svg>'
-                const imageUrl = !row.imagen || /via\.placeholder\.com/.test(row.imagen)
-                  ? placeholder
-                  : (row.imagen.startsWith('http') ? row.imagen : `http://localhost:4000${row.imagen}`)
-                return (
-                  <tr key={row.id_edificio} className="border-b last:border-b-0">
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700">{row.id_edificio}</td>
-                    <td className="px-4 py-2 text-gray-900 font-medium">{row.nombre_edificio}</td>
-                    <td className="px-4 py-2"><Badge color="outline">{row.acronimo}</Badge></td>
-                    <td className="px-4 py-2">
-                      <img src={imageUrl} alt="Edificio" style={{ maxWidth: 48, maxHeight: 48, objectFit: 'cover', borderRadius: 12, background: '#e5e7eb' }} />
-                      {!row.imagen && <span className="text-xs text-gray-400 ml-2">Sin imagen</span>}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700">{row.cord_latitud}, {row.cord_longitud}</td>
-                    <td className="px-4 py-2">
-                      <Badge color={row.estado ? 'green' : 'red'}>{row.estado ? 'Activo' : 'Inactivo'}</Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge color={row.disponibilidad === 'Disponible' ? 'green' : 'gray'}>{row.disponibilidad}</Badge>
-                    </td>
-                    <td className="px-4 py-2">
-                      <ActionsMenu onEdit={() => handleEdit(row)} onDelete={() => handleDelete(row)} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-        <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? 'Editar edificio' : 'Crear edificio'}>
-          <BuildingForm
-            initialData={editItem}
-            onSubmit={(values) => {
-              if (editItem) {
-                updateMutation.mutate({ id: editItem.id_edificio, ...values })
-              } else {
-                createMutation.mutate(values)
-              }
+    <Box>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Edificios
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Gestiona los edificios del sistema.
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar edificios..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+            sx={{ width: 300 }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'action.active' }} />,
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
           />
-        </Modal>
-      </div>
-    </div>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+          >
+            Crear Edificio
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Table */}
+      <TableContainer component={Paper} elevation={1}>
+        {isLoading ? (
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Imagen</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Acrónimo</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Coordenadas</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Disponibilidad</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }} align="center">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data?.map((row) => (
+                <TableRow key={row.id_edificio} hover>
+                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                    {row.id_edificio}
+                  </TableCell>
+                  <TableCell>
+                    {row.imagen && !/via\.placeholder\.com/.test(row.imagen) ? (
+                      <Avatar
+                        src={row.imagen.startsWith('http') ? row.imagen : `http://localhost:4000${row.imagen}`}
+                        variant="rounded"
+                        sx={{ width: 48, height: 48, cursor: 'pointer' }}
+                        onClick={() => {
+                          const url = row.imagen.startsWith('http')
+                            ? row.imagen
+                            : `http://localhost:4000${row.imagen}`
+                          setModalImg(url)
+                        }}
+                      >
+                        <ImageIcon />
+                      </Avatar>
+                    ) : (
+                      <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: 'grey.300' }}>
+                        <ImageIcon />
+                      </Avatar>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'medium' }}>{row.nombre_edificio}</TableCell>
+                  <TableCell>
+                    <Chip label={row.acronimo} size="small" variant="outlined" />
+                  </TableCell>
+                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                    {row.cord_latitud}, {row.cord_longitud}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={row.estado ? 'Activo' : 'Inactivo'}
+                      color={row.estado ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={row.disponibilidad}
+                      color={row.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, row)}>
+                      <MoreIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </TableContainer>
+
+      {/* Actions Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem onClick={() => handleEdit(selectedRow)}>
+          <EditIcon sx={{ mr: 1 }} fontSize="small" />
+          Editar
+        </MenuItem>
+        <MenuItem onClick={() => handleDelete(selectedRow)} sx={{ color: 'error.main' }}>
+          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          Eliminar
+        </MenuItem>
+      </Menu>
+
+      {/* Form Modal */}
+      <BuildingFormDialog
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false)
+          setEditItem(null)
+        }}
+        editItem={editItem}
+        onSubmit={(values) => {
+          if (editItem) {
+            updateMutation.mutate({ id: editItem.id_edificio, ...values })
+          } else {
+            createMutation.mutate(values)
+          }
+        }}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Image Modal */}
+      <Dialog open={!!modalImg} onClose={() => setModalImg(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Imagen del edificio</DialogTitle>
+        <DialogContent>
+          {modalImg && (
+            <Box sx={{ textAlign: 'center' }}>
+              <img
+                src={modalImg}
+                alt="Edificio"
+                style={{ maxWidth: '100%', maxHeight: 400 }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalImg(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
-
-
-import { useRef } from 'react'
-
-function BuildingForm({ initialData, onSubmit, isLoading }) {
+// Building Form Dialog Component
+function BuildingFormDialog({ open, onClose, editItem, onSubmit, isLoading }) {
+  const fileRef = useRef()
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch,
+    reset,
   } = useForm({
-    defaultValues: initialData || {
+    defaultValues: editItem || {
       nombre_edificio: '',
       acronimo: '',
       imagen: '',
       cord_latitud: '',
       cord_longitud: '',
       estado: true,
-      disponibilidad: 'Disponible',
+      disponibilidad: 'Disponible'
     },
+    resolver: zodResolver(buildingSchema),
   })
-  const fileRef = useRef()
-  const imagenUrl = initialData?.imagen && initialData.imagen.startsWith('/uploads')
-    ? `${window.location.origin}${initialData.imagen}`
-    : initialData?.imagen
+
+  const imagenUrl = editItem?.imagen && editItem.imagen.startsWith('/uploads')
+    ? `http://localhost:4000${editItem.imagen}`
+    : editItem?.imagen
 
   const handleFormSubmit = (values) => {
     const formData = new FormData()
     Object.entries(values).forEach(([key, value]) => {
       if (key !== 'imagen') formData.append(key, value)
     })
-      // Solo agregar imagen si hay un archivo seleccionado
-      if (fileRef.current?.files[0]) {
-        formData.append('imagen', fileRef.current.files[0])
-      }
-      // Si no hay archivo pero hay una URL existente (al editar), mantenerla
-      else if (values.imagen && values.imagen.startsWith('/uploads')) {
-        formData.append('imagen', values.imagen)
-      }
+    
+    if (fileRef.current?.files[0]) {
+      formData.append('imagen', fileRef.current.files[0])
+    } else if (values.imagen && values.imagen.startsWith('/uploads')) {
+      formData.append('imagen', values.imagen)
+    }
+    
     onSubmit(formData)
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} encType="multipart/form-data">
-      <FormField label="Nombre" error={errors.nombre_edificio?.message}>
-        <input {...register('nombre_edificio')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Acrónimo" error={errors.acronimo?.message}>
-        <input {...register('acronimo')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Imagen">
-        <input type="file" ref={fileRef} accept="image/*" style={{ width: '100%', padding: '0.5rem' }} />
-        {imagenUrl && (
-          <div style={{ marginTop: 8 }}>
-            <img src={imagenUrl} alt="Imagen" style={{ maxWidth: '100%', maxHeight: 120 }} />
-          </div>
-        )}
-      </FormField>
-      <FormField label="Latitud" error={errors.cord_latitud?.message}>
-        <input type="number" step="any" {...register('cord_latitud')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Longitud" error={errors.cord_longitud?.message}>
-        <input type="number" step="any" {...register('cord_longitud')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Estado" error={errors.estado?.message}>
-        <select {...register('estado')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value={true}>Activo</option>
-          <option value={false}>Inactivo</option>
-        </select>
-      </FormField>
-      <FormField label="Disponibilidad" error={errors.disponibilidad?.message}>
-        <input {...register('disponibilidad')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <button type="submit" disabled={isLoading} style={{ padding: '0.5rem 1rem' }}>
-        {isLoading ? 'Guardando...' : 'Guardar'}
-      </button>
-    </form>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{editItem ? 'Editar Edificio' : 'Crear Edificio'}</DialogTitle>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Nombre"
+              {...register('nombre_edificio')}
+              error={!!errors.nombre_edificio}
+              helperText={errors.nombre_edificio?.message}
+            />
+            
+            <TextField
+              fullWidth
+              label="Acrónimo"
+              {...register('acronimo')}
+              error={!!errors.acronimo}
+              helperText={errors.acronimo?.message}
+            />
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Imagen
+              </Typography>
+              <input
+                type="file"
+                ref={fileRef}
+                accept="image/*"
+                style={{ width: '100%' }}
+              />
+              {imagenUrl && (
+                <Box sx={{ mt: 2 }}>
+                  <img src={imagenUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: 120 }} />
+                </Box>
+              )}
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Latitud"
+              type="number"
+              inputProps={{ step: 'any' }}
+              {...register('cord_latitud')}
+              error={!!errors.cord_latitud}
+              helperText={errors.cord_latitud?.message}
+            />
+
+            <TextField
+              fullWidth
+              label="Longitud"
+              type="number"
+              inputProps={{ step: 'any' }}
+              {...register('cord_longitud')}
+              error={!!errors.cord_longitud}
+              helperText={errors.cord_longitud?.message}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                {...register('estado')}
+                defaultValue={editItem?.estado ?? true}
+                label="Estado"
+              >
+                <MenuItem value={true}>Activo</MenuItem>
+                <MenuItem value={false}>Inactivo</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Disponibilidad"
+              {...register('disponibilidad')}
+              error={!!errors.disponibilidad}
+              helperText={errors.disponibilidad?.message}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isLoading}
+            startIcon={isLoading && <CircularProgress size={20} />}
+          >
+            {isLoading ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }

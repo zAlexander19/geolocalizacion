@@ -1,19 +1,49 @@
-import { useState, useRef } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import api from '../../../lib/api'
-import { queryClient } from '../../../lib/queryClient'
-import DataTable from '../../../components/DataTable'
-import Modal from '../../../components/Modal'
-import FormField from '../../../components/FormField'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-
+﻿import { useState, useRef, useEffect } from "react"
+import { useQuery, useMutation } from "@tanstack/react-query"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import {
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  Avatar,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material"
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreIcon,
+  Search as SearchIcon,
+  Image as ImageIcon,
+} from "@mui/icons-material"
+import api from "../../../lib/api"
+import { queryClient } from "../../../lib/queryClient"
 
 const roomSchema = z.object({
   id_piso: z.coerce.number().int(),
   nombre_sala: z.string().min(1).max(50),
-  imagen: z.string().max(200),
+  imagen: z.string().optional(),
   capacidad: z.coerce.number().int().min(1),
   tipo_sala: z.string().max(50),
   cord_latitud: z.coerce.number(),
@@ -23,73 +53,70 @@ const roomSchema = z.object({
 })
 
 export default function RoomsPage() {
-  const [search, setSearch] = useState('')
-  const [filterBuilding, setFilterBuilding] = useState('')
-  const [filterFloor, setFilterFloor] = useState('')
+  const [search, setSearch] = useState("")
+  const [selectedBuilding, setSelectedBuilding] = useState("")
+  const [selectedFloor, setSelectedFloor] = useState("")
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState(null)
+  const [modalImg, setModalImg] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [selectedRow, setSelectedRow] = useState(null)
 
   const { data: buildings } = useQuery({
-    queryKey: ['buildings'],
+    queryKey: ["buildings"],
     queryFn: async () => {
-      const res = await api.get('/buildings')
+      const res = await api.get("/buildings")
       return res.data.data
     },
   })
 
   const { data: floors } = useQuery({
-    queryKey: ['floors', filterBuilding],
+    queryKey: ["floors", selectedBuilding],
     queryFn: async () => {
-      if (!filterBuilding) return []
-      const res = await api.get(`/buildings/${filterBuilding}/floors`)
+      if (!selectedBuilding) return []
+      const res = await api.get(`/buildings/${selectedBuilding}/floors`)
       return res.data.data
     },
-    enabled: !!filterBuilding,
+    enabled: !!selectedBuilding,
   })
 
   const { data: rooms, isLoading } = useQuery({
-    queryKey: ['rooms', filterBuilding, filterFloor, search],
+    queryKey: ["rooms", selectedFloor, search],
     queryFn: async () => {
-      const res = await api.get('/rooms', {
-        params: { id_piso: filterFloor || undefined, search },
+      if (!selectedFloor) return []
+      const res = await api.get("/rooms", {
+        params: { id_piso: selectedFloor, search },
       })
       return res.data.data
     },
+    enabled: !!selectedFloor,
   })
 
   const createMutation = useMutation({
     mutationFn: async (payload) => {
-      // payload puede ser FormData
-      const res = await api.post('/rooms', payload, payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined)
+      const res = await api.post("/rooms", payload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['rooms'])
+      queryClient.invalidateQueries(["rooms"])
       setModalOpen(false)
-      alert('Created!')
-    },
-    onError: (err) => {
-      const details = err.response?.data?.details
-      if (details && Array.isArray(details)) {
-        alert('Error: ' + (err.response?.data?.error || err.message) + '\n' + details.map(d => d.message).join('\n'))
-      } else {
-        alert('Error: ' + (err.response?.data?.error || err.message))
-      }
     },
   })
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...payload }) => {
-      const res = await api.put(`/rooms/${id}`, payload)
+      const res = await api.put(`/rooms/${id}`, payload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['rooms'])
+      queryClient.invalidateQueries(["rooms"])
       setModalOpen(false)
       setEditItem(null)
-      alert('Updated!')
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const deleteMutation = useMutation({
@@ -98,10 +125,8 @@ export default function RoomsPage() {
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['rooms'])
-      alert('Deleted!')
+      queryClient.invalidateQueries(["rooms"])
     },
-    onError: (err) => alert('Error: ' + (err.response?.data?.error || err.message)),
   })
 
   const handleCreate = () => {
@@ -112,216 +137,433 @@ export default function RoomsPage() {
   const handleEdit = (item) => {
     setEditItem(item)
     setModalOpen(true)
+    setAnchorEl(null)
   }
 
   const handleDelete = (item) => {
-    if (confirm('¿Borrar sala ' + item.nombre_sala + '?')) {
+    if (confirm("¿Borrar habitación " + item.nombre_sala + "?")) {
       deleteMutation.mutate(item.id_sala)
     }
+    setAnchorEl(null)
   }
 
-  const columns = [
-    { key: 'id_sala', label: 'ID' },
-    { key: 'id_piso', label: 'Piso' },
-    { key: 'nombre_sala', label: 'Nombre' },
-    { 
-      key: 'imagen', 
-      label: 'Imagen',
-      render: (row) => {
-        const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dy=".3em" text-anchor="middle" font-size="10" fill="%23aaa">Sin img</text></svg>'
-  if (!row.imagen || /via\.placeholder\.com/.test(row.imagen)) return <img src={placeholder} alt="Sin imagen" style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }} />
-        const imageUrl = row.imagen.startsWith('http') ? row.imagen : `http://localhost:4000${row.imagen}`
-        return (
-          <img src={imageUrl} alt="Sala" style={{ maxWidth: 80, maxHeight: 80, objectFit: 'cover', borderRadius: 4 }} onError={(e) => { e.currentTarget.src = placeholder }} />
-        )
-      }
-    },
-    { key: 'capacidad', label: 'Capacidad' },
-    { key: 'tipo_sala', label: 'Tipo' },
-    { key: 'cord_latitud', label: 'Latitud' },
-    { key: 'cord_longitud', label: 'Longitud' },
-    { key: 'estado', label: 'Estado' },
-    { key: 'disponibilidad', label: 'Disponibilidad' },
-  ]
+  const handleMenuOpen = (event, row) => {
+    setAnchorEl(event.currentTarget)
+    setSelectedRow(row)
+  }
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-1">Habitaciones</h1>
-        <p className="text-base text-gray-600 mb-4">Gestiona las salas o habitaciones por edificio y piso.</p>
-        <div className="flex items-center gap-2 mb-2">
-          <label className="text-sm text-gray-700">Edificio:</label>
-          <select
-            value={filterBuilding}
-            onChange={(e) => {
-              setFilterBuilding(e.target.value)
-              setFilterFloor('')
-            }}
-            className="border border-gray-300 rounded px-3 py-2 text-sm w-64"
-          >
-            <option value="">Todo</option>
-            {buildings?.map((b) => (
-              <option key={b.id_edificio} value={b.id_edificio}>
-                {b.nombre_edificio}
-              </option>
-            ))}
-          </select>
-          {filterBuilding && (
-            <>
-              <label className="text-sm text-gray-700">Piso:</label>
-              <select
-                value={filterFloor}
-                onChange={(e) => setFilterFloor(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-2 text-sm w-48"
-              >
-                <option value="">Todos</option>
-                {floors?.map((f) => (
-                  <option key={f.id_piso} value={f.id_piso}>
-                    {f.nombre_piso}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-          <input
-            placeholder="Buscar..."
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: "bold" }}>
+          Habitaciones
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Gestiona las habitaciones del sistema.
+        </Typography>
+
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 3 }}>
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Edificio</InputLabel>
+            <Select
+              value={selectedBuilding}
+              onChange={(e) => {
+                setSelectedBuilding(e.target.value)
+                setSelectedFloor("")
+              }}
+              label="Edificio"
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {buildings?.map(b => (
+                <MenuItem key={b.id_edificio} value={b.id_edificio}>
+                  {b.nombre_edificio} ({b.acronimo})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 200 }} size="small" disabled={!selectedBuilding}>
+            <InputLabel>Piso</InputLabel>
+            <Select
+              value={selectedFloor}
+              onChange={(e) => setSelectedFloor(e.target.value)}
+              label="Piso"
+            >
+              <MenuItem value="">
+                <em>Ninguno</em>
+              </MenuItem>
+              {floors?.map(f => (
+                <MenuItem key={f.id_piso} value={f.id_piso}>
+                  {f.nombre_piso} (Piso {f.numero_piso})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <TextField
+            placeholder="Buscar habitaciones..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm w-64"
+            size="small"
+            sx={{ width: 300 }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: "action.active" }} />,
+            }}
+            disabled={!selectedFloor}
           />
-          <button onClick={handleCreate} className="px-3 py-2 text-sm rounded border border-gray-300">Crear sala</button>
-        </div>
-      </div>
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        {isLoading ? (
-          <p className="p-6 text-gray-500">Cargando...</p>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+            disabled={!selectedFloor}
+          >
+            Crear Habitación
+          </Button>
+        </Box>
+      </Box>
+
+      <TableContainer component={Paper} elevation={1}>
+        {!selectedFloor ? (
+          <Box sx={{ p: 6, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary">
+              Selecciona un edificio y piso para ver las habitaciones
+            </Typography>
+          </Box>
+        ) : isLoading ? (
+          <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+            <CircularProgress />
+          </Box>
         ) : (
-          <DataTable columns={columns} data={rooms} onEdit={handleEdit} onDelete={handleDelete} />
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "grey.50" }}>
+                <TableCell sx={{ fontWeight: "bold" }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Imagen</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Tipo</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Capacidad</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Coordenadas</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Disponibilidad</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }} align="center">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rooms?.map((row) => {
+                const imageUrl = row.imagen && !/via\.placeholder\.com/.test(row.imagen)
+                  ? (row.imagen.startsWith("http") ? row.imagen : `http://localhost:4000${row.imagen}`)
+                  : null
+
+                return (
+                  <TableRow key={row.id_sala} hover>
+                    <TableCell sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+                      {row.id_sala}
+                    </TableCell>
+                    <TableCell>
+                      {imageUrl ? (
+                        <Avatar
+                          src={imageUrl}
+                          variant="rounded"
+                          sx={{ width: 48, height: 48, cursor: "pointer" }}
+                          onClick={() => setModalImg(imageUrl)}
+                        >
+                          <ImageIcon />
+                        </Avatar>
+                      ) : (
+                        <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: "grey.300" }}>
+                          <ImageIcon />
+                        </Avatar>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "medium" }}>{row.nombre_sala}</TableCell>
+                    <TableCell>
+                      <Chip label={row.tipo_sala} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>{row.capacidad}</TableCell>
+                    <TableCell sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+                      {row.cord_latitud}, {row.cord_longitud}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={row.estado ? "Activo" : "Inactivo"}
+                        color={row.estado ? "success" : "error"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={row.disponibilidad}
+                        color={row.disponibilidad === "Disponible" ? "success" : "default"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton size="small" onClick={(e) => handleMenuOpen(e, row)}>
+                        <MoreIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
-      </div>
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? 'Editar sala' : 'Crear sala'}>
-        <RoomForm
-          buildings={buildings || []}
-          initialData={editItem || { id_piso: '', nombre_sala: '', imagen: '', capacidad: 1, tipo_sala: '', cord_latitud: '', cord_longitud: '', estado: true, disponibilidad: 'Disponible' }}
-          onSubmit={(values) => {
-            if (editItem) {
-              updateMutation.mutate({ id: editItem.id_sala, ...values })
-            } else {
-              createMutation.mutate(values)
-            }
-          }}
-          isLoading={createMutation.isPending || updateMutation.isPending}
-        />
-      </Modal>
-    </div>
+      </TableContainer>
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        <MenuItem onClick={() => handleEdit(selectedRow)}>
+          <EditIcon sx={{ mr: 1 }} fontSize="small" />
+          Editar
+        </MenuItem>
+        <MenuItem onClick={() => handleDelete(selectedRow)} sx={{ color: "error.main" }}>
+          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          Eliminar
+        </MenuItem>
+      </Menu>
+
+      <RoomFormDialog
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false)
+          setEditItem(null)
+        }}
+        editItem={editItem}
+        floors={floors}
+        selectedFloor={selectedFloor}
+        onSubmit={(values) => {
+          if (editItem) {
+            updateMutation.mutate({ id: editItem.id_sala, ...values })
+          } else {
+            createMutation.mutate(values)
+          }
+        }}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <Dialog open={!!modalImg} onClose={() => setModalImg(null)} maxWidth="md" fullWidth>
+        <DialogTitle>Imagen de la habitación</DialogTitle>
+        <DialogContent>
+          {modalImg && (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <img
+                src={modalImg}
+                alt="Habitación"
+                style={{ maxWidth: "100%", maxHeight: "500px", objectFit: "contain" }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalImg(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
-
-function RoomForm({ buildings, initialData, onSubmit, isLoading }) {
+function RoomFormDialog({ open, onClose, editItem, floors, selectedFloor, onSubmit, isLoading }) {
+  const fileRef = useRef()
   const {
     register,
     handleSubmit,
-    watch,
+    reset,
+    control,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(roomSchema),
-    defaultValues: initialData,
-  })
-
-  // Selección de edificio y pisos
-  const selectedBuilding = watch('id_edificio')
-  const { data: floors } = useQuery({
-    queryKey: ['floors', selectedBuilding],
-    queryFn: async () => {
-      if (!selectedBuilding) return []
-      const res = await api.get(`/buildings/${selectedBuilding}/floors`)
-      return res.data.data
+    defaultValues: {
+      nombre_sala: "",
+      tipo_sala: "Aula",
+      capacidad: "",
+      imagen: "",
+      id_piso: selectedFloor || "",
+      cord_latitud: "",
+      cord_longitud: "",
+      estado: true,
+      disponibilidad: "Disponible"
     },
-    enabled: !!selectedBuilding,
+    resolver: zodResolver(roomSchema),
   })
 
-  const fileRef = useRef()
+  // Resetear el formulario cuando cambia editItem o se abre el modal
+  useEffect(() => {
+    if (open) {
+      if (editItem) {
+        reset({
+          nombre_sala: editItem.nombre_sala || "",
+          tipo_sala: editItem.tipo_sala || "Aula",
+          capacidad: editItem.capacidad || "",
+          imagen: editItem.imagen || "",
+          id_piso: editItem.id_piso || selectedFloor || "",
+          cord_latitud: editItem.cord_latitud || "",
+          cord_longitud: editItem.cord_longitud || "",
+          estado: editItem.estado ?? true,
+          disponibilidad: editItem.disponibilidad || "Disponible"
+        })
+      } else {
+        reset({
+          nombre_sala: "",
+          tipo_sala: "Aula",
+          capacidad: "",
+          imagen: "",
+          id_piso: selectedFloor || "",
+          cord_latitud: "",
+          cord_longitud: "",
+          estado: true,
+          disponibilidad: "Disponible"
+        })
+      }
+    }
+  }, [open, editItem, selectedFloor, reset])
+
+  const imagenUrl = editItem?.imagen && editItem.imagen.startsWith("/uploads")
+    ? `http://localhost:4000${editItem.imagen}`
+    : editItem?.imagen
 
   const handleFormSubmit = (values) => {
     const formData = new FormData()
-    // Convierte tipos antes de enviar
-    const toNumber = (v) => v === '' ? undefined : Number(v)
-    const toBool = (v) => v === 'true' || v === true
-    const payload = {
-      ...values,
-      id_piso: toNumber(values.id_piso),
-      capacidad: toNumber(values.capacidad),
-      cord_latitud: toNumber(values.cord_latitud),
-      cord_longitud: toNumber(values.cord_longitud),
-      estado: toBool(values.estado),
-    }
-    Object.entries(payload).forEach(([key, value]) => {
-      if (key !== 'imagen' && value !== undefined) formData.append(key, value)
+    Object.entries(values).forEach(([key, value]) => {
+      if (key !== "imagen") formData.append(key, value)
     })
+
     if (fileRef.current?.files[0]) {
-      formData.append('imagen', fileRef.current.files[0])
+      formData.append("imagen", fileRef.current.files[0])
+    } else if (values.imagen && values.imagen.startsWith("/uploads")) {
+      formData.append("imagen", values.imagen)
     }
+
     onSubmit(formData)
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} encType="multipart/form-data">
-      <FormField label="Edificio" error={errors.id_edificio?.message}>
-        <select {...register('id_edificio')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value="">-- Selecciona --</option>
-          {buildings.map((b) => (
-            <option key={b.id_edificio} value={b.id_edificio}>
-              {b.nombre_edificio}
-            </option>
-          ))}
-        </select>
-      </FormField>
-      <FormField label="Piso" error={errors.id_piso?.message}>
-        <select {...register('id_piso')} style={{ width: '100%', padding: '0.5rem' }} disabled={!selectedBuilding}>
-          <option value="">-- Selecciona --</option>
-          {floors?.map((f) => (
-            <option key={f.id_piso} value={f.id_piso}>
-              {f.nombre_piso}
-            </option>
-          ))}
-        </select>
-      </FormField>
-      <FormField label="Nombre de Sala" error={errors.nombre_sala?.message}>
-        <input {...register('nombre_sala')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Imagen" error={errors.imagen?.message}>
-        <input type="file" ref={fileRef} accept="image/*" style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Capacidad" error={errors.capacidad?.message}>
-        <input type="number" {...register('capacidad')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Tipo de Sala" error={errors.tipo_sala?.message}>
-        <select {...register('tipo_sala')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value="">-- Selecciona --</option>
-          <option value="Laboratorio">Laboratorio</option>
-          <option value="Cátedra">Cátedra</option>
-          <option value="Sala de reuniones">Sala de reuniones</option>
-        </select>
-      </FormField>
-      <FormField label="Latitud" error={errors.cord_latitud?.message}>
-        <input type="number" step="any" {...register('cord_latitud')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Longitud" error={errors.cord_longitud?.message}>
-        <input type="number" step="any" {...register('cord_longitud')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <FormField label="Estado" error={errors.estado?.message}>
-        <select {...register('estado')} style={{ width: '100%', padding: '0.5rem' }}>
-          <option value={true}>Activo</option>
-          <option value={false}>Inactivo</option>
-        </select>
-      </FormField>
-      <FormField label="Disponibilidad" error={errors.disponibilidad?.message}>
-        <input {...register('disponibilidad')} style={{ width: '100%', padding: '0.5rem' }} />
-      </FormField>
-      <button type="submit" disabled={isLoading} style={{ padding: '0.5rem 1rem' }}>
-        {isLoading ? 'Guardando...' : 'Guardar'}
-      </button>
-    </form>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{editItem ? "Editar Habitación" : "Crear Habitación"}</DialogTitle>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Nombre"
+              {...register("nombre_sala")}
+              error={!!errors.nombre_sala}
+              helperText={errors.nombre_sala?.message}
+            />
+
+            <Controller
+              name="tipo_sala"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Tipo de Sala</InputLabel>
+                  <Select {...field} label="Tipo de Sala">
+                    <MenuItem value="Aula">Aula</MenuItem>
+                    <MenuItem value="Laboratorio">Laboratorio</MenuItem>
+                    <MenuItem value="Oficina">Oficina</MenuItem>
+                    <MenuItem value="Auditorio">Auditorio</MenuItem>
+                    <MenuItem value="Biblioteca">Biblioteca</MenuItem>
+                    <MenuItem value="Baño">Baño</MenuItem>
+                    <MenuItem value="Otro">Otro</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <TextField
+              fullWidth
+              label="Capacidad"
+              type="number"
+              {...register("capacidad")}
+              error={!!errors.capacidad}
+              helperText={errors.capacidad?.message}
+            />
+
+            <Controller
+              name="id_piso"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Piso</InputLabel>
+                  <Select {...field} label="Piso">
+                    {floors?.map(f => (
+                      <MenuItem key={f.id_piso} value={f.id_piso}>
+                        {f.nombre_piso} (Piso {f.numero_piso})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Imagen
+              </Typography>
+              <input type="file" ref={fileRef} accept="image/*" style={{ width: "100%" }} />
+              {imagenUrl && (
+                <Box sx={{ mt: 2 }}>
+                  <img src={imagenUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: 120, objectFit: "contain" }} />
+                </Box>
+              )}
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Latitud"
+              type="number"
+              inputProps={{ step: "any" }}
+              {...register("cord_latitud")}
+              error={!!errors.cord_latitud}
+              helperText={errors.cord_latitud?.message}
+            />
+
+            <TextField
+              fullWidth
+              label="Longitud"
+              type="number"
+              inputProps={{ step: "any" }}
+              {...register("cord_longitud")}
+              error={!!errors.cord_longitud}
+              helperText={errors.cord_longitud?.message}
+            />
+
+            <Controller
+              name="estado"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Estado</InputLabel>
+                  <Select {...field} label="Estado">
+                    <MenuItem value={true}>Activo</MenuItem>
+                    <MenuItem value={false}>Inactivo</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <TextField
+              fullWidth
+              label="Disponibilidad"
+              {...register("disponibilidad")}
+              error={!!errors.disponibilidad}
+              helperText={errors.disponibilidad?.message}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isLoading}
+            startIcon={isLoading && <CircularProgress size={20} />}
+          >
+            {isLoading ? "Guardando..." : "Guardar"}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }

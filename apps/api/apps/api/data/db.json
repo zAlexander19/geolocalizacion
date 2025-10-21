@@ -1,23 +1,32 @@
 {
   "buildings": [
     {
-      "id_edificio": 2,
-      "nombre_edificio": "Federacion de ingieneria y arquitectura",
-      "acronimo": "FIA",
-      "imagen": "/uploads/1760991777353-imagen.jpg",
-      "cord_latitud": 1,
-      "cord_longitud": 1,
+      "id_edificio": 1,
+      "nombre_edificio": "Departamento de Física y Tecnología",
+      "acronimo": "DFT",
+      "imagen": "",
+      "cord_latitud": -20.123456,
+      "cord_longitud": -70.123456,
       "estado": true,
       "disponibilidad": "Disponible"
     }
   ],
   "floors": [
     {
-      "id_piso": 3,
-      "id_edificio": 2,
-      "nombre_piso": "Primer piso",
-      "imagen": "/uploads/1760991819444-imagen.jpg",
-      "codigo_qr": "1",
+      "id_piso": 1,
+      "id_edificio": 1,
+      "nombre_piso": "Primer Piso",
+      "imagen": "",
+      "codigo_qr": "QR-001",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 2,
+      "id_edificio": 1,
+      "nombre_piso": "Segundo Piso",
+      "imagen": "",
+      "codigo_qr": "QR-002",
       "estado": true,
       "disponibilidad": "Disponible"
     }
@@ -25,13 +34,13 @@
   "rooms": [
     {
       "id_sala": 3,
-      "id_piso": 3,
-      "nombre_sala": "lc2",
-      "imagen": "/uploads/1760992560780-imagen.jpg",
-      "capacidad": 30,
-      "tipo_sala": "Cátedra",
-      "cord_latitud": 10,
-      "cord_longitud": 10,
+      "id_piso": 2,
+      "nombre_sala": "Sala de Clases 201",
+      "imagen": "",
+      "capacidad": 20,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.123402,
+      "cord_longitud": -70.123402,
       "estado": true,
       "disponibilidad": "Disponible"
     }
