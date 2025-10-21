@@ -22,13 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Env files
-.env
-.env.*
-apps/*/.env
-apps/*/.env.*
-
-# Build outputs in apps
-apps/*/dist
-apps/*/node_modules
