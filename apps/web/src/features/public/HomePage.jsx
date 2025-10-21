@@ -54,6 +54,7 @@ export default function HomePage() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' })
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [roomDetailOpen, setRoomDetailOpen] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -197,6 +198,112 @@ export default function HomePage() {
     setLocationError(null)
     requestUserLocation()
   }
+
+  // Helpers para cargar Leaflet y Routing Machine por CDN solo cuando se abre el mapa
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    const exists = document.querySelector(`script[src="${src}"]`)
+    if (exists) return resolve()
+    const s = document.createElement('script')
+    s.src = src
+    s.async = true
+    s.onload = resolve
+    s.onerror = reject
+    document.body.appendChild(s)
+  })
+
+  const loadStyle = (href) => new Promise((resolve, reject) => {
+    const exists = document.querySelector(`link[href="${href}"]`)
+    if (exists) return resolve()
+    const l = document.createElement('link')
+    l.rel = 'stylesheet'
+    l.href = href
+    l.onload = resolve
+    l.onerror = reject
+    document.head.appendChild(l)
+  })
+
+  const ensureLeafletReady = async () => {
+    // CSS
+    await loadStyle('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css')
+    await loadStyle('https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css')
+    // JS
+    if (!window.L) {
+      await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
+    }
+    if (!window.L?.Routing) {
+      await loadScript('https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js')
+    }
+  }
+
+  // Inicializar mapa con ruta cuando se abre el popup
+  useEffect(() => {
+    let mapInstance = null
+    let routingControl = null
+    const init = async () => {
+      if (!mapOpen || !selectedRoom) return
+      await ensureLeafletReady()
+      const L = window.L
+
+      const containerId = 'route-map'
+      const container = document.getElementById(containerId)
+      if (!container) return
+
+      // Limpiar contenido previo del contenedor para evitar mapas duplicados
+      container.innerHTML = ''
+
+      mapInstance = L.map(containerId)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(mapInstance)
+
+      const dest = L.latLng(selectedRoom.cord_latitud, selectedRoom.cord_longitud)
+
+      // Si no hay ubicación del usuario, sólo mostrar destino
+      if (!userLocation) {
+        const destMarker = L.marker(dest).addTo(mapInstance)
+        destMarker.bindPopup(`<b>${selectedRoom.nombre_sala}</b><br/>Destino`)
+        mapInstance.setView(dest, 17)
+        return
+      }
+
+      const origin = L.latLng(userLocation.latitude, userLocation.longitude)
+
+      // Dibujar ruta óptima (OSRM público por defecto en Leaflet Routing Machine)
+      routingControl = L.Routing.control({
+        waypoints: [origin, dest],
+        addWaypoints: false,
+        draggableWaypoints: false,
+        routeWhileDragging: false,
+        show: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+          styles: [{ color: '#1976d2', weight: 6, opacity: 0.9 }]
+        },
+        createMarker: (i, wp, nWps) => {
+          const label = i === 0 ? 'Origen' : (i === nWps - 1 ? 'Destino' : `Punto ${i}`)
+          return L.marker(wp.latLng).bindPopup(label)
+        }
+      }).addTo(mapInstance)
+
+      // Ajustar vista cuando la ruta esté lista
+      routingControl.on('routesfound', function(e) {
+        const route = e.routes[0]
+        if (route && route.bounds) {
+          mapInstance.fitBounds(route.bounds, { padding: [30, 30] })
+        }
+      })
+    }
+
+    init()
+
+    return () => {
+      try {
+        if (routingControl && routingControl.remove) routingControl.remove()
+        if (mapInstance) mapInstance.remove()
+      } catch {}
+    }
+  }, [mapOpen, selectedRoom, userLocation])
 
   const searchOptions = [
     { id: 'edificio', label: 'Edificio', icon: <BuildingIcon /> },
@@ -708,17 +815,37 @@ export default function HomePage() {
               <Button
                 variant="contained"
                 startIcon={<LocationIcon />}
-                onClick={() => {
-                  // Abrir en Google Maps con las coordenadas de la sala
-                  const url = `https://www.google.com/maps?q=${selectedRoom.cord_latitud},${selectedRoom.cord_longitud}`
-                  window.open(url, '_blank')
-                }}
+                onClick={() => setMapOpen(true)}
               >
                 Mostrar en el mapa
               </Button>
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Popup del mapa con ruta */}
+      <Dialog
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <LocationIcon color="primary" />
+          Ruta hasta {selectedRoom?.nombre_sala || 'destino'}
+        </DialogTitle>
+        <DialogContent dividers>
+          {!userLocation && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Activa tu ubicación para calcular la ruta desde tu posición. Se muestra solo el destino.
+            </Alert>
+          )}
+          <Box id="route-map" sx={{ width: '100%', height: { xs: 400, md: 520 }, borderRadius: 2, overflow: 'hidden' }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMapOpen(false)}>Cerrar</Button>
+        </DialogActions>
       </Dialog>
 
       {/* Footer */}
