@@ -1,6 +1,6 @@
-﻿import { useState, useRef } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -292,8 +292,10 @@ function FloorFormDialog({ open, onClose, editItem, buildings, onSubmit, isLoadi
     register,
     handleSubmit,
     formState: { errors },
+    reset,
+    control,
   } = useForm({
-    defaultValues: editItem || {
+    defaultValues: {
       nombre_piso: '',
       numero_piso: '',
       imagen: '',
@@ -303,6 +305,20 @@ function FloorFormDialog({ open, onClose, editItem, buildings, onSubmit, isLoadi
     },
     resolver: zodResolver(floorSchema),
   })
+
+  // Reset form when editItem changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      reset(editItem || {
+        nombre_piso: '',
+        numero_piso: '',
+        imagen: '',
+        id_edificio: '',
+        estado: true,
+        disponibilidad: 'Disponible'
+      })
+    }
+  }, [open, editItem, reset])
 
   const imagenUrl = editItem?.imagen && editItem.imagen.startsWith('/uploads')
     ? `http://localhost:4000${editItem.imagen}`
@@ -348,17 +364,19 @@ function FloorFormDialog({ open, onClose, editItem, buildings, onSubmit, isLoadi
 
             <FormControl fullWidth>
               <InputLabel>Edificio</InputLabel>
-              <Select
-                {...register('id_edificio')}
-                defaultValue={editItem?.id_edificio ?? ''}
-                label='Edificio'
-              >
-                {buildings?.map(b => (
-                  <MenuItem key={b.id_edificio} value={b.id_edificio}>
-                    {b.nombre_edificio}
-                  </MenuItem>
-                ))}
-              </Select>
+              <Controller
+                name='id_edificio'
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} label='Edificio'>
+                    {buildings?.map(b => (
+                      <MenuItem key={b.id_edificio} value={b.id_edificio}>
+                        {b.nombre_edificio}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
 
             <Box>
@@ -375,14 +393,16 @@ function FloorFormDialog({ open, onClose, editItem, buildings, onSubmit, isLoadi
 
             <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
-              <Select
-                {...register('estado')}
-                defaultValue={editItem?.estado ?? true}
-                label='Estado'
-              >
-                <MenuItem value={true}>Activo</MenuItem>
-                <MenuItem value={false}>Inactivo</MenuItem>
-              </Select>
+              <Controller
+                name='estado'
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} label='Estado'>
+                    <MenuItem value={true}>Activo</MenuItem>
+                    <MenuItem value={false}>Inactivo</MenuItem>
+                  </Select>
+                )}
+              />
             </FormControl>
 
             <TextField

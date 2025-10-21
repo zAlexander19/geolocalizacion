@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -306,8 +306,9 @@ function BuildingFormDialog({ open, onClose, editItem, onSubmit, isLoading }) {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
   } = useForm({
-    defaultValues: editItem || {
+    defaultValues: {
       nombre_edificio: '',
       acronimo: '',
       imagen: '',
@@ -318,6 +319,21 @@ function BuildingFormDialog({ open, onClose, editItem, onSubmit, isLoading }) {
     },
     resolver: zodResolver(buildingSchema),
   })
+
+  // Reset form when editItem changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      reset(editItem || {
+        nombre_edificio: '',
+        acronimo: '',
+        imagen: '',
+        cord_latitud: '',
+        cord_longitud: '',
+        estado: true,
+        disponibilidad: 'Disponible'
+      })
+    }
+  }, [open, editItem, reset])
 
   const imagenUrl = editItem?.imagen && editItem.imagen.startsWith('/uploads')
     ? `http://localhost:4000${editItem.imagen}`
@@ -399,14 +415,16 @@ function BuildingFormDialog({ open, onClose, editItem, onSubmit, isLoading }) {
 
             <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
-              <Select
-                {...register('estado')}
-                defaultValue={editItem?.estado ?? true}
-                label="Estado"
-              >
-                <MenuItem value={true}>Activo</MenuItem>
-                <MenuItem value={false}>Inactivo</MenuItem>
-              </Select>
+              <Controller
+                name="estado"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} label="Estado">
+                    <MenuItem value={true}>Activo</MenuItem>
+                    <MenuItem value={false}>Inactivo</MenuItem>
+                  </Select>
+                )}
+              />
             </FormControl>
 
             <TextField

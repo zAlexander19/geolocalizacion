@@ -51,11 +51,14 @@ export function deleteBuilding(id_edificio) {
   if (idx === -1) return { error: 'NOT_FOUND' }
   // eliminar en cascada pisos y salas
   const removed = db.buildings.splice(idx, 1)[0]
+  // Primero obtener los IDs de los pisos que se van a eliminar
+  const floorIdsToDelete = db.floors
+    .filter((f) => f.id_edificio === Number(id_edificio))
+    .map((f) => f.id_piso)
+  // Eliminar las salas de esos pisos
+  db.rooms = db.rooms.filter((r) => !floorIdsToDelete.includes(r.id_piso))
+  // Eliminar los pisos del edificio
   db.floors = db.floors.filter((f) => f.id_edificio !== Number(id_edificio))
-  db.rooms = db.rooms.filter((r) => {
-    const floor = db.floors.find((f) => f.id_piso === r.id_piso)
-    return floor && floor.id_edificio !== Number(id_edificio)
-  })
   saveDB()
   return { data: removed }
 }

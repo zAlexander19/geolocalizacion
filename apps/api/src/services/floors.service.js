@@ -8,8 +8,9 @@ export function createFloor(data) {
     id_piso: nextId(),
     id_edificio: data.id_edificio,
     nombre_piso: data.nombre_piso,
-    imagen: data.imagen,
-    codigo_qr: data.codigo_qr,
+    numero_piso: data.numero_piso || 0,
+    imagen: data.imagen || '',
+    codigo_qr: data.codigo_qr || '',
     estado: data.estado,
     disponibilidad: data.disponibilidad
   }
