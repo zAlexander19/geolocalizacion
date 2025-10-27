@@ -916,82 +916,73 @@ export default function HomePage() {
                         </Box>
                       )}
 
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        {/* Nombre del baño */}
-                        <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {/* Nombre */}
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                           {bathroom.nombre || 'Baño sin nombre'}
                         </Typography>
 
-                        {/* Tipo de baño */}
-                        <Chip 
-                          label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ mb: 2 }}
-                        />
-
-                        {/* Capacidad */}
-                        {bathroom.capacidad > 0 && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <PeopleIcon color="action" fontSize="small" />
-                            <Typography variant="body2" color="text.secondary">
-                              <strong>Capacidad:</strong> {bathroom.capacidad}
-                            </Typography>
-                          </Box>
-                        )}
+                        {/* Chips: Tipo y Disponibilidad */}
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Chip 
+                            label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Chip
+                            label={bathroom.disponibilidad}
+                            size="small"
+                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                          />
+                        </Box>
 
                         {/* Edificio */}
                         {bathroom.building && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <BuildingIcon color="action" fontSize="small" />
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                            <BuildingIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
                             <Typography variant="body2" color="text.secondary">
-                              <strong>Edificio:</strong> {bathroom.building.nombre_edificio}
+                              {bathroom.building.nombre_edificio}
                             </Typography>
                           </Box>
                         )}
 
                         {/* Piso */}
                         {bathroom.floor && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <RoomIcon color="action" fontSize="small" />
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                            <RoomIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
                             <Typography variant="body2" color="text.secondary">
-                              <strong>Piso:</strong> {bathroom.floor.nombre_piso}
+                              {bathroom.floor.nombre_piso}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Capacidad */}
+                        {bathroom.capacidad > 0 && (
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                            <PeopleIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {bathroom.capacidad} cubículos
                             </Typography>
                           </Box>
                         )}
 
                         {/* Acceso discapacidad */}
                         {bathroom.acceso_discapacidad && (
-                          <Box sx={{ mb: 1 }}>
-                            <Chip 
-                              label="♿ Acceso discapacidad"
-                              size="small"
-                              color="success"
-                              variant="outlined"
-                            />
-                          </Box>
+                          <Chip 
+                            label="♿ Acceso discapacidad"
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ alignSelf: 'flex-start' }}
+                          />
                         )}
-
-                        {/* Disponibilidad */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <Chip
-                            label={bathroom.disponibilidad}
-                            size="small"
-                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                          />
-                          <Chip
-                            label={bathroom.estado ? 'Activo' : 'Inactivo'}
-                            size="small"
-                            color={bathroom.estado ? 'success' : 'error'}
-                          />
-                        </Box>
 
                         {/* Distancia */}
                         {bathroom.distance !== undefined && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
-                            <WalkIcon color="primary" fontSize="small" />
-                            <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 1 }}>
+                            <WalkIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
+                            <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
                               A {bathroom.distance < 1000 
                                 ? `${bathroom.distance} metros` 
                                 : `${(bathroom.distance / 1000).toFixed(2)} km`} de ti
@@ -1007,7 +998,7 @@ export default function HomePage() {
                             setSelectedBathroom(bathroom)
                             setBathroomDetailOpen(true)
                           }}
-                          sx={{ mt: 2 }}
+                          sx={{ mt: 'auto', textTransform: 'none', fontWeight: 'bold' }}
                         >
                           Ver más
                         </Button>
@@ -1516,6 +1507,199 @@ export default function HomePage() {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setBuildingDetailOpen(false)}>Cerrar</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      {/* Modal de Detalles del Baño */}
+      <Dialog
+        open={bathroomDetailOpen}
+        onClose={() => setBathroomDetailOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { maxHeight: '90vh' }
+        }}
+      >
+        {selectedBathroom && (
+          <>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                  {selectedBathroom.nombre || 'Baño sin nombre'}
+                </Typography>
+                <Chip
+                  label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                  color="primary"
+                  size="small"
+                />
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Imagen del edificio - Arriba */}
+                {selectedBathroom.building && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: -2 }}>Edificio</Typography>
+                    {selectedBathroom.building.imagen && !/via\.placeholder\.com/.test(selectedBathroom.building.imagen) ? (
+                      <Box
+                        component="img"
+                        src={selectedBathroom.building.imagen.startsWith('http') ? selectedBathroom.building.imagen : `http://localhost:4000${selectedBathroom.building.imagen}`}
+                        alt={selectedBathroom.building.nombre_edificio}
+                        sx={{
+                          width: '100%',
+                          height: 250,
+                          objectFit: 'cover',
+                          borderRadius: 2
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 250,
+                          bgcolor: 'grey.200',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 2
+                        }}
+                      >
+                        <BuildingIcon sx={{ fontSize: 100, color: 'grey.400' }} />
+                      </Box>
+                    )}
+                  </>
+                )}
+
+                {/* Grid: Piso y Baño lado a lado */}
+                <Grid container spacing={2}>
+                  {/* Piso - Izquierda */}
+                  {selectedBathroom.floor && (
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Piso</Typography>
+                      {selectedBathroom.floor.imagen && !/via\.placeholder\.com/.test(selectedBathroom.floor.imagen) ? (
+                        <Box
+                          component="img"
+                          src={selectedBathroom.floor.imagen.startsWith('http') ? selectedBathroom.floor.imagen : `http://localhost:4000${selectedBathroom.floor.imagen}`}
+                          alt={selectedBathroom.floor.nombre_piso}
+                          sx={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 2 }}
+                        />
+                      ) : (
+                        <Box sx={{ width: '100%', height: 180, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
+                          <LocationIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                        </Box>
+                      )}
+                    </Grid>
+                  )}
+
+                  {/* Baño - Derecha */}
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Baño</Typography>
+                    {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
+                      <Box
+                        component="img"
+                        src={selectedBathroom.imagen.startsWith('http') ? selectedBathroom.imagen : `http://localhost:4000${selectedBathroom.imagen}`}
+                        alt={selectedBathroom.nombre}
+                        sx={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 2 }}
+                      />
+                    ) : (
+                      <Box sx={{ width: '100%', height: 180, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
+                        <BathroomIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                      </Box>
+                    )}
+                  </Grid>
+                </Grid>
+
+                {/* Información detallada del baño */}
+                <Box sx={{ bgcolor: 'grey.50', p: 2.5, borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    {selectedBathroom.nombre || 'Baño sin nombre'}
+                  </Typography>
+
+                  {/* Chips de información */}
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    <Chip
+                      label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      label={selectedBathroom.disponibilidad}
+                      size="small"
+                      color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                    />
+                  </Box>
+
+                  {/* Detalles */}
+                  {selectedBathroom.capacidad > 0 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <PeopleIcon color="action" fontSize="small" />
+                      <Typography variant="body2"><strong>Capacidad:</strong> {selectedBathroom.capacidad} cubículos/espacios</Typography>
+                    </Box>
+                  )}
+
+                  {selectedBathroom.acceso_discapacidad && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <Chip label="♿ Acceso discapacidad" color="success" size="small" />
+                    </Box>
+                  )}
+
+                  {selectedBathroom.floor && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <RoomIcon color="action" fontSize="small" />
+                      <Typography variant="body2">
+                        <strong>Piso:</strong> {selectedBathroom.floor.nombre_piso}
+                        {selectedBathroom.floor.numero_piso != null && ` (N° ${selectedBathroom.floor.numero_piso})`}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {selectedBathroom.building && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <BuildingIcon color="action" fontSize="small" />
+                      <Typography variant="body2">
+                        <strong>Edificio:</strong> {selectedBathroom.building.nombre_edificio}
+                        {selectedBathroom.building.acronimo && ` (${selectedBathroom.building.acronimo})`}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {selectedBathroom.distance !== undefined && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <WalkIcon color="primary" fontSize="small" />
+                      <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
+                        A {selectedBathroom.distance < 1000 
+                          ? `${selectedBathroom.distance} metros` 
+                          : `${(selectedBathroom.distance / 1000).toFixed(2)} km`} de ti
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 2, gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setBathroomDetailOpen(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<LocationIcon />}
+                onClick={() => {
+                  setSelectedRoom({
+                    nombre_sala: selectedBathroom.nombre,
+                    cord_latitud: selectedBathroom.cord_latitud,
+                    cord_longitud: selectedBathroom.cord_longitud
+                  })
+                  setMapOpen(true)
+                }}
+              >
+                Mostrar en el mapa
+              </Button>
             </DialogActions>
           </>
         )}
