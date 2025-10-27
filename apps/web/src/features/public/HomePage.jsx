@@ -60,7 +60,6 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
-  const [buildingSearchFilter, setBuildingSearchFilter] = useState('nombre') // 'nombre' o 'acronimo'
   const [userLocation, setUserLocation] = useState(null)
   const [locationError, setLocationError] = useState(null)
   const [locationDialog, setLocationDialog] = useState(true)
@@ -73,6 +72,8 @@ export default function HomePage() {
   const [floorRoomCarousels, setFloorRoomCarousels] = useState({})
   const [selectedBathroom, setSelectedBathroom] = useState(null)
   const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
+  const [selectedFloorImage, setSelectedFloorImage] = useState(null)
+  const [floorImageOpen, setFloorImageOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -104,10 +105,16 @@ export default function HomePage() {
       const res = await api.get('/rooms')
       const rooms = res.data.data
       
-      // Filtrar por nombre de sala
-      const filtered = rooms.filter(room => 
-        room.nombre_sala.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      const query = searchQuery.toLowerCase().trim()
+      
+      // Filtrar por nombre O acrónimo automáticamente
+      const filtered = rooms.filter(room => {
+        const nombre = room.nombre_sala?.toLowerCase() || ''
+        const acronimo = room.acronimo?.toLowerCase() || ''
+        
+        // Busca en ambos campos
+        return nombre.includes(query) || acronimo.includes(query)
+      })
       
       // Agregar información de edificio y piso
       const enriched = filtered.map(room => {
@@ -138,19 +145,21 @@ export default function HomePage() {
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 1 && !!allFloors, // Solo buscar salas
   })
 
-  // Query para buscar edificios
+  // Query para buscar edificios (busca automáticamente por nombre Y acrónimo)
   const { data: buildingSearchResults, isLoading: isSearchingBuildings } = useQuery({
-    queryKey: ['search-buildings', searchQuery, buildingSearchFilter],
+    queryKey: ['search-buildings', searchQuery],
     queryFn: async () => {
       if (!buildings) return []
       
-      // Filtrar según el tipo de búsqueda seleccionado
+      const query = searchQuery.toLowerCase().trim()
+      
+      // Filtrar por nombre O acrónimo automáticamente
       const filtered = buildings.filter(building => {
-        if (buildingSearchFilter === 'nombre') {
-          return building.nombre_edificio.toLowerCase().includes(searchQuery.toLowerCase())
-        } else {
-          return building.acronimo?.toLowerCase().includes(searchQuery.toLowerCase())
-        }
+        const nombre = building.nombre_edificio?.toLowerCase() || ''
+        const acronimo = building.acronimo?.toLowerCase() || ''
+        
+        // Busca en ambos campos
+        return nombre.includes(query) || acronimo.includes(query)
       })
       
       // Si hay ubicación del usuario, calcular distancia y ordenar
@@ -365,7 +374,7 @@ export default function HomePage() {
   const handleSearch = () => {
     if (activeTab === 0 && searchQuery.trim()) { // Edificios
       setSearchTriggered(true)
-      console.log(`Buscando edificio por ${buildingSearchFilter}: ${searchQuery}`)
+      console.log(`Buscando edificio: ${searchQuery}`)
     } else if (activeTab === 1 && searchQuery.trim()) { // Salas
       setSearchTriggered(true)
       console.log(`Buscando sala: ${searchQuery}`)
@@ -529,24 +538,6 @@ export default function HomePage() {
 
           {/* Search Bar */}
           <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            {/* Filtro de búsqueda para edificios */}
-            {activeTab === 0 && (
-              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-                <FormControl sx={{ minWidth: 250 }}>
-                  <InputLabel>Buscar por</InputLabel>
-                  <Select
-                    value={buildingSearchFilter}
-                    onChange={(e) => setBuildingSearchFilter(e.target.value)}
-                    label="Buscar por"
-                    size="small"
-                  >
-                    <MenuItem value="nombre">Nombre del edificio</MenuItem>
-                    <MenuItem value="acronimo">Acrónimo</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            )}
-
             <Paper elevation={2} sx={{ p: 1, display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth
@@ -709,7 +700,7 @@ export default function HomePage() {
                   No se encontraron edificios
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Intenta con otro {buildingSearchFilter === 'nombre' ? 'nombre' : 'acrónimo'} o verifica la ortografía
+                  Intenta con otro nombre o acrónimo, o verifica la ortografía
                 </Typography>
               </Paper>
             )}
@@ -772,11 +763,22 @@ export default function HomePage() {
                           {room.nombre_sala}
                         </Typography>
 
+                        {/* Acrónimo */}
+                        {room.acronimo && (
+                          <Chip 
+                            label={room.acronimo}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ mr: 1, mb: 2 }}
+                          />
+                        )}
+
                         {/* Tipo de sala */}
                         <Chip 
                           label={room.tipo_sala || 'Sin tipo'}
                           size="small"
-                          color="primary"
+                          color="secondary"
                           variant="outlined"
                           sx={{ mb: 2 }}
                         />
@@ -1142,7 +1144,10 @@ export default function HomePage() {
                   <Typography variant="overline" color="text.secondary">Sala</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{selectedRoom.nombre_sala}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                    <Chip label={selectedRoom.tipo_sala || 'Sin tipo'} size="small" color="primary" variant="outlined" />
+                    {selectedRoom.acronimo && (
+                      <Chip label={selectedRoom.acronimo} size="small" color="primary" variant="outlined" />
+                    )}
+                    <Chip label={selectedRoom.tipo_sala || 'Sin tipo'} size="small" color="secondary" variant="outlined" />
                     <Chip
                       label={selectedRoom.estado ? 'Activa' : 'Inactiva'}
                       color={selectedRoom.estado ? 'success' : 'error'}
@@ -1255,7 +1260,7 @@ export default function HomePage() {
         maxWidth="lg"
         fullWidth
         PaperProps={{
-          sx: { maxHeight: '90vh', height: '90vh' }
+          sx: { maxHeight: '90vh' }
         }}
       >
         {selectedBuilding && (
@@ -1279,243 +1284,308 @@ export default function HomePage() {
               </Box>
             </DialogTitle>
             <DialogContent dividers>
-              <Grid container spacing={3} sx={{ height: '100%' }}>
-                {/* Columna izquierda: Imagen del edificio */}
-                <Grid item xs={12} md={5}>
-                  <Box sx={{ position: 'sticky', top: 0 }}>
-                    {selectedBuilding.imagen && !/via\.placeholder\.com/.test(selectedBuilding.imagen) ? (
-                      <Box
-                        component="img"
-                        src={selectedBuilding.imagen.startsWith('http') ? selectedBuilding.imagen : `http://localhost:4000${selectedBuilding.imagen}`}
-                        alt={selectedBuilding.nombre_edificio}
-                        sx={{
-                          width: '100%',
-                          height: 'auto',
-                          maxHeight: '70vh',
-                          objectFit: 'cover',
-                          borderRadius: 2,
-                          boxShadow: 3
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: 400,
-                          bgcolor: 'grey.200',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: 2
-                        }}
-                      >
-                        <BuildingIcon sx={{ fontSize: 120, color: 'grey.400' }} />
-                      </Box>
-                    )}
-                    
-                    {/* Información del edificio */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Ubicación:</strong>
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Latitud: {selectedBuilding.cord_latitud}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Longitud: {selectedBuilding.cord_longitud}
-                      </Typography>
-                    </Box>
+              {/* Imagen del edificio - Mitad superior */}
+              <Box sx={{ mb: 3 }}>
+                {selectedBuilding.imagen && !/via\.placeholder\.com/.test(selectedBuilding.imagen) ? (
+                  <Box
+                    component="img"
+                    src={selectedBuilding.imagen.startsWith('http') ? selectedBuilding.imagen : `http://localhost:4000${selectedBuilding.imagen}`}
+                    alt={selectedBuilding.nombre_edificio}
+                    sx={{
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: '40vh',
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      boxShadow: 3
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 300,
+                      bgcolor: 'grey.200',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 2
+                    }}
+                  >
+                    <BuildingIcon sx={{ fontSize: 120, color: 'grey.400' }} />
                   </Box>
-                </Grid>
-
-                {/* Columna derecha: Lista de pisos con salas */}
-                <Grid item xs={12} md={7}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-                    Pisos y Salas
+                )}
+                
+                {/* Información del edificio */}
+                <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Ubicación:</strong> Lat: {selectedBuilding.cord_latitud}, Lon: {selectedBuilding.cord_longitud}
                   </Typography>
+                </Box>
+              </Box>
 
-                  {buildingFloors && buildingFloors.length > 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                      {buildingFloors.map((floor) => {
-                        const rooms = getRoomsForFloor(floor.id_piso)
-                        const carouselIndex = floorRoomCarousels[floor.id_piso] || 0
-                        const visibleRooms = rooms.slice(carouselIndex, carouselIndex + 3)
-                        
-                        return (
-                          <Paper key={floor.id_piso} elevation={2} sx={{ p: 2 }}>
-                            {/* Nombre del piso */}
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                              {floor.nombre_piso}
-                              {floor.numero_piso != null && ` - Piso ${floor.numero_piso}`}
-                            </Typography>
+              {/* Pisos y Salas - Mitad inferior */}
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Pisos y Salas
+              </Typography>
 
-                            <Divider sx={{ mb: 2 }} />
+              {buildingFloors && buildingFloors.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {buildingFloors.map((floor) => {
+                    const rooms = getRoomsForFloor(floor.id_piso)
+                    const carouselIndex = floorRoomCarousels[floor.id_piso] || 0
+                    const visibleRooms = rooms.slice(carouselIndex, carouselIndex + 3)
+                    
+                    return (
+                      <Paper key={floor.id_piso} elevation={2} sx={{ p: 2 }}>
+                        {/* Nombre del piso con botón para ver foto */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                            {floor.nombre_piso}
+                            {floor.numero_piso != null && ` - Piso ${floor.numero_piso}`}
+                          </Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<ImageIcon />}
+                            onClick={() => {
+                              setSelectedFloorImage(floor)
+                              setFloorImageOpen(true)
+                            }}
+                          >
+                            Ver foto del piso
+                          </Button>
+                        </Box>
 
-                            {/* Salas del piso con carrusel */}
-                            {rooms.length > 0 ? (
-                              <Box sx={{ position: 'relative' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  {/* Botón anterior */}
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleCarouselChange(floor.id_piso, 'prev')}
-                                    disabled={carouselIndex === 0}
-                                    sx={{ 
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'grey.100' }
-                                    }}
-                                  >
-                                    <ChevronLeftIcon />
-                                  </IconButton>
+                        <Divider sx={{ mb: 2 }} />
 
-                                  {/* Grid de salas visibles */}
-                                  <Grid container spacing={2} sx={{ flex: 1 }}>
-                                    {visibleRooms.map((room) => (
-                                      <Grid item xs={4} key={room.id_sala}>
-                                        <Tooltip title={room.nombre_sala} arrow placement="top">
+                        {/* Salas del piso con carrusel */}
+                        {rooms.length > 0 ? (
+                          <Box sx={{ position: 'relative' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {/* Botón anterior */}
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCarouselChange(floor.id_piso, 'prev')}
+                                disabled={carouselIndex === 0}
+                                sx={{ 
+                                  bgcolor: 'background.paper',
+                                  boxShadow: 1,
+                                  '&:hover': { bgcolor: 'grey.100' }
+                                }}
+                              >
+                                <ChevronLeftIcon />
+                              </IconButton>
+
+                              {/* Grid de salas visibles */}
+                              <Grid container spacing={2} sx={{ flex: 1 }}>
+                                {visibleRooms.map((room) => (
+                                  <Grid item xs={4} key={room.id_sala}>
+                                    <Tooltip title={room.nombre_sala} arrow placement="top">
+                                      <Box
+                                        sx={{
+                                          position: 'relative',
+                                          paddingTop: '100%',
+                                          borderRadius: 1,
+                                          overflow: 'hidden',
+                                          cursor: 'pointer',
+                                          transition: 'all 0.3s',
+                                          '&:hover': {
+                                            transform: 'scale(1.05)',
+                                            boxShadow: 4,
+                                            '& .room-name-overlay': {
+                                              opacity: 1
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
+                                          <Box
+                                            component="img"
+                                            src={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
+                                            alt={room.nombre_sala}
+                                            sx={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              left: 0,
+                                              width: '100%',
+                                              height: '100%',
+                                              objectFit: 'cover'
+                                            }}
+                                          />
+                                        ) : (
                                           <Box
                                             sx={{
-                                              position: 'relative',
-                                              paddingTop: '100%',
-                                              borderRadius: 1,
-                                              overflow: 'hidden',
-                                              cursor: 'pointer',
-                                              transition: 'all 0.3s',
-                                              '&:hover': {
-                                                transform: 'scale(1.05)',
-                                                boxShadow: 4,
-                                                '& .room-name-overlay': {
-                                                  opacity: 1
-                                                }
-                                              }
+                                              position: 'absolute',
+                                              top: 0,
+                                              left: 0,
+                                              width: '100%',
+                                              height: '100%',
+                                              bgcolor: 'grey.200',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center'
                                             }}
                                           >
-                                            {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                                              <Box
-                                                component="img"
-                                                src={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
-                                                alt={room.nombre_sala}
-                                                sx={{
-                                                  position: 'absolute',
-                                                  top: 0,
-                                                  left: 0,
-                                                  width: '100%',
-                                                  height: '100%',
-                                                  objectFit: 'cover'
-                                                }}
-                                              />
-                                            ) : (
-                                              <Box
-                                                sx={{
-                                                  position: 'absolute',
-                                                  top: 0,
-                                                  left: 0,
-                                                  width: '100%',
-                                                  height: '100%',
-                                                  bgcolor: 'grey.200',
-                                                  display: 'flex',
-                                                  alignItems: 'center',
-                                                  justifyContent: 'center'
-                                                }}
-                                              >
-                                                <RoomIcon sx={{ fontSize: 40, color: 'grey.400' }} />
-                                              </Box>
-                                            )}
-                                            
-                                            {/* Overlay con nombre de sala */}
-                                            <Box
-                                              className="room-name-overlay"
-                                              sx={{
-                                                position: 'absolute',
-                                                bottom: 0,
-                                                left: 0,
-                                                right: 0,
-                                                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                                                color: 'white',
-                                                p: 1,
-                                                opacity: 0,
-                                                transition: 'opacity 0.3s'
-                                              }}
-                                            >
-                                              <Typography 
-                                                variant="caption" 
-                                                sx={{ 
-                                                  fontWeight: 'bold',
-                                                  display: 'block',
-                                                  textAlign: 'center',
-                                                  fontSize: '0.7rem'
-                                                }}
-                                              >
-                                                {room.nombre_sala}
-                                              </Typography>
-                                            </Box>
+                                            <RoomIcon sx={{ fontSize: 40, color: 'grey.400' }} />
                                           </Box>
-                                        </Tooltip>
-                                      </Grid>
-                                    ))}
-
-                                    {/* Espacios vacíos si hay menos de 3 salas */}
-                                    {visibleRooms.length < 3 && Array.from({ length: 3 - visibleRooms.length }).map((_, idx) => (
-                                      <Grid item xs={4} key={`empty-${idx}`}>
+                                        )}
+                                        
+                                        {/* Overlay con nombre de sala */}
                                         <Box
+                                          className="room-name-overlay"
                                           sx={{
-                                            paddingTop: '100%',
-                                            bgcolor: 'grey.100',
-                                            borderRadius: 1,
-                                            border: '2px dashed',
-                                            borderColor: 'grey.300'
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bgcolor: 'rgba(0, 0, 0, 0.7)',
+                                            color: 'white',
+                                            p: 1,
+                                            opacity: 0,
+                                            transition: 'opacity 0.3s'
                                           }}
-                                        />
-                                      </Grid>
-                                    ))}
+                                        >
+                                          <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                              fontWeight: 'bold',
+                                              display: 'block',
+                                              textAlign: 'center',
+                                              fontSize: '0.7rem'
+                                            }}
+                                          >
+                                            {room.nombre_sala}
+                                          </Typography>
+                                        </Box>
+                                      </Box>
+                                    </Tooltip>
                                   </Grid>
+                                ))}
 
-                                  {/* Botón siguiente */}
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleCarouselChange(floor.id_piso, 'next')}
-                                    disabled={carouselIndex >= rooms.length - 3}
-                                    sx={{ 
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'grey.100' }
-                                    }}
-                                  >
-                                    <ChevronRightIcon />
-                                  </IconButton>
-                                </Box>
+                                {/* Espacios vacíos si hay menos de 3 salas */}
+                                {visibleRooms.length < 3 && Array.from({ length: 3 - visibleRooms.length }).map((_, idx) => (
+                                  <Grid item xs={4} key={`empty-${idx}`}>
+                                    <Box
+                                      sx={{
+                                        paddingTop: '100%',
+                                        bgcolor: 'grey.100',
+                                        borderRadius: 1,
+                                        border: '2px dashed',
+                                        borderColor: 'grey.300'
+                                      }}
+                                    />
+                                  </Grid>
+                                ))}
+                              </Grid>
 
-                                {/* Indicador de cantidad de salas */}
-                                <Typography 
-                                  variant="caption" 
-                                  color="text.secondary" 
-                                  sx={{ display: 'block', textAlign: 'center', mt: 1 }}
-                                >
-                                  {rooms.length} {rooms.length === 1 ? 'sala' : 'salas'} en este piso
-                                </Typography>
-                              </Box>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                No hay salas registradas en este piso
-                              </Typography>
-                            )}
-                          </Paper>
-                        )
-                      })}
-                    </Box>
-                  ) : (
-                    <Paper sx={{ p: 4, textAlign: 'center' }}>
-                      <Typography variant="body1" color="text.secondary">
-                        No hay pisos registrados para este edificio
-                      </Typography>
-                    </Paper>
-                  )}
-                </Grid>
-              </Grid>
+                              {/* Botón siguiente */}
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCarouselChange(floor.id_piso, 'next')}
+                                disabled={carouselIndex >= rooms.length - 3}
+                                sx={{ 
+                                  bgcolor: 'background.paper',
+                                  boxShadow: 1,
+                                  '&:hover': { bgcolor: 'grey.100' }
+                                }}
+                              >
+                                <ChevronRightIcon />
+                              </IconButton>
+                            </Box>
+
+                            {/* Indicador de cantidad de salas */}
+                            <Typography 
+                              variant="caption" 
+                              color="text.secondary" 
+                              sx={{ display: 'block', textAlign: 'center', mt: 1 }}
+                            >
+                              {rooms.length} {rooms.length === 1 ? 'sala' : 'salas'} en este piso
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                            No hay salas registradas en este piso
+                          </Typography>
+                        )}
+                      </Paper>
+                    )
+                  })}
+                </Box>
+              ) : (
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No hay pisos registrados para este edificio
+                  </Typography>
+                </Paper>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setBuildingDetailOpen(false)}>Cerrar</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      {/* Modal para ver foto del piso */}
+      <Dialog
+        open={floorImageOpen}
+        onClose={() => {
+          setFloorImageOpen(false)
+          setSelectedFloorImage(null)
+        }}
+        maxWidth="md"
+        fullWidth
+      >
+        {selectedFloorImage && (
+          <>
+            <DialogTitle>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  {selectedFloorImage.nombre_piso}
+                  {selectedFloorImage.numero_piso != null && ` - Piso ${selectedFloorImage.numero_piso}`}
+                </Typography>
+                <IconButton onClick={() => setFloorImageOpen(false)}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              {selectedFloorImage.imagen && !/via\.placeholder\.com/.test(selectedFloorImage.imagen) ? (
+                <Box
+                  component="img"
+                  src={selectedFloorImage.imagen.startsWith('http') ? selectedFloorImage.imagen : `http://localhost:4000${selectedFloorImage.imagen}`}
+                  alt={selectedFloorImage.nombre_piso}
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '70vh',
+                    objectFit: 'contain',
+                    borderRadius: 2
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: 400,
+                    bgcolor: 'grey.200',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 2
+                  }}
+                >
+                  <ImageIcon sx={{ fontSize: 100, color: 'grey.400', mb: 2 }} />
+                  <Typography variant="body1" color="text.secondary">
+                    No hay imagen disponible para este piso
+                  </Typography>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setFloorImageOpen(false)}>Cerrar</Button>
             </DialogActions>
           </>
         )}
