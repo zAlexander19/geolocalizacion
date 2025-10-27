@@ -36,5 +36,33 @@
       "estado": true,
       "disponibilidad": "Disponible"
     }
+  ],
+  "bathrooms": [
+    {
+      "id_bano": 1,
+      "id_edificio": 1,
+      "id_piso": 2,
+      "identificador": "B1",
+      "imagen": "",
+      "tipo": "mixto",
+      "acceso_discapacidad": true,
+      "cord_latitud": 20.63453,
+      "cord_longitud": 21.43424,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_bano": 2,
+      "id_edificio": 1,
+      "id_piso": 2,
+      "identificador": "B2",
+      "imagen": "",
+      "tipo": "mixto",
+      "acceso_discapacidad": true,
+      "cord_latitud": 20.8657,
+      "cord_longitud": 23.8567,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    }
   ]
 }
