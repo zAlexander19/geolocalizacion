@@ -71,6 +71,8 @@ export default function HomePage() {
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [buildingDetailOpen, setBuildingDetailOpen] = useState(false)
   const [floorRoomCarousels, setFloorRoomCarousels] = useState({})
+  const [selectedBathroom, setSelectedBathroom] = useState(null)
+  const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -187,6 +189,52 @@ export default function HomePage() {
       const res = await api.get('/rooms')
       return res.data.data
     },
+  })
+
+  // Query para obtener todos los baños
+  const { data: allBathrooms } = useQuery({
+    queryKey: ['all-bathrooms'],
+    queryFn: async () => {
+      const res = await api.get('/bathrooms')
+      return res.data.data
+    },
+  })
+
+  // Query para buscar baños
+  const { data: bathroomSearchResults, isLoading: isSearchingBathrooms } = useQuery({
+    queryKey: ['search-bathrooms', searchQuery],
+    queryFn: async () => {
+      if (!allBathrooms) return []
+      
+      const filtered = allBathrooms.filter(bathroom => 
+        bathroom.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      
+      const enriched = filtered.map(bathroom => {
+        const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
+        const building = buildings?.find(b => b.id_edificio === bathroom.id_edificio)
+        return {
+          ...bathroom,
+          floor,
+          building,
+        }
+      })
+      
+      if (userLocation && enriched.length > 0) {
+        return enriched.map(bathroom => ({
+          ...bathroom,
+          distance: calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            bathroom.cord_latitud,
+            bathroom.cord_longitud
+          )
+        })).sort((a, b) => a.distance - b.distance)
+      }
+      
+      return enriched
+    },
+    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 3 && !!allBathrooms,
   })
 
   // Función para obtener salas de un piso específico
@@ -321,6 +369,9 @@ export default function HomePage() {
     } else if (activeTab === 1 && searchQuery.trim()) { // Salas
       setSearchTriggered(true)
       console.log(`Buscando sala: ${searchQuery}`)
+    } else if (activeTab === 3 && searchQuery.trim()) { // Baños
+      setSearchTriggered(true)
+      console.log(`Buscando baño: ${searchQuery}`)
     } else {
       setSnackbar({
         open: true,
@@ -814,6 +865,170 @@ export default function HomePage() {
             )}
           </Box>
         )}
+
+        {/* Search Results Section - Baños */}
+        {searchTriggered && activeTab === 3 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+              Resultados de búsqueda - Baños
+            </Typography>
+
+            {isSearchingBathrooms ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress />
+              </Box>
+            ) : bathroomSearchResults?.length > 0 ? (
+              <Grid container spacing={3}>
+                {bathroomSearchResults.map((bathroom) => (
+                  <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'all 0.3s',
+                        '&:hover': {
+                          boxShadow: 6,
+                          transform: 'translateY(-4px)'
+                        }
+                      }}
+                    >
+                      {/* Imagen del baño */}
+                      {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
+                        <CardMedia
+                          component="img"
+                          height="200"
+                          image={bathroom.imagen.startsWith('http') ? bathroom.imagen : `http://localhost:4000${bathroom.imagen}`}
+                          alt={bathroom.nombre}
+                          sx={{ objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            height: 200,
+                            bgcolor: 'grey.200',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <BathroomIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                        </Box>
+                      )}
+
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        {/* Nombre del baño */}
+                        <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                          {bathroom.nombre || 'Baño sin nombre'}
+                        </Typography>
+
+                        {/* Tipo de baño */}
+                        <Chip 
+                          label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mb: 2 }}
+                        />
+
+                        {/* Capacidad */}
+                        {bathroom.capacidad > 0 && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <PeopleIcon color="action" fontSize="small" />
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Capacidad:</strong> {bathroom.capacidad}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Edificio */}
+                        {bathroom.building && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <BuildingIcon color="action" fontSize="small" />
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Edificio:</strong> {bathroom.building.nombre_edificio}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Piso */}
+                        {bathroom.floor && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <RoomIcon color="action" fontSize="small" />
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Piso:</strong> {bathroom.floor.nombre_piso}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Acceso discapacidad */}
+                        {bathroom.acceso_discapacidad && (
+                          <Box sx={{ mb: 1 }}>
+                            <Chip 
+                              label="♿ Acceso discapacidad"
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                            />
+                          </Box>
+                        )}
+
+                        {/* Disponibilidad */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Chip
+                            label={bathroom.disponibilidad}
+                            size="small"
+                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                          />
+                          <Chip
+                            label={bathroom.estado ? 'Activo' : 'Inactivo'}
+                            size="small"
+                            color={bathroom.estado ? 'success' : 'error'}
+                          />
+                        </Box>
+
+                        {/* Distancia */}
+                        {bathroom.distance !== undefined && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
+                            <WalkIcon color="primary" fontSize="small" />
+                            <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
+                              A {bathroom.distance < 1000 
+                                ? `${bathroom.distance} metros` 
+                                : `${(bathroom.distance / 1000).toFixed(2)} km`} de ti
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* Botón Ver más */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => {
+                            setSelectedBathroom(bathroom)
+                            setBathroomDetailOpen(true)
+                          }}
+                          sx={{ mt: 2 }}
+                        >
+                          Ver más
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Paper sx={{ p: 6, textAlign: 'center' }}>
+                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No se encontraron baños
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Intenta con otro nombre o verifica la ortografía
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        )}
       </Container>
 
       {/* Modal de Detalles de la Sala */}
@@ -928,8 +1143,11 @@ export default function HomePage() {
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{selectedRoom.nombre_sala}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                     <Chip label={selectedRoom.tipo_sala || 'Sin tipo'} size="small" color="primary" variant="outlined" />
-                    <Chip label={selectedRoom.disponibilidad} size="small" color={selectedRoom.disponibilidad === 'Disponible' ? 'success' : 'default'} />
-                    <Chip label={selectedRoom.estado ? 'Activa' : 'Inactiva'} size="small" color={selectedRoom.estado ? 'success' : 'error'} />
+                    <Chip
+                      label={selectedRoom.estado ? 'Activa' : 'Inactiva'}
+                      color={selectedRoom.estado ? 'success' : 'error'}
+                      size="small"
+                    />
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <PeopleIcon color="action" fontSize="small" />

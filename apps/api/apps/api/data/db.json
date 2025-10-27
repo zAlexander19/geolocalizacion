@@ -142,27 +142,16 @@
   "bathrooms": [
     {
       "id_bano": 1,
-      "id_edificio": 1,
-      "id_piso": 2,
+      "id_edificio": "1",
+      "id_piso": "3",
       "identificador": "B1",
-      "imagen": "",
+      "nombre": "Baño Mixto FA 2°P",
+      "capacidad": 2,
+      "imagen": "/uploads/1761593092481-Captura_de_pantalla_2025-09-29_182319.png",
       "tipo": "mixto",
-      "acceso_discapacidad": true,
-      "cord_latitud": 20.63453,
-      "cord_longitud": 21.43424,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    },
-    {
-      "id_bano": 2,
-      "id_edificio": 1,
-      "id_piso": 2,
-      "identificador": "B2",
-      "imagen": "",
-      "tipo": "mixto",
-      "acceso_discapacidad": true,
-      "cord_latitud": 20.8657,
-      "cord_longitud": 23.8567,
+      "acceso_discapacidad": "true",
+      "cord_latitud": "25.54323",
+      "cord_longitud": "23.85673",
       "estado": true,
       "disponibilidad": "Disponible"
     }

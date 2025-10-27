@@ -81,6 +81,16 @@ export function createApp() {
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
   app.use('/uploads', express.static(uploadsDir))
 
+  // multer storage para manejar subidas de imagenes
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+      const safeName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`
+      cb(null, safeName)
+    }
+  })
+  const upload = multer({ storage })
+
   // Health
   app.get('/health', (req, res) => res.json({ ok: true }))
 
@@ -279,17 +289,21 @@ export function createApp() {
     res.json({ data: db.bathrooms || [] })
   })
 
-  app.post('/bathrooms', (req, res) => {
+  app.post('/bathrooms', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const b = req.body || {}
+    if (req.file) {
+      b.imagen = `/uploads/${req.file.filename}`
+    }
     const bathrooms = db.bathrooms || []
     const id = nextId(bathrooms, 'id_bano')
 
     const id_edificio = Number(b.id_edificio)
     const id_piso = Number(b.id_piso)
-    // identificador opcional: si no viene, lo generamos automáticamente
     let identificador = String(b.identificador || '').trim()
     const tipo = String(b.tipo || '').toLowerCase()
+    const nombre = String(b.nombre || '').trim()
+    const capacidad = Number(b.capacidad) || 0
 
     // validations
     if (!['h', 'm', 'mixto'].includes(tipo)) return res.status(400).json({ message: 'tipo inválido (h/m/mixto)' })
@@ -298,7 +312,6 @@ export function createApp() {
     const piso = (db.floors || []).find(x => Number(x.id_piso) === id_piso && Number(x.id_edificio) === id_edificio)
     if (!piso) return res.status(400).json({ message: 'piso no encontrado para ese edificio' })
 
-    // si no se proporcionó identificador, generarlo automáticamente (por ejemplo "B{id}")
     if (!identificador) {
       identificador = `B${id}`
     }
@@ -309,7 +322,6 @@ export function createApp() {
     )
     if (exists) return res.status(400).json({ message: 'ya existe un baño con ese identificador en el mismo edificio/piso' })
 
-    // permitir campo imagen (url) opcional
     const imagen = b.imagen || ''
 
     const nuevo = {
@@ -317,6 +329,8 @@ export function createApp() {
       id_edificio,
       id_piso,
       identificador,
+      nombre,
+      capacidad,
       imagen,
       tipo,
       acceso_discapacidad: b.acceso_discapacidad === true || String(b.acceso_discapacidad || '').toLowerCase() === 'sí' || String(b.acceso_discapacidad || '').toLowerCase() === 'si',
@@ -330,13 +344,19 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/bathrooms/:id', (req, res) => {
+  app.put('/bathrooms/:id', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.bathrooms || []).findIndex(b => Number(b.id_bano) === id)
     if (idx === -1) return res.status(404).json({ message: 'Not found' })
     const prev = db.bathrooms[idx]
-    db.bathrooms[idx] = { ...prev, ...req.body, id_bano: prev.id_bano }
+    const b = req.body || {}
+    if (req.file) {
+      b.imagen = `/uploads/${req.file.filename}`
+    }
+    if (b.nombre !== undefined) b.nombre = String(b.nombre).trim()
+    if (b.capacidad !== undefined) b.capacidad = Number(b.capacidad)
+    db.bathrooms[idx] = { ...prev, ...b, id_bano: prev.id_bano }
     saveDB(db)
     res.json({ data: db.bathrooms[idx] })
   })
