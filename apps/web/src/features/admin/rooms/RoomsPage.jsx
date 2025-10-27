@@ -38,11 +38,14 @@ export default function RoomsPage() {
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
   const [filterFloor, setFilterFloor] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
       id_piso: '',
       nombre_sala: '',
+      acronimo: '',
       imagen: '',
       capacidad: 0,
       tipo_sala: '',
@@ -83,21 +86,35 @@ export default function RoomsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post('/rooms', data),
+    mutationFn: async (formData) => {
+      const res = await api.post('/rooms', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['rooms'])
       setOpen(false)
       reset()
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.put(`/rooms/${id}`, data),
+    mutationFn: async ({ id, formData }) => {
+      const res = await api.put(`/rooms/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['rooms'])
       setOpen(false)
       reset()
       setEditId(null)
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
@@ -115,6 +132,7 @@ export default function RoomsPage() {
         if (r) {
           setValue('id_piso', r.id_piso)
           setValue('nombre_sala', r.nombre_sala)
+          setValue('acronimo', r.acronimo || '')
           setValue('imagen', r.imagen || '')
           setValue('capacidad', r.capacidad)
           setValue('tipo_sala', r.tipo_sala)
@@ -122,18 +140,50 @@ export default function RoomsPage() {
           setValue('cord_longitud', r.cord_longitud)
           setValue('estado', r.estado)
           setValue('disponibilidad', r.disponibilidad)
+          setImagePreviewUrl(r.imagen ? (r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`) : null)
         }
       } else {
         reset()
+        setImageFile(null)
+        setImagePreviewUrl(null)
       }
     }
   }, [open, editId, rooms, reset, setValue])
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result)
+      }
+      reader.readAsDataURL(file)
+    } else if (file) {
+      alert('Por favor selecciona un archivo PNG o JPG')
+    }
+  }
+
   const onSubmit = (data) => {
+    const formData = new FormData()
+    formData.append('id_piso', data.id_piso)
+    formData.append('nombre_sala', data.nombre_sala)
+    formData.append('acronimo', data.acronimo)
+    formData.append('capacidad', data.capacidad)
+    formData.append('tipo_sala', data.tipo_sala)
+    formData.append('cord_latitud', data.cord_latitud)
+    formData.append('cord_longitud', data.cord_longitud)
+    formData.append('estado', data.estado)
+    formData.append('disponibilidad', data.disponibilidad)
+    
+    if (imageFile) {
+      formData.append('imagen', imageFile)
+    }
+
     if (editId) {
-      updateMutation.mutate({ id: editId, data })
+      updateMutation.mutate({ id: editId, formData })
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate(formData)
     }
   }
 
@@ -216,6 +266,7 @@ export default function RoomsPage() {
               <TableCell>ID</TableCell>
               <TableCell>Imagen</TableCell>
               <TableCell>Nombre</TableCell>
+              <TableCell>Acrónimo</TableCell>
               <TableCell>Tipo</TableCell>
               <TableCell>Capacidad</TableCell>
               <TableCell>Piso</TableCell>
@@ -243,6 +294,7 @@ export default function RoomsPage() {
                   )}
                 </TableCell>
                 <TableCell>{r.nombre_sala}</TableCell>
+                <TableCell>{r.acronimo || '-'}</TableCell>
                 <TableCell>{r.tipo_sala}</TableCell>
                 <TableCell>{r.capacidad}</TableCell>
                 <TableCell>{getFloorName(r.id_piso)}</TableCell>
@@ -294,20 +346,53 @@ export default function RoomsPage() {
               render={({ field }) => <TextField {...field} label="Nombre Sala" fullWidth required />}
             />
             <Controller
+              name="acronimo"
+              control={control}
+              render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth required />}
+            />
+            <Controller
               name="tipo_sala"
               control={control}
-              render={({ field }) => <TextField {...field} label="Tipo Sala" fullWidth />}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Tipo Sala</InputLabel>
+                  <Select {...field} label="Tipo Sala">
+                    <MenuItem value="">-- Seleccionar --</MenuItem>
+                    <MenuItem value="Aula">Aula</MenuItem>
+                    <MenuItem value="Laboratorio">Laboratorio</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
             />
             <Controller
               name="capacidad"
               control={control}
               render={({ field }) => <TextField {...field} label="Capacidad" type="number" fullWidth />}
             />
-            <Controller
-              name="imagen"
-              control={control}
-              render={({ field }) => <TextField {...field} label="URL Imagen" fullWidth />}
-            />
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: 1 }}
+              >
+                Subir Imagen (PNG/JPG)
+                <input
+                  type="file"
+                  hidden
+                  accept="image/png,image/jpeg"
+                  onChange={handleImageChange}
+                />
+              </Button>
+              {imagePreviewUrl && (
+                <Box
+                  component="img"
+                  src={imagePreviewUrl}
+                  alt="Preview"
+                  sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider' }}
+                />
+              )}
+            </Box>
             <Controller
               name="cord_latitud"
               control={control}
