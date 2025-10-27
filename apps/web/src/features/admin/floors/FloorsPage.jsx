@@ -37,6 +37,8 @@ export default function FloorsPage() {
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -74,21 +76,35 @@ export default function FloorsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post(`/buildings/${data.id_edificio}/floors`, data),
+    mutationFn: async ({ id_edificio, formData }) => {
+      const res = await api.post(`/buildings/${id_edificio}/floors`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['all-floors'])
       setOpen(false)
       reset()
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.put(`/floors/${id}`, data),
+    mutationFn: async ({ id, formData }) => {
+      const res = await api.put(`/floors/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['all-floors'])
       setOpen(false)
       reset()
       setEditId(null)
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
@@ -111,18 +127,46 @@ export default function FloorsPage() {
           setValue('codigo_qr', f.codigo_qr || '')
           setValue('estado', f.estado)
           setValue('disponibilidad', f.disponibilidad)
+          setImagePreviewUrl(f.imagen ? (f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`) : null)
         }
       } else {
         reset()
+        setImageFile(null)
+        setImagePreviewUrl(null)
       }
     }
   }, [open, editId, allFloorsData, reset, setValue])
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result)
+      }
+      reader.readAsDataURL(file)
+    } else if (file) {
+      alert('Por favor selecciona un archivo PNG o JPG')
+    }
+  }
+
   const onSubmit = (data) => {
+    const formData = new FormData()
+    formData.append('nombre_piso', data.nombre_piso)
+    formData.append('numero_piso', data.numero_piso)
+    formData.append('codigo_qr', data.codigo_qr)
+    formData.append('estado', data.estado)
+    formData.append('disponibilidad', data.disponibilidad)
+    
+    if (imageFile) {
+      formData.append('imagen', imageFile)
+    }
+
     if (editId) {
-      updateMutation.mutate({ id: editId, data })
+      updateMutation.mutate({ id: editId, formData })
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate({ id_edificio: data.id_edificio, formData })
     }
   }
 
@@ -252,11 +296,30 @@ export default function FloorsPage() {
               control={control}
               render={({ field }) => <TextField {...field} label="Número Piso" type="number" fullWidth />}
             />
-            <Controller
-              name="imagen"
-              control={control}
-              render={({ field }) => <TextField {...field} label="URL Imagen" fullWidth />}
-            />
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: 1 }}
+              >
+                Subir Imagen (PNG/JPG)
+                <input
+                  type="file"
+                  hidden
+                  accept="image/png,image/jpeg"
+                  onChange={handleImageChange}
+                />
+              </Button>
+              {imagePreviewUrl && (
+                <Box
+                  component="img"
+                  src={imagePreviewUrl}
+                  alt="Preview"
+                  sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider' }}
+                />
+              )}
+            </Box>
             <Controller
               name="codigo_qr"
               control={control}

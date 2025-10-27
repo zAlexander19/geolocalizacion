@@ -2,10 +2,35 @@ import express from 'express'
 import cors from 'cors'
 import path from 'path'
 import fs from 'fs'
+import multer from 'multer'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Configurar multer para subir archivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsDir = path.resolve(__dirname, '../uploads')
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+    cb(null, uploadsDir)
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, uniqueSuffix + path.extname(file.originalname))
+  }
+})
+
+const upload = multer({ 
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+      cb(null, true)
+    } else {
+      cb(new Error('Solo se permiten archivos PNG o JPG'))
+    }
+  }
+})
 
 // Resolve data file in either /data/db.json or nested /apps/api/data/db.json
 function resolveDataPath() {
@@ -65,7 +90,7 @@ export function createApp() {
     res.json({ data: db.buildings || [] })
   })
 
-  app.post('/buildings', (req, res) => {
+  app.post('/buildings', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const b = req.body || {}
     const buildings = db.buildings || []
@@ -74,10 +99,10 @@ export function createApp() {
       id_edificio: id,
       nombre_edificio: String(b.nombre_edificio || '').trim(),
       acronimo: String(b.acronimo || '').trim(),
-      imagen: b.imagen || '',
+      imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen || ''),
       cord_latitud: Number(b.cord_latitud) || 0,
       cord_longitud: Number(b.cord_longitud) || 0,
-      estado: b.estado !== false,
+      estado: b.estado === 'true' || b.estado === true,
       disponibilidad: b.disponibilidad || 'Disponible'
     }
     db.buildings = buildings.concat(nuevo)
@@ -85,7 +110,7 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/buildings/:id', (req, res) => {
+  app.put('/buildings/:id', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.buildings || []).findIndex(b => Number(b.id_edificio) === id)
@@ -94,7 +119,13 @@ export function createApp() {
     const b = req.body || {}
     db.buildings[idx] = {
       ...prev,
-      ...b,
+      nombre_edificio: b.nombre_edificio || prev.nombre_edificio,
+      acronimo: b.acronimo !== undefined ? b.acronimo : prev.acronimo,
+      imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen !== undefined ? b.imagen : prev.imagen),
+      cord_latitud: b.cord_latitud !== undefined ? Number(b.cord_latitud) : prev.cord_latitud,
+      cord_longitud: b.cord_longitud !== undefined ? Number(b.cord_longitud) : prev.cord_longitud,
+      estado: b.estado !== undefined ? (b.estado === 'true' || b.estado === true) : prev.estado,
+      disponibilidad: b.disponibilidad || prev.disponibilidad,
       id_edificio: prev.id_edificio,
     }
     saveDB(db)
@@ -127,7 +158,7 @@ export function createApp() {
     res.json({ data: floors })
   })
 
-  app.post('/buildings/:id/floors', (req, res) => {
+  app.post('/buildings/:id/floors', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const id_edificio = Number(req.params.id)
     const f = req.body || {}
@@ -138,9 +169,9 @@ export function createApp() {
       id_edificio,
       nombre_piso: String(f.nombre_piso || '').trim(),
       numero_piso: f.numero_piso != null ? Number(f.numero_piso) : null,
-      imagen: f.imagen || '',
+      imagen: req.file ? `/uploads/${req.file.filename}` : (f.imagen || ''),
       codigo_qr: f.codigo_qr || '',
-      estado: f.estado !== false,
+      estado: f.estado === 'true' || f.estado === true,
       disponibilidad: f.disponibilidad || 'Disponible',
     }
     db.floors = floors.concat(nuevo)
@@ -148,13 +179,24 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/floors/:id', (req, res) => {
+  app.put('/floors/:id', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.floors || []).findIndex(f => Number(f.id_piso) === id)
     if (idx === -1) return res.status(404).json({ message: 'Not found' })
     const prev = db.floors[idx]
-    db.floors[idx] = { ...prev, ...req.body, id_piso: prev.id_piso }
+    const f = req.body || {}
+    db.floors[idx] = {
+      ...prev,
+      nombre_piso: f.nombre_piso || prev.nombre_piso,
+      numero_piso: f.numero_piso !== undefined ? Number(f.numero_piso) : prev.numero_piso,
+      imagen: req.file ? `/uploads/${req.file.filename}` : (f.imagen !== undefined ? f.imagen : prev.imagen),
+      codigo_qr: f.codigo_qr !== undefined ? f.codigo_qr : prev.codigo_qr,
+      estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : prev.estado,
+      disponibilidad: f.disponibilidad || prev.disponibilidad,
+      id_piso: prev.id_piso,
+      id_edificio: prev.id_edificio,
+    }
     saveDB(db)
     res.json({ data: db.floors[idx] })
   })
@@ -175,7 +217,7 @@ export function createApp() {
     res.json({ data: db.rooms || [] })
   })
 
-  app.post('/rooms', (req, res) => {
+  app.post('/rooms', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const r = req.body || {}
     const rooms = db.rooms || []
@@ -184,12 +226,13 @@ export function createApp() {
       id_sala: id,
       id_piso: Number(r.id_piso),
       nombre_sala: String(r.nombre_sala || '').trim(),
-      imagen: r.imagen || '',
+      acronimo: String(r.acronimo || '').trim(),
+      imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen || ''),
       capacidad: Number(r.capacidad) || 0,
       tipo_sala: r.tipo_sala || '',
       cord_latitud: Number(r.cord_latitud) || 0,
       cord_longitud: Number(r.cord_longitud) || 0,
-      estado: r.estado !== false,
+      estado: r.estado === 'true' || r.estado === true,
       disponibilidad: r.disponibilidad || 'Disponible'
     }
     db.rooms = rooms.concat(nuevo)
@@ -197,13 +240,27 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/rooms/:id', (req, res) => {
+  app.put('/rooms/:id', upload.single('imagen'), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.rooms || []).findIndex(r => Number(r.id_sala) === id)
     if (idx === -1) return res.status(404).json({ message: 'Not found' })
     const prev = db.rooms[idx]
-    db.rooms[idx] = { ...prev, ...req.body, id_sala: prev.id_sala }
+    const r = req.body || {}
+    db.rooms[idx] = {
+      ...prev,
+      id_piso: r.id_piso !== undefined ? Number(r.id_piso) : prev.id_piso,
+      nombre_sala: r.nombre_sala || prev.nombre_sala,
+      acronimo: r.acronimo || prev.acronimo,
+      imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen !== undefined ? r.imagen : prev.imagen),
+      capacidad: r.capacidad !== undefined ? Number(r.capacidad) : prev.capacidad,
+      tipo_sala: r.tipo_sala !== undefined ? r.tipo_sala : prev.tipo_sala,
+      cord_latitud: r.cord_latitud !== undefined ? Number(r.cord_latitud) : prev.cord_latitud,
+      cord_longitud: r.cord_longitud !== undefined ? Number(r.cord_longitud) : prev.cord_longitud,
+      estado: r.estado !== undefined ? (r.estado === 'true' || r.estado === true) : prev.estado,
+      disponibilidad: r.disponibilidad || prev.disponibilidad,
+      id_sala: prev.id_sala,
+    }
     saveDB(db)
     res.json({ data: db.rooms[idx] })
   })

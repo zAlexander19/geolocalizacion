@@ -37,6 +37,8 @@ export default function BuildingsPage() {
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
 
   const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
@@ -59,21 +61,35 @@ export default function BuildingsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post('/buildings', data),
+    mutationFn: async (formData) => {
+      const res = await api.post('/buildings', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
       setOpen(false)
       reset()
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => api.put(`/buildings/${id}`, data),
+    mutationFn: async ({ id, formData }) => {
+      const res = await api.put(`/buildings/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return res
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
       setOpen(false)
       reset()
       setEditId(null)
+      setImageFile(null)
+      setImagePreviewUrl(null)
     },
   })
 
@@ -96,18 +112,47 @@ export default function BuildingsPage() {
           setValue('cord_longitud', b.cord_longitud)
           setValue('estado', b.estado)
           setValue('disponibilidad', b.disponibilidad)
+          setImagePreviewUrl(b.imagen ? (b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`) : null)
         }
       } else {
         reset()
+        setImageFile(null)
+        setImagePreviewUrl(null)
       }
     }
   }, [open, editId, buildings, reset, setValue])
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result)
+      }
+      reader.readAsDataURL(file)
+    } else if (file) {
+      alert('Por favor selecciona un archivo PNG o JPG')
+    }
+  }
+
   const onSubmit = (data) => {
+    const formData = new FormData()
+    formData.append('nombre_edificio', data.nombre_edificio)
+    formData.append('acronimo', data.acronimo)
+    formData.append('cord_latitud', data.cord_latitud)
+    formData.append('cord_longitud', data.cord_longitud)
+    formData.append('estado', data.estado)
+    formData.append('disponibilidad', data.disponibilidad)
+    
+    if (imageFile) {
+      formData.append('imagen', imageFile)
+    }
+
     if (editId) {
-      updateMutation.mutate({ id: editId, data })
+      updateMutation.mutate({ id: editId, formData })
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate(formData)
     }
   }
 
@@ -220,11 +265,30 @@ export default function BuildingsPage() {
               control={control}
               render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth />}
             />
-            <Controller
-              name="imagen"
-              control={control}
-              render={({ field }) => <TextField {...field} label="URL Imagen" fullWidth />}
-            />
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: 1 }}
+              >
+                Subir Imagen (PNG/JPG)
+                <input
+                  type="file"
+                  hidden
+                  accept="image/png,image/jpeg"
+                  onChange={handleImageChange}
+                />
+              </Button>
+              {imagePreviewUrl && (
+                <Box
+                  component="img"
+                  src={imagePreviewUrl}
+                  alt="Preview"
+                  sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider' }}
+                />
+              )}
+            </Box>
             <Controller
               name="cord_latitud"
               control={control}
