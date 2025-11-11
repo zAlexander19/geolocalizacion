@@ -50,14 +50,14 @@ function resolveDataPath() {
 function loadDB() {
   const dbPath = resolveDataPath()
   if (!fs.existsSync(dbPath)) {
-    return { buildings: [], floors: [], rooms: [], bathrooms: [] }
+    return { buildings: [], floors: [], rooms: [], bathrooms: [], faculties: [] }
   }
   try {
     const raw = fs.readFileSync(dbPath, 'utf8')
     return JSON.parse(raw)
   } catch (e) {
     console.error('Error reading DB file:', e)
-    return { buildings: [], floors: [], rooms: [], bathrooms: [] }
+    return { buildings: [], floors: [], rooms: [], bathrooms: [], faculties: [] }
   }
 }
 
@@ -367,6 +367,193 @@ export function createApp() {
     db.bathrooms = (db.bathrooms || []).filter(b => Number(b.id_bano) !== id)
     saveDB(db)
     res.json({ ok: true })
+  })
+
+  // Faculties
+  app.get('/faculties', (req, res) => {
+    const db = loadDB()
+    res.json({ data: db.faculties || [] })
+  })
+
+  app.post('/faculties', upload.single('logo'), (req, res) => {
+    try {
+      const db = loadDB()
+      const f = req.body || {}
+      if (req.file) {
+        f.logo = `/uploads/${req.file.filename}`
+      }
+
+      const faculties = db.faculties || []
+      const idNum = nextId(faculties, 'codigo_facultad')
+
+      // Allow provided code or use numeric id as string
+      const codigo_facultad = f.codigo_facultad !== undefined && String(f.codigo_facultad).trim() !== '' ? String(f.codigo_facultad).trim() : String(idNum)
+      const nombre_facultad = String(f.nombre_facultad || '').trim()
+      const descripcion = String(f.descripcion || '').trim()
+      const id_edificio = f.id_edificio ? Number(f.id_edificio) : null
+
+      // Validations
+      if (!nombre_facultad) return res.status(400).json({ message: 'Nombre de facultad obligatorio' })
+      if (!codigo_facultad) return res.status(400).json({ message: 'Código de facultad obligatorio' })
+      const codeRe = /^[A-Za-z0-9_-]{2,50}$/
+      if (!codeRe.test(String(codigo_facultad))) return res.status(400).json({ message: 'Formato de código inválido' })
+
+      const nameExists = (db.faculties || []).some(x => String(x.nombre_facultad || '').toLowerCase() === nombre_facultad.toLowerCase())
+      const codeExists = (db.faculties || []).some(x => String(x.codigo_facultad || '').toLowerCase() === String(codigo_facultad).toLowerCase())
+      if (nameExists) return res.status(400).json({ message: 'Ya existe una facultad con ese nombre' })
+      if (codeExists) return res.status(400).json({ message: 'Ya existe una facultad con ese código' })
+
+      // Validate building association if provided
+      if (id_edificio) {
+        const edificio = (db.buildings || []).find(b => Number(b.id_edificio) === id_edificio)
+        if (!edificio) return res.status(400).json({ message: 'Edificio no encontrado' })
+      }
+
+      const nuevo = {
+        codigo_facultad,
+        nombre_facultad,
+        descripcion,
+        logo: f.logo || '',
+        id_edificio: id_edificio || null,
+        estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : true,
+        disponibilidad: f.disponibilidad || 'Disponible'
+      }
+
+      db.faculties = faculties.concat(nuevo)
+      saveDB(db)
+      res.status(201).json({ data: nuevo })
+    } catch (error) {
+      console.error('Error creating faculty:', error)
+      res.status(500).json({ message: 'Error al crear facultad' })
+    }
+  })
+
+  app.put('/faculties/:id', upload.single('logo'), (req, res) => {
+    try {
+      const db = loadDB()
+      const id = req.params.id
+      const fbody = req.body || {}
+      if (req.file) {
+        fbody.logo = `/uploads/${req.file.filename}`
+      }
+
+      const faculties = db.faculties || []
+      const idx = faculties.findIndex(x => String(x.codigo_facultad) === String(id) || String(x.codigo_facultad) === String(Number(id)))
+      if (idx === -1) return res.status(404).json({ message: 'Facultad no encontrada' })
+
+      const current = faculties[idx]
+
+      const codigo_facultad = fbody.codigo_facultad !== undefined && String(fbody.codigo_facultad).trim() !== '' ? String(fbody.codigo_facultad).trim() : current.codigo_facultad
+      const nombre_facultad = String(fbody.nombre_facultad !== undefined ? fbody.nombre_facultad : current.nombre_facultad).trim()
+      const descripcion = String(fbody.descripcion !== undefined ? fbody.descripcion : current.descripcion || '').trim()
+      const id_edificio = fbody.id_edificio !== undefined && fbody.id_edificio !== '' ? Number(fbody.id_edificio) : (current.id_edificio || null)
+
+      if (!nombre_facultad) return res.status(400).json({ message: 'Nombre de facultad obligatorio' })
+      if (!codigo_facultad) return res.status(400).json({ message: 'Código de facultad obligatorio' })
+      const codeRe = /^[A-Za-z0-9_-]{2,50}$/
+      if (!codeRe.test(String(codigo_facultad))) return res.status(400).json({ message: 'Formato de código inválido' })
+
+      // uniqueness excluding current
+      const nameExists = (db.faculties || []).some(x => String(x.nombre_facultad || '').toLowerCase() === nombre_facultad.toLowerCase() && String(x.codigo_facultad) !== String(current.codigo_facultad))
+      const codeExists = (db.faculties || []).some(x => String(x.codigo_facultad || '').toLowerCase() === String(codigo_facultad).toLowerCase() && String(x.codigo_facultad) !== String(current.codigo_facultad))
+      if (nameExists) return res.status(400).json({ message: 'Ya existe una facultad con ese nombre' })
+      if (codeExists) return res.status(400).json({ message: 'Ya existe una facultad con ese código' })
+
+      // Validate building association if provided
+      if (id_edificio) {
+        const edificio = (db.buildings || []).find(b => Number(b.id_edificio) === id_edificio)
+        if (!edificio) return res.status(400).json({ message: 'Edificio no encontrado' })
+      }
+
+      // apply updates
+      const updated = {
+        ...current,
+        codigo_facultad,
+        nombre_facultad,
+        descripcion,
+        logo: fbody.logo !== undefined ? fbody.logo : current.logo || '',
+        id_edificio: id_edificio || null,
+        estado: fbody.estado !== undefined ? (fbody.estado === 'true' || fbody.estado === true) : current.estado,
+        disponibilidad: fbody.disponibilidad || current.disponibilidad || 'Disponible'
+      }
+
+      db.faculties[idx] = updated
+      saveDB(db)
+      res.json({ data: updated })
+    } catch (error) {
+      console.error('Error updating faculty:', error)
+      res.status(500).json({ message: 'Error al actualizar facultad' })
+    }
+  })
+
+  app.delete('/faculties/:id', (req, res) => {
+    const db = loadDB()
+    const id = req.params.id
+    db.faculties = (db.faculties || []).filter(f => String(f.codigo_facultad) !== String(id) && String(f.codigo_facultad) !== String(Number(id)))
+    saveDB(db)
+    res.json({ ok: true })
+  })
+
+  app.put('/faculties/:id', upload.single('logo'), (req, res) => {
+    try {
+      const db = loadDB()
+      const id = req.params.id
+      const f = req.body || {}
+
+      // Find faculty by codigo_facultad
+      const idx = (db.faculties || []).findIndex(x => String(x.codigo_facultad) === String(id))
+      if (idx === -1) return res.status(404).json({ message: 'Facultad no encontrada' })
+
+      const prev = db.faculties[idx]
+
+      const nombre_facultad = f.nombre_facultad !== undefined ? String(f.nombre_facultad).trim() : prev.nombre_facultad
+      const descripcion = f.descripcion !== undefined ? String(f.descripcion).trim() : prev.descripcion
+      const id_edificio = f.id_edificio !== undefined ? (f.id_edificio ? Number(f.id_edificio) : null) : prev.id_edificio
+      const logo = req.file ? `/uploads/${req.file.filename}` : (f.logo !== undefined ? f.logo : prev.logo)
+      const codigo_facultad = f.codigo_facultad !== undefined ? String(f.codigo_facultad).trim() : prev.codigo_facultad
+
+      // Validations
+      if (!nombre_facultad) return res.status(400).json({ message: 'Nombre de facultad obligatorio' })
+      if (!codigo_facultad) return res.status(400).json({ message: 'Código de facultad obligatorio' })
+
+      const codeRe = /^[A-Za-z0-9_-]{2,50}$/
+      if (!codeRe.test(codigo_facultad)) return res.status(400).json({ message: 'Formato de código inválido' })
+
+      // Check uniqueness (excluding current faculty)
+      const nameExists = (db.faculties || []).some(x => {
+        if (idx !== undefined && String(x.codigo_facultad) === String(prev.codigo_facultad)) return false
+        return String(x.nombre_facultad || '').toLowerCase() === nombre_facultad.toLowerCase()
+      })
+      const codeExists = (db.faculties || []).some(x => {
+        if (idx !== undefined && String(x.codigo_facultad) === String(prev.codigo_facultad)) return false
+        return String(x.codigo_facultad || '').toLowerCase() === String(codigo_facultad).toLowerCase()
+      })
+      if (nameExists) return res.status(400).json({ message: 'Ya existe una facultad con ese nombre' })
+      if (codeExists) return res.status(400).json({ message: 'Ya existe una facultad con ese código' })
+
+      // Validate building if provided
+      if (id_edificio) {
+        const edificio = (db.buildings || []).find(b => Number(b.id_edificio) === id_edificio)
+        if (!edificio) return res.status(400).json({ message: 'Edificio no encontrado' })
+      }
+
+      db.faculties[idx] = {
+        ...prev,
+        codigo_facultad,
+        nombre_facultad,
+        descripcion,
+        logo,
+        id_edificio,
+        estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : prev.estado,
+        disponibilidad: f.disponibilidad !== undefined ? f.disponibilidad : prev.disponibilidad,
+      }
+
+      saveDB(db)
+      res.json({ data: db.faculties[idx] })
+    } catch (error) {
+      console.error('Error updating faculty:', error)
+      res.status(500).json({ message: 'Error al actualizar facultad' })
+    }
   })
 
   return app

@@ -209,6 +209,15 @@ export default function HomePage() {
     },
   })
 
+  // Query para obtener facultades
+  const { data: allFaculties } = useQuery({
+    queryKey: ['all-faculties'],
+    queryFn: async () => {
+      const res = await api.get('/faculties')
+      return res.data.data
+    },
+  })
+
   // Query para buscar baños
   const { data: bathroomSearchResults, isLoading: isSearchingBathrooms } = useQuery({
     queryKey: ['search-bathrooms', searchQuery],
@@ -244,6 +253,28 @@ export default function HomePage() {
       return enriched
     },
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 3 && !!allBathrooms,
+  })
+
+  // Query para buscar facultades
+  const { data: facultySearchResults, isLoading: isSearchingFaculties } = useQuery({
+    queryKey: ['search-faculties', searchQuery],
+    queryFn: async () => {
+      if (!allFaculties) return []
+      
+      const query = searchQuery.toLowerCase().trim()
+      
+      // Filtrar por nombre O código automáticamente
+      const filtered = allFaculties.filter(faculty => {
+        const nombre = faculty.nombre_facultad?.toLowerCase() || ''
+        const codigo = faculty.codigo_facultad?.toLowerCase() || ''
+        
+        // Busca en ambos campos
+        return nombre.includes(query) || codigo.includes(query)
+      })
+      
+      return filtered
+    },
+    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 2 && !!allFaculties,
   })
 
   // Función para obtener salas de un piso específico
@@ -378,6 +409,9 @@ export default function HomePage() {
     } else if (activeTab === 1 && searchQuery.trim()) { // Salas
       setSearchTriggered(true)
       console.log(`Buscando sala: ${searchQuery}`)
+    } else if (activeTab === 2 && searchQuery.trim()) { // Facultades
+      setSearchTriggered(true)
+      console.log(`Buscando facultad: ${searchQuery}`)
     } else if (activeTab === 3 && searchQuery.trim()) { // Baños
       setSearchTriggered(true)
       console.log(`Buscando baño: ${searchQuery}`)
@@ -862,6 +896,138 @@ export default function HomePage() {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Intenta con otro nombre o verifica la ortografía
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        )}
+
+        {/* Search Results Section - Facultades */}
+        {searchTriggered && activeTab === 2 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+              Resultados de búsqueda - Facultades
+            </Typography>
+
+            {isSearchingFaculties ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress />
+              </Box>
+            ) : facultySearchResults?.length > 0 ? (
+              <Grid container spacing={3}>
+                {facultySearchResults.map((faculty) => {
+                  // Get the associated building
+                  const associatedBuilding = faculty.id_edificio
+                    ? (buildings || []).find(b => Number(b.id_edificio) === Number(faculty.id_edificio))
+                    : null
+
+                  return (
+                    <Grid item xs={12} key={faculty.codigo_facultad}>
+                      <Card 
+                        sx={{ 
+                          boxShadow: 2,
+                          borderRadius: 2,
+                          transition: 'all 0.3s',
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-4px)'
+                          }
+                        }}
+                      >
+                        <CardContent sx={{ p: 3 }}>
+                          {/* Faculty info: Logo left, Description right */}
+                          <Grid container spacing={3} sx={{ mb: 3 }}>
+                            {/* Logo on the left */}
+                            <Grid item xs={12} sm={3} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {faculty.logo ? (
+                                <Box
+                                  component="img"
+                                  src={faculty.logo.startsWith('http') ? faculty.logo : `http://localhost:4000${faculty.logo}`}
+                                  alt={faculty.nombre_facultad}
+                                  sx={{
+                                    maxWidth: '100%',
+                                    maxHeight: 200,
+                                    objectFit: 'contain',
+                                    borderRadius: 1,
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 150,
+                                    height: 150,
+                                    bgcolor: 'grey.200',
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <Typography variant="body2" color="text.secondary">
+                                    Sin logo
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Grid>
+
+                            {/* Description on the right */}
+                            <Grid item xs={12} sm={9}>
+                              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                {faculty.nombre_facultad}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Código: {faculty.codigo_facultad}
+                              </Typography>
+                              <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
+                                {faculty.descripcion || 'Sin descripción'}
+                              </Typography>
+                            </Grid>
+                          </Grid>
+
+                          {/* Associated building(s) below */}
+                          {associatedBuilding && (
+                            <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 3 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                Edificio Asociado
+                              </Typography>
+                              <Card sx={{ maxWidth: 300, bgcolor: 'grey.50' }}>
+                                <CardMedia
+                                  component="img"
+                                  height="140"
+                                  image={
+                                    associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen)
+                                      ? associatedBuilding.imagen.startsWith('http')
+                                        ? associatedBuilding.imagen
+                                        : `http://localhost:4000${associatedBuilding.imagen}`
+                                      : 'https://via.placeholder.com/300x200?text=Sin+imagen'
+                                  }
+                                  alt={associatedBuilding.nombre_edificio}
+                                />
+                                <CardContent>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                    {associatedBuilding.nombre_edificio}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {associatedBuilding.acronimo || 'Sin acrónimo'}
+                                  </Typography>
+                                </CardContent>
+                              </Card>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )
+                })}
+              </Grid>
+            ) : (
+              <Paper sx={{ p: 6, textAlign: 'center' }}>
+                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No se encontraron facultades
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Intenta con otro nombre o código, o verifica la ortografía
                 </Typography>
               </Paper>
             )}

@@ -48,6 +48,7 @@ export default function AdminLayout() {
     { label: 'Edificios', icon: <BuildingIcon />, path: '/admin/edificios' },
     { label: 'Pisos', icon: <LayersIcon />, path: '/admin/pisos' },
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },
+    { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     // usar la ruta en español para que coincida con el router del admin
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
   ]
