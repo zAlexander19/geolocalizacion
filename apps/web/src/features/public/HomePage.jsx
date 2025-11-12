@@ -53,7 +53,64 @@ import {
   ChevronRight as ChevronRightIcon,
   Close as CloseIcon,
 } from '@mui/icons-material'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-routing-machine'
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import api from '../../lib/api'
+
+// Fix para los iconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
+
+// Componente para manejar la ruta en el mapa
+function RouteComponent({ start, end, waypoints = [] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!map || !start || !end) return
+
+    // Crear array de waypoints: inicio -> puntos intermedios -> destino
+    const allWaypoints = [
+      L.latLng(start[0], start[1]),
+      ...waypoints.map(wp => L.latLng(wp[0], wp[1])),
+      L.latLng(end[0], end[1])
+    ]
+
+    // Crear el control de rutas
+    const routingControl = L.Routing.control({
+      waypoints: allWaypoints,
+      router: L.Routing.osrmv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1',
+        profile: 'foot' // Rutas a pie
+      }),
+      lineOptions: {
+        styles: [{ color: '#6FA1EC', weight: 4 }]
+      },
+      show: false, // Ocultar el panel de instrucciones
+      addWaypoints: false,
+      routeWhileDragging: false,
+      draggableWaypoints: false,
+      fitSelectedRoutes: true,
+      showAlternatives: false,
+      createMarker: function() { return null; } // No crear marcadores adicionales
+    }).addTo(map)
+
+    // Cleanup
+    return () => {
+      if (map && routingControl) {
+        map.removeControl(routingControl)
+      }
+    }
+  }, [map, start, end, waypoints])
+
+  return null
+}
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -74,6 +131,12 @@ export default function HomePage() {
   const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
   const [selectedFloorImage, setSelectedFloorImage] = useState(null)
   const [floorImageOpen, setFloorImageOpen] = useState(false)
+  const [routeMapOpen, setRouteMapOpen] = useState(false)
+  const [routeDestination, setRouteDestination] = useState(null)
+  const [routeDestinationName, setRouteDestinationName] = useState('')
+  const [routeDestinationData, setRouteDestinationData] = useState(null)
+  const [routeWaypoints, setRouteWaypoints] = useState([])
+  const [locationAccuracy, setLocationAccuracy] = useState(null)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -334,15 +397,16 @@ export default function HomePage() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords
+        const { latitude, longitude, accuracy } = position.coords
         setUserLocation({ latitude, longitude })
+        setLocationAccuracy(accuracy)
         setLocationDialog(false)
         setSnackbar({
           open: true,
-          message: '✓ Ubicación activada correctamente',
+          message: `✓ Ubicación activada (precisión: ${Math.round(accuracy)}m)`,
           severity: 'success'
         })
-        console.log('Ubicación del usuario:', { latitude, longitude })
+        console.log('Ubicación del usuario:', { latitude, longitude, accuracy: `${Math.round(accuracy)}m` })
       },
       (error) => {
         let errorMessage = 'No se pudo obtener tu ubicación'
@@ -527,13 +591,23 @@ export default function HomePage() {
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {/* Botón de estado de ubicación */}
             {userLocation ? (
-              <Button
-                size="small"
-                startIcon={<MyLocationIcon />}
-                sx={{ color: 'success.main', textTransform: 'none' }}
-              >
-                Ubicación activada
-              </Button>
+              <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)} metros` : 'Ubicación activada'}>
+                <Button
+                  size="small"
+                  startIcon={<MyLocationIcon />}
+                  sx={{ color: 'success.main', textTransform: 'none' }}
+                >
+                  Ubicación activada
+                  {locationAccuracy && locationAccuracy <= 20 && (
+                    <Chip 
+                      label={`${Math.round(locationAccuracy)}m`}
+                      size="small" 
+                      color="success" 
+                      sx={{ ml: 1, height: 20 }}
+                    />
+                  )}
+                </Button>
+              </Tooltip>
             ) : (
               <Button
                 size="small"
@@ -709,19 +783,53 @@ export default function HomePage() {
                           </Box>
                         )}
 
-                        {/* Botón Ver más */}
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={() => {
-                            setSelectedBuilding(building)
-                            setBuildingDetailOpen(true)
-                            setFloorRoomCarousels({})
-                          }}
-                          sx={{ mt: 2 }}
-                        >
-                          Ver más
-                        </Button>
+                        {/* Botones de acción */}
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<LocationIcon />}
+                            onClick={() => {
+                              if (!userLocation) {
+                                setSnackbar({
+                                  open: true,
+                                  message: 'Por favor, activa tu ubicación para ver la ruta',
+                                  severity: 'warning'
+                                })
+                                return
+                              }
+                              setRouteDestination({
+                                lat: building.cord_latitud,
+                                lng: building.cord_longitud
+                              })
+                              setRouteDestinationName(building.nombre_edificio)
+                              setRouteDestinationData({
+                                type: 'building',
+                                name: building.nombre_edificio,
+                                acronym: building.acronimo,
+                                image: building.imagen,
+                                distance: building.distance,
+                                latitude: building.cord_latitud,
+                                longitude: building.cord_longitud
+                              })
+                              setRouteWaypoints([]) // Sin waypoints para edificios
+                              setRouteMapOpen(true)
+                            }}
+                          >
+                            Ver Ruta
+                          </Button>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={() => {
+                              setSelectedBuilding(building)
+                              setBuildingDetailOpen(true)
+                              setFloorRoomCarousels({})
+                            }}
+                          >
+                            Ver más
+                          </Button>
+                        </Box>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -871,18 +979,60 @@ export default function HomePage() {
                           </Box>
                         )}
 
-                        {/* Botón Ver más */}
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={() => {
-                            setSelectedRoom(room)
-                            setRoomDetailOpen(true)
-                          }}
-                          sx={{ mt: 2 }}
-                        >
-                          Ver más
-                        </Button>
+                        {/* Botones de acción */}
+                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<LocationIcon />}
+                            onClick={() => {
+                              if (!userLocation) {
+                                setSnackbar({
+                                  open: true,
+                                  message: 'Por favor, activa tu ubicación para ver la ruta',
+                                  severity: 'warning'
+                                })
+                                return
+                              }
+                              
+                              // Si la sala tiene edificio, pasar primero por su entrada
+                              const waypoints = []
+                              if (room.building && room.building.cord_latitud && room.building.cord_longitud) {
+                                waypoints.push([room.building.cord_latitud, room.building.cord_longitud])
+                              }
+                              
+                              setRouteDestination({
+                                lat: room.cord_latitud,
+                                lng: room.cord_longitud
+                              })
+                              setRouteDestinationName(`Sala ${room.nombre_sala}`)
+                              setRouteDestinationData({
+                                type: 'room',
+                                name: `Sala ${room.nombre_sala}`,
+                                acronym: room.nombre_edificio,
+                                image: room.imagen,
+                                distance: room.distance,
+                                latitude: room.cord_latitud,
+                                longitude: room.cord_longitud,
+                                capacity: room.capacidad_personas
+                              })
+                              setRouteWaypoints(waypoints)
+                              setRouteMapOpen(true)
+                            }}
+                          >
+                            Ver Ruta
+                          </Button>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={() => {
+                              setSelectedRoom(room)
+                              setRoomDetailOpen(true)
+                            }}
+                          >
+                            Ver más
+                          </Button>
+                        </Box>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -1158,18 +1308,62 @@ export default function HomePage() {
                           </Box>
                         )}
 
-                        {/* Botón Ver más */}
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={() => {
-                            setSelectedBathroom(bathroom)
-                            setBathroomDetailOpen(true)
-                          }}
-                          sx={{ mt: 'auto', textTransform: 'none', fontWeight: 'bold' }}
-                        >
-                          Ver más
-                        </Button>
+                        {/* Botones de acción */}
+                        <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<LocationIcon />}
+                            onClick={() => {
+                              if (!userLocation) {
+                                setSnackbar({
+                                  open: true,
+                                  message: 'Por favor, activa tu ubicación para ver la ruta',
+                                  severity: 'warning'
+                                })
+                                return
+                              }
+                              
+                              // Si el baño tiene edificio, pasar primero por su entrada
+                              const waypoints = []
+                              if (bathroom.building && bathroom.building.cord_latitud && bathroom.building.cord_longitud) {
+                                waypoints.push([bathroom.building.cord_latitud, bathroom.building.cord_longitud])
+                              }
+                              
+                              setRouteDestination({
+                                lat: bathroom.cord_latitud,
+                                lng: bathroom.cord_longitud
+                              })
+                              setRouteDestinationName(`Baño en ${bathroom.nombre_edificio}`)
+                              setRouteDestinationData({
+                                type: 'bathroom',
+                                name: `Baño en ${bathroom.nombre_edificio}`,
+                                acronym: bathroom.nombre_piso,
+                                image: bathroom.imagen,
+                                distance: bathroom.distance,
+                                latitude: bathroom.cord_latitud,
+                                longitude: bathroom.cord_longitud,
+                                capacity: bathroom.capacidad_personas
+                              })
+                              setRouteWaypoints(waypoints)
+                              setRouteMapOpen(true)
+                            }}
+                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                          >
+                            Ver Ruta
+                          </Button>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={() => {
+                              setSelectedBathroom(bathroom)
+                              setBathroomDetailOpen(true)
+                            }}
+                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                          >
+                            Ver más
+                          </Button>
+                        </Box>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -1677,11 +1871,199 @@ export default function HomePage() {
                 </Paper>
               )}
             </DialogContent>
-            <DialogActions>
+            <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
               <Button onClick={() => setBuildingDetailOpen(false)}>Cerrar</Button>
+              <Button
+                variant="contained"
+                startIcon={<LocationIcon />}
+                onClick={() => {
+                  if (!userLocation) {
+                    setSnackbar({
+                      open: true,
+                      message: 'Por favor, activa tu ubicación para ver la ruta',
+                      severity: 'warning'
+                    })
+                    return
+                  }
+                  
+                  // Calcular distancia
+                  const distance = userLocation ? 
+                    Math.round(
+                      Math.sqrt(
+                        Math.pow((selectedBuilding.cord_latitud - userLocation.latitude) * 111320, 2) +
+                        Math.pow((selectedBuilding.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
+                      )
+                    ) : undefined
+                  
+                  setRouteDestination({
+                    lat: selectedBuilding.cord_latitud,
+                    lng: selectedBuilding.cord_longitud
+                  })
+                  setRouteDestinationName(selectedBuilding.nombre_edificio)
+                  setRouteDestinationData({
+                    type: 'building',
+                    name: selectedBuilding.nombre_edificio,
+                    acronym: selectedBuilding.acronimo,
+                    image: selectedBuilding.imagen,
+                    distance: distance,
+                    latitude: selectedBuilding.cord_latitud,
+                    longitude: selectedBuilding.cord_longitud
+                  })
+                  setRouteWaypoints([]) // Sin waypoints para edificios
+                  setRouteMapOpen(true)
+                  setBuildingDetailOpen(false)
+                }}
+                sx={{ textTransform: 'none', fontWeight: 'bold' }}
+              >
+                Ver Ruta
+              </Button>
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Modal de Mapa con Ruta */}
+      <Dialog
+        open={routeMapOpen}
+        onClose={() => setRouteMapOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { height: '85vh' }
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              Ruta a {routeDestinationName}
+            </Typography>
+            <IconButton onClick={() => setRouteMapOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 2, height: '100%', display: 'flex', gap: 2 }}>
+          {routeMapOpen && routeDestination && userLocation && routeDestinationData && (
+            <>
+              {/* Tarjeta de información del destino */}
+              <Card sx={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+                {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
+                    alt={routeDestinationData.name}
+                    sx={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      bgcolor: 'grey.200',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                  </Box>
+                )}
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    {routeDestinationData.name}
+                  </Typography>
+                  
+                  {routeDestinationData.acronym && (
+                    <Chip
+                      label={routeDestinationData.acronym}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ mb: 2 }}
+                    />
+                  )}
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Distancia */}
+                  {routeDestinationData.distance !== undefined && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <WalkIcon color="primary" fontSize="small" />
+                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                        A {routeDestinationData.distance < 1000 
+                          ? `${routeDestinationData.distance} metros` 
+                          : `${(routeDestinationData.distance / 1000).toFixed(2)} km`} de ti
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Coordenadas */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
+                      Lat: {routeDestinationData.latitude}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
+                      Lon: {routeDestinationData.longitude}
+                    </Typography>
+                  </Box>
+
+                  {/* Capacidad si aplica */}
+                  {routeDestinationData.capacity && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PeopleIcon color="action" fontSize="small" />
+                      <Typography variant="body2" color="text.secondary">
+                        Capacidad: {routeDestinationData.capacity} personas
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Mapa */}
+              <Box sx={{ flexGrow: 1, position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
+                <MapContainer
+                  center={[userLocation.latitude, userLocation.longitude]}
+                  zoom={16}
+                  minZoom={15}
+                  maxZoom={20}
+                  maxBounds={[
+                    [-20.2500, -70.1500], // Esquina suroeste
+                    [-20.2350, -70.1320]  // Esquina noreste
+                  ]}
+                  maxBoundsViscosity={1.0}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    maxNativeZoom={18}
+                    maxZoom={20}
+                  />
+                  <RouteComponent 
+                    start={[userLocation.latitude, userLocation.longitude]}
+                    end={[routeDestination.lat, routeDestination.lng]}
+                    waypoints={routeWaypoints}
+                  />
+                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
+                    <Popup>Tu ubicación</Popup>
+                  </Marker>
+                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
+                    <Popup>{routeDestinationName}</Popup>
+                  </Marker>
+                </MapContainer>
+              </Box>
+            </>
+          )}
+          {routeMapOpen && (!userLocation || !routeDestination) && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+              <Typography variant="body1" color="text.secondary">
+                {!userLocation ? 'No se pudo obtener tu ubicación' : 'No se pudo obtener el destino'}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
 
       {/* Footer */}

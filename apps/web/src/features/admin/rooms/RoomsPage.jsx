@@ -23,11 +23,13 @@ import {
   Typography,
   IconButton,
   Chip,
+  InputAdornment,
 } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material'
 import api from '../../../lib/api'
 
@@ -40,6 +42,8 @@ export default function RoomsPage() {
   const [filterFloor, setFilterFloor] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
+  const [selectedBuilding, setSelectedBuilding] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -130,6 +134,11 @@ export default function RoomsPage() {
       if (editId) {
         const r = rooms?.find(x => x.id_sala === editId)
         if (r) {
+          // Find the building of this floor
+          const floor = allFloorsData?.find(f => f.id_piso === r.id_piso)
+          if (floor) {
+            setSelectedBuilding(floor.id_edificio)
+          }
           setValue('id_piso', r.id_piso)
           setValue('nombre_sala', r.nombre_sala)
           setValue('acronimo', r.acronimo || '')
@@ -146,9 +155,10 @@ export default function RoomsPage() {
         reset()
         setImageFile(null)
         setImagePreviewUrl(null)
+        setSelectedBuilding('')
       }
     }
-  }, [open, editId, rooms, reset, setValue])
+  }, [open, editId, rooms, allFloorsData, reset, setValue])
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
@@ -208,27 +218,68 @@ export default function RoomsPage() {
     ? allFloorsData?.filter(f => f.id_edificio === filterBuilding)
     : []
 
-  // Salas filtradas por edificio y piso
-  const filteredRooms = (filterBuilding && filterFloor) ? rooms?.filter(r => {
-    const floor = allFloorsData?.find(f => f.id_piso === r.id_piso)
-    if (!floor) return false
-    const matchBuilding = floor.id_edificio === filterBuilding
-    const matchFloor = r.id_piso === filterFloor
-    return matchBuilding && matchFloor
-  }) : []
+  // Salas filtradas por búsqueda o por edificio/piso
+  const filteredRooms = (() => {
+    if (!rooms) return []
+    
+    // Si hay búsqueda, filtrar por nombre o acrónimo
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      return rooms.filter(r => {
+        const nombre = r.nombre_sala?.toLowerCase() || ''
+        const acronimo = r.acronimo?.toLowerCase() || ''
+        return nombre.includes(query) || acronimo.includes(query)
+      })
+    }
+    
+    // Si hay filtros de edificio y piso
+    if (filterBuilding && filterFloor) {
+      return rooms.filter(r => {
+        const floor = allFloorsData?.find(f => f.id_piso === r.id_piso)
+        if (!floor) return false
+        const matchBuilding = floor.id_edificio === filterBuilding
+        const matchFloor = r.id_piso === filterFloor
+        return matchBuilding && matchFloor
+      })
+    }
+    
+    return []
+  })()
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Salas</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 180 }}>
+          <TextField
+            placeholder="Buscar por nombre o acrónimo..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              // Limpiar filtros de edificio/piso cuando se busca
+              if (e.target.value.trim()) {
+                setFilterBuilding('')
+                setFilterFloor('')
+              }
+            }}
+            size="small"
+            sx={{ minWidth: 250 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl sx={{ minWidth: 180 }} disabled={searchQuery.trim() !== ''}>
             <InputLabel>Seleccionar edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => {
                 setFilterBuilding(e.target.value)
                 setFilterFloor('') // Reset floor filter when building changes
+                setSearchQuery('') // Limpiar búsqueda cuando se filtra
               }}
               label="Seleccionar edificio"
               size="small"
@@ -239,7 +290,7 @@ export default function RoomsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding}>
+          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding || searchQuery.trim() !== ''}>
             <InputLabel>Seleccionar piso</InputLabel>
             <Select
               value={filterFloor}
@@ -307,13 +358,15 @@ export default function RoomsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!filterBuilding || !filterFloor) && (
+            {(searchQuery.trim() ? filteredRooms.length === 0 : (!filterBuilding || !filterFloor)) && (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    {!filterBuilding 
-                      ? 'Selecciona un edificio primero' 
-                      : 'Selecciona un piso para ver sus salas'}
+                    {searchQuery.trim() 
+                      ? 'No se encontraron salas con ese criterio de búsqueda'
+                      : (!filterBuilding 
+                          ? 'Selecciona un edificio o usa el buscador' 
+                          : 'Selecciona un piso para ver sus salas')}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -326,16 +379,34 @@ export default function RoomsPage() {
         <DialogTitle>{editId ? 'Editar Sala' : 'Nueva Sala'}</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <FormControl fullWidth required>
+              <InputLabel>Edificio</InputLabel>
+              <Select
+                value={selectedBuilding}
+                onChange={(e) => {
+                  setSelectedBuilding(e.target.value)
+                  setValue('id_piso', '') // Reset floor when building changes
+                }}
+                label="Edificio"
+              >
+                <MenuItem value="">-- Seleccionar --</MenuItem>
+                {buildings?.map(b => (
+                  <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Controller
               name="id_piso"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth required>
+                <FormControl fullWidth required disabled={!selectedBuilding}>
                   <InputLabel>Piso</InputLabel>
                   <Select {...field} label="Piso">
-                    {allFloorsData?.map(f => (
-                      <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso}</MenuItem>
-                    ))}
+                    {allFloorsData
+                      ?.filter(f => f.id_edificio === selectedBuilding)
+                      .map(f => (
+                        <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso}</MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               )}

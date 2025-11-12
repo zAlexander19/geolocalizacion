@@ -556,6 +556,67 @@ export function createApp() {
     }
   })
 
+  // OSM Import endpoint
+  app.post('/import/osm', async (req, res) => {
+    try {
+      const { importOSMData } = await import('./utils/osm-import.js')
+      const path = await import('path')
+      const { fileURLToPath } = await import('url')
+      
+      const __filename = fileURLToPath(import.meta.url)
+      const __dirname = path.dirname(__filename)
+      const osmFilePath = path.resolve(__dirname, '../data/map.osm')
+
+      const options = {
+        mergeMode: req.body.mergeMode || 'add',
+        updateExisting: req.body.updateExisting || false,
+        skipDuplicates: req.body.skipDuplicates !== undefined ? req.body.skipDuplicates : true
+      }
+
+      const results = importOSMData(osmFilePath, options)
+      res.json({ 
+        success: true, 
+        message: 'OSM data imported successfully', 
+        ...results 
+      })
+    } catch (error) {
+      console.error('OSM import error:', error)
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to import OSM data', 
+        error: error.message 
+      })
+    }
+  })
+
+  // Get OSM import preview (without actually importing)
+  app.get('/import/osm/preview', async (req, res) => {
+    try {
+      const { parseOSMForImport } = await import('./utils/osm-parser.js')
+      const path = await import('path')
+      const { fileURLToPath } = await import('url')
+      
+      const __filename = fileURLToPath(import.meta.url)
+      const __dirname = path.dirname(__filename)
+      const osmFilePath = path.resolve(__dirname, '../data/map.osm')
+
+      const osmData = parseOSMForImport(osmFilePath)
+      res.json({
+        success: true,
+        buildings: osmData.buildings,
+        pois: osmData.pois,
+        stats: osmData.stats
+      })
+    } catch (error) {
+      console.error('OSM preview error:', error)
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to preview OSM data', 
+        error: error.message 
+      })
+    }
+  })
+
   return app
 }
 

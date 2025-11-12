@@ -2,13 +2,1822 @@
   "buildings": [
     {
       "id_edificio": 1,
-      "nombre_edificio": "Federacion de ingieneria y arquitectura",
-      "acronimo": "FIA",
-      "imagen": "/uploads/1761057862982-imagen.jpg",
-      "cord_latitud": 1,
-      "cord_longitud": 1,
+      "osm_id": 298889411,
+      "nombre_edificio": "Gimnasio Esmeralda",
+      "acronimo": "",
+      "cord_latitud": -20.24491428181818,
+      "cord_longitud": -70.14003414545455,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
       "estado": true,
-      "disponibilidad": "Disponible"
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2449558,
+          "lon": -70.1401965
+        },
+        {
+          "lat": -20.2452038,
+          "lon": -70.1399913
+        },
+        {
+          "lat": -20.2450362,
+          "lon": -70.1397611
+        },
+        {
+          "lat": -20.2449596,
+          "lon": -70.1398245
+        },
+        {
+          "lat": -20.2447782,
+          "lon": -70.1399746
+        },
+        {
+          "lat": -20.2448127,
+          "lon": -70.140022
+        },
+        {
+          "lat": -20.2448182,
+          "lon": -70.1400295
+        },
+        {
+          "lat": -20.2447727,
+          "lon": -70.1400671
+        },
+        {
+          "lat": -20.2448543,
+          "lon": -70.1401792
+        },
+        {
+          "lat": -20.2449098,
+          "lon": -70.1401333
+        },
+        {
+          "lat": -20.2449558,
+          "lon": -70.1401965
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Gimnasio Esmeralda"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.679Z"
+    },
+    {
+      "id_edificio": 2,
+      "osm_id": 298889412,
+      "nombre_edificio": "Casino Universidad Arturo Prat",
+      "acronimo": "",
+      "cord_latitud": -20.245266185714286,
+      "cord_longitud": -70.13977290000001,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.245238,
+          "lon": -70.1400204
+        },
+        {
+          "lat": -20.2454818,
+          "lon": -70.139846
+        },
+        {
+          "lat": -20.2453147,
+          "lon": -70.1395806
+        },
+        {
+          "lat": -20.2453072,
+          "lon": -70.1395688
+        },
+        {
+          "lat": -20.2452202,
+          "lon": -70.139631
+        },
+        {
+          "lat": -20.2450634,
+          "lon": -70.1397431
+        },
+        {
+          "lat": -20.245238,
+          "lon": -70.1400204
+        }
+      ],
+      "tags": {
+        "amenity": "restaurant",
+        "building": "yes",
+        "name": "Casino Universidad Arturo Prat"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.680Z"
+    },
+    {
+      "id_edificio": 4,
+      "osm_id": 599466233,
+      "nombre_edificio": "Edificio CRP",
+      "acronimo": "",
+      "cord_latitud": -20.24278195,
+      "cord_longitud": -70.1413667125,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2427464,
+          "lon": -70.14118
+        },
+        {
+          "lat": -20.2429292,
+          "lon": -70.1414369
+        },
+        {
+          "lat": -20.2428958,
+          "lon": -70.1414648
+        },
+        {
+          "lat": -20.2428534,
+          "lon": -70.1415003
+        },
+        {
+          "lat": -20.2428042,
+          "lon": -70.1415437
+        },
+        {
+          "lat": -20.24266,
+          "lon": -70.1413425
+        },
+        {
+          "lat": -20.2426202,
+          "lon": -70.1412855
+        },
+        {
+          "lat": -20.2427464,
+          "lon": -70.14118
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 4,
+        "height": 20,
+        "name": "Edificio CRP"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.681Z"
+    },
+    {
+      "id_edificio": 5,
+      "osm_id": 599466234,
+      "nombre_edificio": "Rectoría Universidad Arturo Prat (UNAP)",
+      "acronimo": "",
+      "cord_latitud": -20.243967953333332,
+      "cord_longitud": -70.14078368666667,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762965610473-RECTORIA.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2440353,
+          "lon": -70.1408687
+        },
+        {
+          "lat": -20.2440265,
+          "lon": -70.140872
+        },
+        {
+          "lat": -20.2439573,
+          "lon": -70.1408619
+        },
+        {
+          "lat": -20.2439426,
+          "lon": -70.1408635
+        },
+        {
+          "lat": -20.2438959,
+          "lon": -70.1409024
+        },
+        {
+          "lat": -20.2438571,
+          "lon": -70.1408496
+        },
+        {
+          "lat": -20.2438674,
+          "lon": -70.1406791
+        },
+        {
+          "lat": -20.2439232,
+          "lon": -70.140683
+        },
+        {
+          "lat": -20.2439202,
+          "lon": -70.1407326
+        },
+        {
+          "lat": -20.2439524,
+          "lon": -70.1407558
+        },
+        {
+          "lat": -20.2439891,
+          "lon": -70.1407463
+        },
+        {
+          "lat": -20.2440003,
+          "lon": -70.140681
+        },
+        {
+          "lat": -20.2440498,
+          "lon": -70.1406906
+        },
+        {
+          "lat": -20.2440669,
+          "lon": -70.1407001
+        },
+        {
+          "lat": -20.2440353,
+          "lon": -70.1408687
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 5,
+        "height": 23,
+        "name": "Rectoría Universidad Arturo Prat (UNAP)"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.682Z"
+    },
+    {
+      "id_edificio": 6,
+      "osm_id": 599466235,
+      "nombre_edificio": "Edificio INTE",
+      "acronimo": "",
+      "cord_latitud": -20.24362947142857,
+      "cord_longitud": -70.14069931428571,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2437604,
+          "lon": -70.1407103
+        },
+        {
+          "lat": -20.2437446,
+          "lon": -70.1406881
+        },
+        {
+          "lat": -20.2436413,
+          "lon": -70.140543
+        },
+        {
+          "lat": -20.243459,
+          "lon": -70.1406904
+        },
+        {
+          "lat": -20.2434625,
+          "lon": -70.1406954
+        },
+        {
+          "lat": -20.2435781,
+          "lon": -70.1408577
+        },
+        {
+          "lat": -20.2437604,
+          "lon": -70.1407103
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Edificio INTE"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.682Z"
+    },
+    {
+      "id_edificio": 7,
+      "osm_id": 599466236,
+      "nombre_edificio": "Facultad de Ciencias de la Salud",
+      "acronimo": "FQF",
+      "cord_latitud": -20.24328523,
+      "cord_longitud": -70.14140938,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762965905384-QUIMICA.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2433145,
+          "lon": -70.1413077
+        },
+        {
+          "lat": -20.2432224,
+          "lon": -70.1413895
+        },
+        {
+          "lat": -20.2431708,
+          "lon": -70.1414354
+        },
+        {
+          "lat": -20.2432205,
+          "lon": -70.1414965
+        },
+        {
+          "lat": -20.2432788,
+          "lon": -70.1414466
+        },
+        {
+          "lat": -20.2433069,
+          "lon": -70.1414839
+        },
+        {
+          "lat": -20.2433476,
+          "lon": -70.1414491
+        },
+        {
+          "lat": -20.2433162,
+          "lon": -70.1414075
+        },
+        {
+          "lat": -20.2433601,
+          "lon": -70.1413699
+        },
+        {
+          "lat": -20.2433145,
+          "lon": -70.1413077
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 4,
+        "height": 20,
+        "name": "Facultad de Ciencias de la Salud"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.683Z"
+    },
+    {
+      "id_edificio": 8,
+      "osm_id": 599466237,
+      "nombre_edificio": "Facultad de Ingeniería y Arquitectura/Edificio CEMDIS",
+      "acronimo": "FIA",
+      "cord_latitud": -20.242917966666663,
+      "cord_longitud": -70.14121616666667,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762955411821-FIA.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2428756,
+          "lon": -70.141316
+        },
+        {
+          "lat": -20.2428962,
+          "lon": -70.1412986
+        },
+        {
+          "lat": -20.2430834,
+          "lon": -70.1411402
+        },
+        {
+          "lat": -20.2429943,
+          "lon": -70.1410308
+        },
+        {
+          "lat": -20.2427827,
+          "lon": -70.1411954
+        },
+        {
+          "lat": -20.2428756,
+          "lon": -70.141316
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 5,
+        "height": 23,
+        "name": "Edificio CEMDIS"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.683Z"
+    },
+    {
+      "id_edificio": 9,
+      "osm_id": 599466238,
+      "nombre_edificio": "Facultad de Ciencas Jurídicas y Políticas",
+      "acronimo": "",
+      "cord_latitud": -20.243064662500004,
+      "cord_longitud": -70.1416965125,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2431404,
+          "lon": -70.1417113
+        },
+        {
+          "lat": -20.2431302,
+          "lon": -70.1416975
+        },
+        {
+          "lat": -20.2430294,
+          "lon": -70.1415615
+        },
+        {
+          "lat": -20.242931,
+          "lon": -70.1416443
+        },
+        {
+          "lat": -20.2429874,
+          "lon": -70.1417205
+        },
+        {
+          "lat": -20.243042,
+          "lon": -70.1417942
+        },
+        {
+          "lat": -20.2431165,
+          "lon": -70.1417315
+        },
+        {
+          "lat": -20.2431404,
+          "lon": -70.1417113
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 2,
+        "height": 12,
+        "name": "Facultad de Ciencas Jurídicas y Políticas"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.684Z"
+    },
+    {
+      "id_edificio": 10,
+      "osm_id": 599466239,
+      "nombre_edificio": "Odontología / Centro Integral de Salud",
+      "acronimo": "ODO",
+      "cord_latitud": -20.2437086375,
+      "cord_longitud": -70.1411184375,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762965563303-odontologia.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2438056,
+          "lon": -70.1409854
+        },
+        {
+          "lat": -20.2436769,
+          "lon": -70.1410987
+        },
+        {
+          "lat": -20.243661,
+          "lon": -70.1411127
+        },
+        {
+          "lat": -20.2434665,
+          "lon": -70.1412838
+        },
+        {
+          "lat": -20.2435405,
+          "lon": -70.1413793
+        },
+        {
+          "lat": -20.2438795,
+          "lon": -70.1410808
+        },
+        {
+          "lat": -20.2438335,
+          "lon": -70.1410214
+        },
+        {
+          "lat": -20.2438056,
+          "lon": -70.1409854
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 2,
+        "height": 8,
+        "name": "Odontología / Centro Integral de Salud"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.684Z"
+    },
+    {
+      "id_edificio": 14,
+      "osm_id": 619000028,
+      "nombre_edificio": "Facultad de Metalurgia UNAP",
+      "acronimo": "",
+      "cord_latitud": -20.245095875,
+      "cord_longitud": -70.13946766666668,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2451858,
+          "lon": -70.1393966
+        },
+        {
+          "lat": -20.2451171,
+          "lon": -70.1392953
+        },
+        {
+          "lat": -20.2449274,
+          "lon": -70.1394415
+        },
+        {
+          "lat": -20.2449912,
+          "lon": -70.1395356
+        },
+        {
+          "lat": -20.2450519,
+          "lon": -70.1394888
+        },
+        {
+          "lat": -20.2450601,
+          "lon": -70.1395009
+        },
+        {
+          "lat": -20.2450643,
+          "lon": -70.1395071
+        },
+        {
+          "lat": -20.2450763,
+          "lon": -70.1394979
+        },
+        {
+          "lat": -20.2451379,
+          "lon": -70.1395887
+        },
+        {
+          "lat": -20.2452109,
+          "lon": -70.1395325
+        },
+        {
+          "lat": -20.2451418,
+          "lon": -70.1394305
+        },
+        {
+          "lat": -20.2451858,
+          "lon": -70.1393966
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "name": "Facultad de Metalurgia UNAP"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.686Z"
+    },
+    {
+      "id_edificio": 18,
+      "osm_id": 619495916,
+      "nombre_edificio": "Facultad de Ciencias Empresariales",
+      "acronimo": "FCE",
+      "cord_latitud": -20.244629620689658,
+      "cord_longitud": -70.140340637931,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762956318606-e.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.244858,
+          "lon": -70.1402808
+        },
+        {
+          "lat": -20.2448408,
+          "lon": -70.1402581
+        },
+        {
+          "lat": -20.2448122,
+          "lon": -70.1402203
+        },
+        {
+          "lat": -20.2447645,
+          "lon": -70.1402614
+        },
+        {
+          "lat": -20.2447561,
+          "lon": -70.1402502
+        },
+        {
+          "lat": -20.2447355,
+          "lon": -70.140223
+        },
+        {
+          "lat": -20.2447853,
+          "lon": -70.1401801
+        },
+        {
+          "lat": -20.2447123,
+          "lon": -70.1400836
+        },
+        {
+          "lat": -20.2446539,
+          "lon": -70.1401339
+        },
+        {
+          "lat": -20.2444531,
+          "lon": -70.1403067
+        },
+        {
+          "lat": -20.2445073,
+          "lon": -70.1403783
+        },
+        {
+          "lat": -20.2444915,
+          "lon": -70.1403919
+        },
+        {
+          "lat": -20.2444809,
+          "lon": -70.140401
+        },
+        {
+          "lat": -20.2444335,
+          "lon": -70.1403384
+        },
+        {
+          "lat": -20.2443762,
+          "lon": -70.1403877
+        },
+        {
+          "lat": -20.2444543,
+          "lon": -70.1404908
+        },
+        {
+          "lat": -20.2445143,
+          "lon": -70.1404392
+        },
+        {
+          "lat": -20.2445223,
+          "lon": -70.1404497
+        },
+        {
+          "lat": -20.2445371,
+          "lon": -70.1404693
+        },
+        {
+          "lat": -20.2444942,
+          "lon": -70.1405062
+        },
+        {
+          "lat": -20.2445366,
+          "lon": -70.1405622
+        },
+        {
+          "lat": -20.2446033,
+          "lon": -70.1405048
+        },
+        {
+          "lat": -20.2445463,
+          "lon": -70.1404296
+        },
+        {
+          "lat": -20.2445414,
+          "lon": -70.1404231
+        },
+        {
+          "lat": -20.2447195,
+          "lon": -70.1402698
+        },
+        {
+          "lat": -20.2447263,
+          "lon": -70.1402789
+        },
+        {
+          "lat": -20.2447651,
+          "lon": -70.1403301
+        },
+        {
+          "lat": -20.2447792,
+          "lon": -70.1403486
+        },
+        {
+          "lat": -20.244858,
+          "lon": -70.1402808
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "name": "Facultad de Ciencias Empresariales"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.686Z"
+    },
+    {
+      "id_edificio": 19,
+      "osm_id": 619495917,
+      "nombre_edificio": "Biblioteca UNAP",
+      "acronimo": "",
+      "cord_latitud": -20.243924632,
+      "cord_longitud": -70.14041618799999,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762965962105-BIBLIO.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2441625,
+          "lon": -70.1403328
+        },
+        {
+          "lat": -20.2440447,
+          "lon": -70.1401829
+        },
+        {
+          "lat": -20.2439382,
+          "lon": -70.1402779
+        },
+        {
+          "lat": -20.24393,
+          "lon": -70.1402675
+        },
+        {
+          "lat": -20.2439107,
+          "lon": -70.1402429
+        },
+        {
+          "lat": -20.243802,
+          "lon": -70.1403398
+        },
+        {
+          "lat": -20.2438201,
+          "lon": -70.1403629
+        },
+        {
+          "lat": -20.2438321,
+          "lon": -70.1403782
+        },
+        {
+          "lat": -20.243731,
+          "lon": -70.1404684
+        },
+        {
+          "lat": -20.2437903,
+          "lon": -70.140544
+        },
+        {
+          "lat": -20.2437768,
+          "lon": -70.1405786
+        },
+        {
+          "lat": -20.2438233,
+          "lon": -70.1406003
+        },
+        {
+          "lat": -20.2438645,
+          "lon": -70.1406048
+        },
+        {
+          "lat": -20.2438775,
+          "lon": -70.1405603
+        },
+        {
+          "lat": -20.243881,
+          "lon": -70.1404995
+        },
+        {
+          "lat": -20.243885,
+          "lon": -70.1404656
+        },
+        {
+          "lat": -20.2439134,
+          "lon": -70.1404603
+        },
+        {
+          "lat": -20.2439406,
+          "lon": -70.1404498
+        },
+        {
+          "lat": -20.2439516,
+          "lon": -70.1404431
+        },
+        {
+          "lat": -20.2439657,
+          "lon": -70.1404346
+        },
+        {
+          "lat": -20.2439944,
+          "lon": -70.1404077
+        },
+        {
+          "lat": -20.2440006,
+          "lon": -70.1403985
+        },
+        {
+          "lat": -20.2440167,
+          "lon": -70.1403745
+        },
+        {
+          "lat": -20.2441006,
+          "lon": -70.140397
+        },
+        {
+          "lat": -20.2441625,
+          "lon": -70.1403328
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 4,
+        "name": "Biblioteca UNAP"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.687Z"
+    },
+    {
+      "id_edificio": 20,
+      "osm_id": 619495918,
+      "nombre_edificio": "Pabellon C",
+      "acronimo": "PC",
+      "cord_latitud": -20.24333955625,
+      "cord_longitud": -70.14094791875,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762957426421-pabellon_c.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2434716,
+          "lon": -70.1408519
+        },
+        {
+          "lat": -20.2434009,
+          "lon": -70.1407565
+        },
+        {
+          "lat": -20.243144,
+          "lon": -70.140973
+        },
+        {
+          "lat": -20.2432223,
+          "lon": -70.1410785
+        },
+        {
+          "lat": -20.2432391,
+          "lon": -70.1410644
+        },
+        {
+          "lat": -20.2432828,
+          "lon": -70.1410275
+        },
+        {
+          "lat": -20.243295,
+          "lon": -70.1410172
+        },
+        {
+          "lat": -20.2432874,
+          "lon": -70.1410071
+        },
+        {
+          "lat": -20.2433162,
+          "lon": -70.1409828
+        },
+        {
+          "lat": -20.2433282,
+          "lon": -70.1409727
+        },
+        {
+          "lat": -20.2433361,
+          "lon": -70.1409661
+        },
+        {
+          "lat": -20.2433895,
+          "lon": -70.1409211
+        },
+        {
+          "lat": -20.2433953,
+          "lon": -70.1409162
+        },
+        {
+          "lat": -20.2434085,
+          "lon": -70.140905
+        },
+        {
+          "lat": -20.2434444,
+          "lon": -70.1408748
+        },
+        {
+          "lat": -20.2434716,
+          "lon": -70.1408519
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 1,
+        "height": 8,
+        "name": "Pabellon C"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.687Z"
+    },
+    {
+      "id_edificio": 21,
+      "osm_id": 619495919,
+      "nombre_edificio": "Departamento de Formación Técnica DFT",
+      "acronimo": "DFT",
+      "cord_latitud": -20.24340718888889,
+      "cord_longitud": -70.14123797777778,
+      "tipo": "university",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762965522396-dft.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2433861,
+          "lon": -70.1413212
+        },
+        {
+          "lat": -20.2433435,
+          "lon": -70.141265
+        },
+        {
+          "lat": -20.2432979,
+          "lon": -70.1412047
+        },
+        {
+          "lat": -20.2434129,
+          "lon": -70.1411059
+        },
+        {
+          "lat": -20.2434787,
+          "lon": -70.1411928
+        },
+        {
+          "lat": -20.2434874,
+          "lon": -70.1412043
+        },
+        {
+          "lat": -20.2434292,
+          "lon": -70.1412543
+        },
+        {
+          "lat": -20.2434429,
+          "lon": -70.1412724
+        },
+        {
+          "lat": -20.2433861,
+          "lon": -70.1413212
+        }
+      ],
+      "tags": {
+        "building": "university",
+        "building:levels": 1,
+        "height": 5,
+        "name": "Departamento de Formación Técnica DFT"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.688Z"
+    },
+    {
+      "id_edificio": 23,
+      "osm_id": 947237450,
+      "nombre_edificio": "Facultad de Ciencias",
+      "acronimo": "",
+      "cord_latitud": -20.242441983333336,
+      "cord_longitud": -70.14167068333333,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2424944,
+          "lon": -70.1417398
+        },
+        {
+          "lat": -20.2424507,
+          "lon": -70.1417231
+        },
+        {
+          "lat": -20.2423151,
+          "lon": -70.1416714
+        },
+        {
+          "lat": -20.242359,
+          "lon": -70.1415408
+        },
+        {
+          "lat": -20.2425383,
+          "lon": -70.1416092
+        },
+        {
+          "lat": -20.2424944,
+          "lon": -70.1417398
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 3,
+        "name": "Facultad de Ciencias"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.689Z"
+    },
+    {
+      "id_edificio": 24,
+      "osm_id": 947237451,
+      "nombre_edificio": "Aranceles y Cobranza",
+      "acronimo": "",
+      "cord_latitud": -20.2422474125,
+      "cord_longitud": -70.1419339,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2422642,
+          "lon": -70.1417915
+        },
+        {
+          "lat": -20.2423462,
+          "lon": -70.1418208
+        },
+        {
+          "lat": -20.2423305,
+          "lon": -70.1418707
+        },
+        {
+          "lat": -20.2422537,
+          "lon": -70.1421145
+        },
+        {
+          "lat": -20.2421496,
+          "lon": -70.1420773
+        },
+        {
+          "lat": -20.2421744,
+          "lon": -70.1419985
+        },
+        {
+          "lat": -20.2421965,
+          "lon": -70.1420064
+        },
+        {
+          "lat": -20.2422642,
+          "lon": -70.1417915
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "height": 4,
+        "name": "Aranceles y Cobranza"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.690Z"
+    },
+    {
+      "id_edificio": 25,
+      "osm_id": 947237452,
+      "nombre_edificio": "Facultad de Ingenieria y Arquitectura / Genaro Gallo",
+      "acronimo": "",
+      "cord_latitud": -20.24249597777778,
+      "cord_longitud": -70.14187832222221,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2427285,
+          "lon": -70.1418223
+        },
+        {
+          "lat": -20.2424007,
+          "lon": -70.1420832
+        },
+        {
+          "lat": -20.2423501,
+          "lon": -70.1420111
+        },
+        {
+          "lat": -20.2423241,
+          "lon": -70.1419739
+        },
+        {
+          "lat": -20.2423473,
+          "lon": -70.141906
+        },
+        {
+          "lat": -20.2424277,
+          "lon": -70.141842
+        },
+        {
+          "lat": -20.2425272,
+          "lon": -70.1417628
+        },
+        {
+          "lat": -20.2426297,
+          "lon": -70.1416813
+        },
+        {
+          "lat": -20.2427285,
+          "lon": -70.1418223
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "height": 5,
+        "name": "Facultad de Ingenieria y Arquitectura / Genaro Gallo"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.691Z"
+    },
+    {
+      "id_edificio": 26,
+      "osm_id": 1386285571,
+      "nombre_edificio": "Oficina de Partes",
+      "acronimo": "",
+      "cord_latitud": -20.24423714,
+      "cord_longitud": -70.1408225,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2442195,
+          "lon": -70.1408426
+        },
+        {
+          "lat": -20.2442202,
+          "lon": -70.1407917
+        },
+        {
+          "lat": -20.2442636,
+          "lon": -70.1407923
+        },
+        {
+          "lat": -20.2442629,
+          "lon": -70.1408433
+        },
+        {
+          "lat": -20.2442195,
+          "lon": -70.1408426
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Oficina de Partes"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.691Z"
+    },
+    {
+      "id_edificio": 27,
+      "osm_id": 1386285580,
+      "nombre_edificio": "Edificio de Enfermería",
+      "acronimo": "",
+      "cord_latitud": -20.244347308333335,
+      "cord_longitud": -70.14015404999999,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.244243,
+          "lon": -70.1402199
+        },
+        {
+          "lat": -20.2441702,
+          "lon": -70.1401237
+        },
+        {
+          "lat": -20.2443633,
+          "lon": -70.1399576
+        },
+        {
+          "lat": -20.2445098,
+          "lon": -70.1401511
+        },
+        {
+          "lat": -20.2444312,
+          "lon": -70.1402187
+        },
+        {
+          "lat": -20.2444215,
+          "lon": -70.140227
+        },
+        {
+          "lat": -20.2443665,
+          "lon": -70.1401544
+        },
+        {
+          "lat": -20.2443771,
+          "lon": -70.1401453
+        },
+        {
+          "lat": -20.2443829,
+          "lon": -70.1401403
+        },
+        {
+          "lat": -20.2443642,
+          "lon": -70.1401156
+        },
+        {
+          "lat": -20.244295,
+          "lon": -70.1401751
+        },
+        {
+          "lat": -20.244243,
+          "lon": -70.1402199
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "height": 4,
+        "name": "Edificio de Enfermería"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.692Z"
+    },
+    {
+      "id_edificio": 28,
+      "osm_id": 1386285590,
+      "nombre_edificio": "Kiosko Unap N°1",
+      "acronimo": "",
+      "cord_latitud": -20.243204220000003,
+      "cord_longitud": -70.14161998,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762966065785-04ef0728-60cb-4dc4-843a-10cd8ff83c60.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.2432635,
+          "lon": -70.1416475
+        },
+        {
+          "lat": -20.2431872,
+          "lon": -70.1417044
+        },
+        {
+          "lat": -20.243154,
+          "lon": -70.1416539
+        },
+        {
+          "lat": -20.243194,
+          "lon": -70.1416241
+        },
+        {
+          "lat": -20.2431622,
+          "lon": -70.1415756
+        },
+        {
+          "lat": -20.243168,
+          "lon": -70.1415713
+        },
+        {
+          "lat": -20.2431881,
+          "lon": -70.1415563
+        },
+        {
+          "lat": -20.2432239,
+          "lon": -70.1416108
+        },
+        {
+          "lat": -20.2432378,
+          "lon": -70.1416084
+        },
+        {
+          "lat": -20.2432635,
+          "lon": -70.1416475
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "height": 4,
+        "name": "Kiosko Unap N°1"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.692Z"
+    },
+    {
+      "id_edificio": 29,
+      "osm_id": 1386285591,
+      "nombre_edificio": "Auditorio Óscar Hahn",
+      "acronimo": "",
+      "cord_latitud": -20.242939583333335,
+      "cord_longitud": -70.14157086666667,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2428702,
+          "lon": -70.1415958
+        },
+        {
+          "lat": -20.2429749,
+          "lon": -70.1415025
+        },
+        {
+          "lat": -20.2429941,
+          "lon": -70.141527
+        },
+        {
+          "lat": -20.2430164,
+          "lon": -70.1415554
+        },
+        {
+          "lat": -20.2429117,
+          "lon": -70.1416487
+        },
+        {
+          "lat": -20.2428702,
+          "lon": -70.1415958
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 2,
+        "height": 8,
+        "name": "Auditorio Óscar Hahn"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.693Z"
+    },
+    {
+      "id_edificio": 30,
+      "osm_id": 1386285592,
+      "nombre_edificio": "Oficina de Inclusión",
+      "acronimo": "",
+      "cord_latitud": -20.24491855,
+      "cord_longitud": -70.13958101666667,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2448073,
+          "lon": -70.1394891
+        },
+        {
+          "lat": -20.2448862,
+          "lon": -70.1394295
+        },
+        {
+          "lat": -20.245042,
+          "lon": -70.1396637
+        },
+        {
+          "lat": -20.2450054,
+          "lon": -70.1396914
+        },
+        {
+          "lat": -20.2449631,
+          "lon": -70.1397233
+        },
+        {
+          "lat": -20.2448073,
+          "lon": -70.1394891
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Oficina de Inclusión"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.693Z"
+    },
+    {
+      "id_edificio": 31,
+      "osm_id": 1386285593,
+      "nombre_edificio": "Gimnasio Centro de Entrenamiento UNAP (CEU)",
+      "acronimo": "",
+      "cord_latitud": -20.244523870000002,
+      "cord_longitud": -70.13988553,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2444065,
+          "lon": -70.1398226
+        },
+        {
+          "lat": -20.2445113,
+          "lon": -70.1397364
+        },
+        {
+          "lat": -20.2446031,
+          "lon": -70.1398632
+        },
+        {
+          "lat": -20.244696,
+          "lon": -70.1399917
+        },
+        {
+          "lat": -20.2446365,
+          "lon": -70.1400406
+        },
+        {
+          "lat": -20.244543,
+          "lon": -70.1399114
+        },
+        {
+          "lat": -20.2445197,
+          "lon": -70.1398792
+        },
+        {
+          "lat": -20.2444744,
+          "lon": -70.1399164
+        },
+        {
+          "lat": -20.2444417,
+          "lon": -70.1398712
+        },
+        {
+          "lat": -20.2444065,
+          "lon": -70.1398226
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "name": "Gimnasio Centro de Entrenamiento UNAP (CEU)"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.693Z"
+    },
+    {
+      "id_edificio": 32,
+      "osm_id": 1386288029,
+      "nombre_edificio": "Baño",
+      "acronimo": "",
+      "cord_latitud": -20.243548020000002,
+      "cord_longitud": -70.1405536,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2435295,
+          "lon": -70.1405937
+        },
+        {
+          "lat": -20.2435013,
+          "lon": -70.1405543
+        },
+        {
+          "lat": -20.2435758,
+          "lon": -70.1404935
+        },
+        {
+          "lat": -20.243604,
+          "lon": -70.1405328
+        },
+        {
+          "lat": -20.2435295,
+          "lon": -70.1405937
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "name": "Baño"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.693Z"
+    },
+    {
+      "id_edificio": 35,
+      "osm_id": 1447603278,
+      "nombre_edificio": "Federación de Estudiantes UNAP",
+      "acronimo": "",
+      "cord_latitud": -20.24416965,
+      "cord_longitud": -70.14023606666666,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2441852,
+          "lon": -70.1403163
+        },
+        {
+          "lat": -20.2442201,
+          "lon": -70.1402869
+        },
+        {
+          "lat": -20.2442488,
+          "lon": -70.1402628
+        },
+        {
+          "lat": -20.2441211,
+          "lon": -70.1400903
+        },
+        {
+          "lat": -20.2440575,
+          "lon": -70.1401438
+        },
+        {
+          "lat": -20.2441852,
+          "lon": -70.1403163
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Federación de Estudiantes UNAP"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.695Z"
+    },
+    {
+      "id_edificio": 36,
+      "osm_id": 1447603303,
+      "nombre_edificio": "Kiosko Unap N°2",
+      "acronimo": "",
+      "cord_latitud": -20.24450667142857,
+      "cord_longitud": -70.14003134285714,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2445229,
+          "lon": -70.1401241
+        },
+        {
+          "lat": -20.2445668,
+          "lon": -70.140088
+        },
+        {
+          "lat": -20.2445868,
+          "lon": -70.1400716
+        },
+        {
+          "lat": -20.2444744,
+          "lon": -70.1399164
+        },
+        {
+          "lat": -20.2444623,
+          "lon": -70.1399263
+        },
+        {
+          "lat": -20.2444106,
+          "lon": -70.1399689
+        },
+        {
+          "lat": -20.2445229,
+          "lon": -70.1401241
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "name": "Kiosko Unap N°2"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.696Z"
+    },
+    {
+      "id_edificio": 37,
+      "osm_id": 1447723844,
+      "nombre_edificio": "Oficina de Transparencia / Dirección General de Innovación y Desarrollo",
+      "acronimo": "DGID",
+      "cord_latitud": -20.2431332,
+      "cord_longitud": -70.14107512857143,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "/uploads/1762955728191-CI.jpeg",
+      "coordinates": [
+        {
+          "lat": -20.243136,
+          "lon": -70.1411506
+        },
+        {
+          "lat": -20.2431782,
+          "lon": -70.1411116
+        },
+        {
+          "lat": -20.2432128,
+          "lon": -70.1410796
+        },
+        {
+          "lat": -20.2431282,
+          "lon": -70.1409756
+        },
+        {
+          "lat": -20.2430898,
+          "lon": -70.1410112
+        },
+        {
+          "lat": -20.2430514,
+          "lon": -70.1410467
+        },
+        {
+          "lat": -20.243136,
+          "lon": -70.1411506
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 2,
+        "height": 10,
+        "name": "Oficina de Transparencia / Dirección General de Innovación y Desarrollo"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.697Z"
+    },
+    {
+      "id_edificio": 38,
+      "osm_id": 1449557175,
+      "nombre_edificio": "Laboratorio Anatomía",
+      "acronimo": "",
+      "cord_latitud": -20.2444158,
+      "cord_longitud": -70.13991816250001,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2443996,
+          "lon": -70.1399779
+        },
+        {
+          "lat": -20.2444106,
+          "lon": -70.1399689
+        },
+        {
+          "lat": -20.2444623,
+          "lon": -70.1399263
+        },
+        {
+          "lat": -20.2444744,
+          "lon": -70.1399164
+        },
+        {
+          "lat": -20.2444417,
+          "lon": -70.1398712
+        },
+        {
+          "lat": -20.2444065,
+          "lon": -70.1398226
+        },
+        {
+          "lat": -20.2443317,
+          "lon": -70.1398841
+        },
+        {
+          "lat": -20.2443996,
+          "lon": -70.1399779
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "name": "Laboratorio Anatomía"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.697Z"
+    },
+    {
+      "id_edificio": 39,
+      "osm_id": 1449926809,
+      "nombre_edificio": "Centro de Salud Estudiantil",
+      "acronimo": "",
+      "cord_latitud": -20.24346291666667,
+      "cord_longitud": -70.14079545,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2435018,
+          "lon": -70.1408262
+        },
+        {
+          "lat": -20.2434716,
+          "lon": -70.1408519
+        },
+        {
+          "lat": -20.2434009,
+          "lon": -70.1407565
+        },
+        {
+          "lat": -20.2434319,
+          "lon": -70.1407301
+        },
+        {
+          "lat": -20.2434695,
+          "lon": -70.1407818
+        },
+        {
+          "lat": -20.2435018,
+          "lon": -70.1408262
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Centro de Salud Estudiantil"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.697Z"
+    },
+    {
+      "id_edificio": 40,
+      "osm_id": 1449926812,
+      "nombre_edificio": "Centro Cultural Rubén Mamani",
+      "acronimo": "",
+      "cord_latitud": -20.243522816666665,
+      "cord_longitud": -70.14109541666667,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2434787,
+          "lon": -70.1411928
+        },
+        {
+          "lat": -20.2436214,
+          "lon": -70.1410699
+        },
+        {
+          "lat": -20.2435897,
+          "lon": -70.1410281
+        },
+        {
+          "lat": -20.2435555,
+          "lon": -70.140983
+        },
+        {
+          "lat": -20.2434129,
+          "lon": -70.1411059
+        },
+        {
+          "lat": -20.2434787,
+          "lon": -70.1411928
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 1,
+        "height": 5,
+        "name": "Centro Cultural Rubén Mamani"
+      },
+      "created_from_osm": true,
+      "imported_at": "2025-11-12T13:44:47.698Z"
     }
   ],
   "floors": [
@@ -31,61 +1840,49 @@
       "codigo_qr": "",
       "estado": true,
       "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 4,
+      "id_edificio": 8,
+      "nombre_piso": "Primer Piso",
+      "numero_piso": 1,
+      "imagen": "/uploads/1762957524486-PISO_1_FIA.jpeg",
+      "codigo_qr": "",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 5,
+      "id_edificio": 8,
+      "nombre_piso": "Segundo Piso",
+      "numero_piso": 2,
+      "imagen": "/uploads/1762960585195-PISO2.jpeg",
+      "codigo_qr": "",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 6,
+      "id_edificio": 18,
+      "nombre_piso": "Primer Piso",
+      "numero_piso": 1,
+      "imagen": "/uploads/1762965684928-PRIMER_PISO_E.jpeg",
+      "codigo_qr": "",
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_piso": 7,
+      "id_edificio": 18,
+      "nombre_piso": "Segundo Piso",
+      "numero_piso": 2,
+      "imagen": "/uploads/1762962083397-piso2_e.jpeg",
+      "codigo_qr": "",
+      "estado": true,
+      "disponibilidad": "Disponible"
     }
   ],
   "rooms": [
-    {
-      "id_sala": 2,
-      "id_piso": 2,
-      "nombre_sala": "Laboratorio de computación 2",
-      "acronimo": "lc2",
-      "imagen": "/uploads/1761058657089-imagen.jpg",
-      "capacidad": 30,
-      "tipo_sala": "Aula",
-      "cord_latitud": -20.242938,
-      "cord_longitud": -70.141131,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    },
-    {
-      "id_sala": 3,
-      "id_piso": 2,
-      "nombre_sala": "Laboratorio de computación 3 ",
-      "acronimo": "Lc3",
-      "imagen": "/uploads/1761096021378-245591825.jpg",
-      "capacidad": 30,
-      "tipo_sala": "Aula",
-      "cord_latitud": -20.244334,
-      "cord_longitud": -70.14114,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    },
-    {
-      "id_sala": 4,
-      "id_piso": 2,
-      "nombre_sala": "Laboratorio de computación 1",
-      "acronimo": "lc1",
-      "imagen": "/uploads/1761520212769-239518831.jpg",
-      "capacidad": 25,
-      "tipo_sala": "Aula",
-      "cord_latitud": -20.242934,
-      "cord_longitud": -70.141194,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    },
-    {
-      "id_sala": 5,
-      "id_piso": 2,
-      "nombre_sala": "Laboratorio de computación 4",
-      "acronimo": "lc4",
-      "imagen": "/uploads/1761520264498-162636009.jpg",
-      "capacidad": 20,
-      "tipo_sala": "Aula",
-      "cord_latitud": -20.243012,
-      "cord_longitud": -70.141112,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    },
     {
       "id_sala": 6,
       "id_piso": 3,
@@ -135,6 +1932,162 @@
       "tipo_sala": "Laboratorio",
       "cord_latitud": -20.243014,
       "cord_longitud": -70.141164,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 10,
+      "id_piso": 4,
+      "nombre_sala": "Laboratorio de Computación 1",
+      "acronimo": "LC1",
+      "imagen": "/uploads/1762957633642-LC1.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.242934,
+      "cord_longitud": -70.141194,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 13,
+      "id_piso": 4,
+      "nombre_sala": "Laboratorio de Computacion 2",
+      "acronimo": "LC2",
+      "imagen": "/uploads/1762960032786-lc2.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.242938,
+      "cord_longitud": -70.141131,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 14,
+      "id_piso": 4,
+      "nombre_sala": "Laboratorio de Computación 3",
+      "acronimo": "LC3",
+      "imagen": "/uploads/1762960231112-LC3.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243029,
+      "cord_longitud": -70.14112,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 15,
+      "id_piso": 4,
+      "nombre_sala": "Laboratorio de Computacion 4",
+      "acronimo": "LC4",
+      "imagen": "/uploads/1762960320957-LC4.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243012,
+      "cord_longitud": -70.141112,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 16,
+      "id_piso": 4,
+      "nombre_sala": "Laboratorio de Operaciones Unitarias",
+      "acronimo": "LOU",
+      "imagen": "/uploads/1762960420403-Lou.jpeg",
+      "capacidad": 20,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243148,
+      "cord_longitud": -70.141236,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 17,
+      "id_piso": 5,
+      "nombre_sala": "Taller de Redes y Comunicaciones",
+      "acronimo": "Redes",
+      "imagen": "/uploads/1762960712391-Redes.jpeg",
+      "capacidad": 10,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243036,
+      "cord_longitud": -70.141179,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 18,
+      "id_piso": 5,
+      "nombre_sala": "Taller de Base de Datos",
+      "acronimo": "TBD",
+      "imagen": "/uploads/1762960821022-TBD.jpeg",
+      "capacidad": 20,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243014,
+      "cord_longitud": -70.141164,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 19,
+      "id_piso": 5,
+      "nombre_sala": "CM8",
+      "acronimo": "CM8",
+      "imagen": "/uploads/1762960966317-CM8.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Aula",
+      "cord_latitud": -20.242904,
+      "cord_longitud": -70.141237,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 20,
+      "id_piso": 5,
+      "nombre_sala": "Laboratorio de Programación",
+      "acronimo": "LP",
+      "imagen": "/uploads/1762961052158-lp.jpeg",
+      "capacidad": 20,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243031,
+      "cord_longitud": -70.141154,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 21,
+      "id_piso": 5,
+      "nombre_sala": "Laboratorio de Computación 8",
+      "acronimo": "LC8",
+      "imagen": "/uploads/1762961155072-lc8.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.242923,
+      "cord_longitud": -70.141174,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 22,
+      "id_piso": 5,
+      "nombre_sala": "Laboratorio de Sistemas Operativos",
+      "acronimo": "LSO",
+      "imagen": "/uploads/1762961221228-lso.jpeg",
+      "capacidad": 20,
+      "tipo_sala": "Laboratorio",
+      "cord_latitud": -20.243006,
+      "cord_longitud": -70.141153,
+      "estado": true,
+      "disponibilidad": "Disponible"
+    },
+    {
+      "id_sala": 27,
+      "id_piso": 6,
+      "nombre_sala": "E1",
+      "acronimo": "E1",
+      "imagen": "/uploads/1762962281214-E1.jpeg",
+      "capacidad": 30,
+      "tipo_sala": "Aula",
+      "cord_latitud": -20.244639,
+      "cord_longitud": -70.140378,
       "estado": true,
       "disponibilidad": "Disponible"
     }

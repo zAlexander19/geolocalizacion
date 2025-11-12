@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Button,
@@ -23,16 +24,19 @@ import {
   Typography,
   IconButton,
   Chip,
+  Tooltip,
 } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Map as MapIcon,
 } from '@mui/icons-material'
 import api from '../../../lib/api'
 
 export default function BuildingsPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
@@ -99,6 +103,11 @@ export default function BuildingsPage() {
       queryClient.invalidateQueries(['buildings'])
     },
   })
+
+  const handleViewOnMap = (building) => {
+    // Navigate to map with building ID in URL
+    navigate(`/admin/mapa?buildingId=${building.id_edificio}`)
+  }
 
   useEffect(() => {
     if (open) {
@@ -233,8 +242,21 @@ export default function BuildingsPage() {
                   <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
                 </TableCell>
                 <TableCell>
-                  <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}><DeleteIcon fontSize="small" /></IconButton>
+                  <Tooltip title="Ver en el mapa">
+                    <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
+                      <MapIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Editar">
+                    <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar">
+                    <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
