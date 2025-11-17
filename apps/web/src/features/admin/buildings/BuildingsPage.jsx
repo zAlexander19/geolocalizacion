@@ -31,8 +31,10 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Map as MapIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material'
 import api from '../../../lib/api'
+import BuildingDetailsModal from '../../../components/BuildingDetailsModal'
 
 export default function BuildingsPage() {
   const queryClient = useQueryClient()
@@ -43,6 +45,8 @@ export default function BuildingsPage() {
   const [filterBuilding, setFilterBuilding] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+  const [selectedBuilding, setSelectedBuilding] = useState(null)
 
   const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
@@ -107,6 +111,11 @@ export default function BuildingsPage() {
   const handleViewOnMap = (building) => {
     // Navigate to map with building ID in URL
     navigate(`/admin/mapa?buildingId=${building.id_edificio}`)
+  }
+
+  const handleViewDetails = (building) => {
+    setSelectedBuilding(building)
+    setDetailsModalOpen(true)
   }
 
   useEffect(() => {
@@ -242,6 +251,11 @@ export default function BuildingsPage() {
                   <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
                 </TableCell>
                 <TableCell>
+                  <Tooltip title="Ver más">
+                    <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Ver en el mapa">
                     <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
                       <MapIcon fontSize="small" />
@@ -371,6 +385,16 @@ export default function BuildingsPage() {
           <Button onClick={() => setImagePreview(null)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de detalles del edificio con pisos y salas */}
+      <BuildingDetailsModal
+        building={selectedBuilding}
+        open={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false)
+          setSelectedBuilding(null)
+        }}
+      />
     </Box>
   )
 }

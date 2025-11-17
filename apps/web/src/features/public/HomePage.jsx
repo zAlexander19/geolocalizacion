@@ -59,6 +59,7 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import api from '../../lib/api'
+import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 
 // Fix para los iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -126,11 +127,8 @@ export default function HomePage() {
   const [mapOpen, setMapOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [buildingDetailOpen, setBuildingDetailOpen] = useState(false)
-  const [floorRoomCarousels, setFloorRoomCarousels] = useState({})
   const [selectedBathroom, setSelectedBathroom] = useState(null)
   const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
-  const [selectedFloorImage, setSelectedFloorImage] = useState(null)
-  const [floorImageOpen, setFloorImageOpen] = useState(false)
   const [routeMapOpen, setRouteMapOpen] = useState(false)
   const [routeDestination, setRouteDestination] = useState(null)
   const [routeDestinationName, setRouteDestinationName] = useState('')
@@ -243,17 +241,6 @@ export default function HomePage() {
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 0 && !!buildings, // Solo buscar edificios
   })
 
-  // Query para obtener pisos de un edificio específico
-  const { data: buildingFloors } = useQuery({
-    queryKey: ['building-floors', selectedBuilding?.id_edificio],
-    queryFn: async () => {
-      if (!selectedBuilding) return []
-      const res = await api.get(`/buildings/${selectedBuilding.id_edificio}/floors`)
-      return res.data.data
-    },
-    enabled: !!selectedBuilding && buildingDetailOpen,
-  })
-
   // Query para obtener todas las salas
   const { data: allRooms } = useQuery({
     queryKey: ['all-rooms'],
@@ -339,30 +326,6 @@ export default function HomePage() {
     },
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 2 && !!allFaculties,
   })
-
-  // Función para obtener salas de un piso específico
-  const getRoomsForFloor = (floorId) => {
-    if (!allRooms) return []
-    return allRooms.filter(room => room.id_piso === floorId)
-  }
-
-  // Función para manejar el carrusel de salas por piso
-  const handleCarouselChange = (floorId, direction) => {
-    setFloorRoomCarousels(prev => {
-      const currentIndex = prev[floorId] || 0
-      const rooms = getRoomsForFloor(floorId)
-      const maxIndex = Math.max(0, rooms.length - 3) // Mostrar 3 salas a la vez
-      
-      let newIndex = currentIndex
-      if (direction === 'next') {
-        newIndex = Math.min(currentIndex + 1, maxIndex)
-      } else {
-        newIndex = Math.max(currentIndex - 1, 0)
-      }
-      
-      return { ...prev, [floorId]: newIndex }
-    })
-  }
 
   // Función para calcular distancia usando fórmula Haversine
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -1600,327 +1563,16 @@ export default function HomePage() {
         </DialogActions>
       </Dialog>
 
-      {/* Modal de Detalle del Edificio */}
-      <Dialog
+      {/* Modal de Detalle del Edificio - Optimizado */}
+      <BuildingDetailsModal
+        building={selectedBuilding}
         open={buildingDetailOpen}
         onClose={() => {
           setBuildingDetailOpen(false)
           setSelectedBuilding(null)
-          setFloorRoomCarousels({})
         }}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: { maxHeight: '90vh' }
-        }}
-      >
-        {selectedBuilding && (
-          <>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                  {selectedBuilding.nombre_edificio}
-                  {selectedBuilding.acronimo && (
-                    <Chip 
-                      label={selectedBuilding.acronimo} 
-                      color="primary" 
-                      size="small" 
-                      sx={{ ml: 2 }}
-                    />
-                  )}
-                </Typography>
-                <IconButton onClick={() => setBuildingDetailOpen(false)}>
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-            </DialogTitle>
-            <DialogContent dividers>
-              {/* Imagen del edificio - Mitad superior */}
-              <Box sx={{ mb: 3 }}>
-                {selectedBuilding.imagen && !/via\.placeholder\.com/.test(selectedBuilding.imagen) ? (
-                  <Box
-                    component="img"
-                    src={selectedBuilding.imagen.startsWith('http') ? selectedBuilding.imagen : `http://localhost:4000${selectedBuilding.imagen}`}
-                    alt={selectedBuilding.nombre_edificio}
-                    sx={{
-                      width: '100%',
-                      height: 'auto',
-                      maxHeight: '40vh',
-                      objectFit: 'cover',
-                      borderRadius: 2,
-                      boxShadow: 3
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: 300,
-                      bgcolor: 'grey.200',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 2
-                    }}
-                  >
-                    <BuildingIcon sx={{ fontSize: 120, color: 'grey.400' }} />
-                  </Box>
-                )}
-                
-                {/* Información del edificio */}
-                <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Ubicación:</strong> Lat: {selectedBuilding.cord_latitud}, Lon: {selectedBuilding.cord_longitud}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Pisos y Salas - Mitad inferior */}
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Pisos y Salas
-              </Typography>
-
-              {buildingFloors && buildingFloors.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {buildingFloors.map((floor) => {
-                    const rooms = getRoomsForFloor(floor.id_piso)
-                    const carouselIndex = floorRoomCarousels[floor.id_piso] || 0
-                    const visibleRooms = rooms.slice(carouselIndex, carouselIndex + 3)
-                    
-                    return (
-                      <Paper key={floor.id_piso} elevation={2} sx={{ p: 2 }}>
-                        {/* Nombre del piso con botón para ver foto */}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                            {floor.nombre_piso}
-                            {floor.numero_piso != null && ` - Piso ${floor.numero_piso}`}
-                          </Typography>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<ImageIcon />}
-                            onClick={() => {
-                              setSelectedFloorImage(floor)
-                              setFloorImageOpen(true)
-                            }}
-                          >
-                            Ver foto del piso
-                          </Button>
-                        </Box>
-
-                        <Divider sx={{ mb: 2 }} />
-
-                        {/* Salas del piso con carrusel */}
-                        {rooms.length > 0 ? (
-                          <Box sx={{ position: 'relative' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {/* Botón anterior */}
-                              <IconButton
-                                size="small"
-                                onClick={() => handleCarouselChange(floor.id_piso, 'prev')}
-                                disabled={carouselIndex === 0}
-                                sx={{ 
-                                  bgcolor: 'background.paper',
-                                  boxShadow: 1,
-                                  '&:hover': { bgcolor: 'grey.100' }
-                                }}
-                              >
-                                <ChevronLeftIcon />
-                              </IconButton>
-
-                              {/* Grid de salas visibles */}
-                              <Grid container spacing={2} sx={{ flex: 1 }}>
-                                {visibleRooms.map((room) => (
-                                  <Grid item xs={4} key={room.id_sala}>
-                                    <Tooltip title={room.nombre_sala} arrow placement="top">
-                                      <Box
-                                        sx={{
-                                          position: 'relative',
-                                          paddingTop: '100%',
-                                          borderRadius: 1,
-                                          overflow: 'hidden',
-                                          cursor: 'pointer',
-                                          transition: 'all 0.3s',
-                                          '&:hover': {
-                                            transform: 'scale(1.05)',
-                                            boxShadow: 4,
-                                            '& .room-name-overlay': {
-                                              opacity: 1
-                                            }
-                                          }
-                                        }}
-                                      >
-                                        {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                                          <Box
-                                            component="img"
-                                            src={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
-                                            alt={room.nombre_sala}
-                                            sx={{
-                                              position: 'absolute',
-                                              top: 0,
-                                              left: 0,
-                                              width: '100%',
-                                              height: '100%',
-                                              objectFit: 'cover'
-                                            }}
-                                          />
-                                        ) : (
-                                          <Box
-                                            sx={{
-                                              position: 'absolute',
-                                              top: 0,
-                                              left: 0,
-                                              width: '100%',
-                                              height: '100%',
-                                              bgcolor: 'grey.200',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center'
-                                            }}
-                                          >
-                                            <RoomIcon sx={{ fontSize: 40, color: 'grey.400' }} />
-                                          </Box>
-                                        )}
-                                        
-                                        {/* Overlay con nombre de sala */}
-                                        <Box
-                                          className="room-name-overlay"
-                                          sx={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bgcolor: 'rgba(0, 0, 0, 0.7)',
-                                            color: 'white',
-                                            p: 1,
-                                            opacity: 0,
-                                            transition: 'opacity 0.3s'
-                                          }}
-                                        >
-                                          <Typography 
-                                            variant="caption" 
-                                            sx={{ 
-                                              fontWeight: 'bold',
-                                              display: 'block',
-                                              textAlign: 'center',
-                                              fontSize: '0.7rem'
-                                            }}
-                                          >
-                                            {room.nombre_sala}
-                                          </Typography>
-                                        </Box>
-                                      </Box>
-                                    </Tooltip>
-                                  </Grid>
-                                ))}
-
-                                {/* Espacios vacíos si hay menos de 3 salas */}
-                                {visibleRooms.length < 3 && Array.from({ length: 3 - visibleRooms.length }).map((_, idx) => (
-                                  <Grid item xs={4} key={`empty-${idx}`}>
-                                    <Box
-                                      sx={{
-                                        paddingTop: '100%',
-                                        bgcolor: 'grey.100',
-                                        borderRadius: 1,
-                                        border: '2px dashed',
-                                        borderColor: 'grey.300'
-                                      }}
-                                    />
-                                  </Grid>
-                                ))}
-                              </Grid>
-
-                              {/* Botón siguiente */}
-                              <IconButton
-                                size="small"
-                                onClick={() => handleCarouselChange(floor.id_piso, 'next')}
-                                disabled={carouselIndex >= rooms.length - 3}
-                                sx={{ 
-                                  bgcolor: 'background.paper',
-                                  boxShadow: 1,
-                                  '&:hover': { bgcolor: 'grey.100' }
-                                }}
-                              >
-                                <ChevronRightIcon />
-                              </IconButton>
-                            </Box>
-
-                            {/* Indicador de cantidad de salas */}
-                            <Typography 
-                              variant="caption" 
-                              color="text.secondary" 
-                              sx={{ display: 'block', textAlign: 'center', mt: 1 }}
-                            >
-                              {rooms.length} {rooms.length === 1 ? 'sala' : 'salas'} en este piso
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                            No hay salas registradas en este piso
-                          </Typography>
-                        )}
-                      </Paper>
-                    )
-                  })}
-                </Box>
-              ) : (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography variant="body1" color="text.secondary">
-                    No hay pisos registrados para este edificio
-                  </Typography>
-                </Paper>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
-              <Button onClick={() => setBuildingDetailOpen(false)}>Cerrar</Button>
-              <Button
-                variant="contained"
-                startIcon={<LocationIcon />}
-                onClick={() => {
-                  if (!userLocation) {
-                    setSnackbar({
-                      open: true,
-                      message: 'Por favor, activa tu ubicación para ver la ruta',
-                      severity: 'warning'
-                    })
-                    return
-                  }
-                  
-                  // Calcular distancia
-                  const distance = userLocation ? 
-                    Math.round(
-                      Math.sqrt(
-                        Math.pow((selectedBuilding.cord_latitud - userLocation.latitude) * 111320, 2) +
-                        Math.pow((selectedBuilding.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
-                      )
-                    ) : undefined
-                  
-                  setRouteDestination({
-                    lat: selectedBuilding.cord_latitud,
-                    lng: selectedBuilding.cord_longitud
-                  })
-                  setRouteDestinationName(selectedBuilding.nombre_edificio)
-                  setRouteDestinationData({
-                    type: 'building',
-                    name: selectedBuilding.nombre_edificio,
-                    acronym: selectedBuilding.acronimo,
-                    image: selectedBuilding.imagen,
-                    distance: distance,
-                    latitude: selectedBuilding.cord_latitud,
-                    longitude: selectedBuilding.cord_longitud
-                  })
-                  setRouteWaypoints([]) // Sin waypoints para edificios
-                  setRouteMapOpen(true)
-                  setBuildingDetailOpen(false)
-                }}
-                sx={{ textTransform: 'none', fontWeight: 'bold' }}
-              >
-                Ver Ruta
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
+        isPublic={true}
+      />
 
       {/* Modal de Mapa con Ruta */}
       <Dialog
