@@ -21,10 +21,11 @@ import {
   ChevronRight as ChevronRightIcon,
   People as PeopleIcon,
   MeetingRoom as RoomIcon,
+  LocationOn as LocationOnIcon,
 } from '@mui/icons-material'
 import api from '../lib/api'
 
-export default function BuildingDetailsModal({ building, open, onClose, isPublic = false }) {
+export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute }) {
   const [selectedFloor, setSelectedFloor] = useState(null)
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0)
 
@@ -110,7 +111,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
           // Vista de edificio con lista de pisos
           <Box>
             {/* Imagen del edificio */}
-            <Box sx={{ px: 3, pt: 2, pb: 2, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ px: 3, pt: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
               {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
                 <Box
                   component="img"
@@ -144,6 +145,30 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 </Box>
               )}
             </Box>
+
+            {/* Botón Ver Ruta centrado debajo de la imagen */}
+            {isPublic && onViewRoute && (
+              <Box sx={{ px: 3, pb: 2, display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<LocationOnIcon />}
+                  onClick={() => {
+                    onViewRoute({
+                      type: 'building',
+                      name: building.nombre_edificio,
+                      acronym: building.acronimo,
+                      image: building.imagen,
+                      distance: building.distance,
+                      latitude: building.cord_latitud,
+                      longitude: building.cord_longitud
+                    })
+                  }}
+                  sx={{ minWidth: 200 }}
+                >
+                  Ver Ruta
+                </Button>
+              </Box>
+            )}
 
             {/* Lista de pisos */}
             <Box sx={{ px: 3, pb: 3 }}>

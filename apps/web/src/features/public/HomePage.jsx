@@ -1572,6 +1572,17 @@ export default function HomePage() {
           setSelectedBuilding(null)
         }}
         isPublic={true}
+        onViewRoute={(destination) => {
+          setRouteDestination({
+            lat: destination.latitude,
+            lng: destination.longitude
+          })
+          setRouteDestinationName(destination.name)
+          setRouteDestinationData(destination)
+          setRouteWaypoints([])
+          setRouteMapOpen(true)
+          setBuildingDetailOpen(false)
+        }}
       />
 
       {/* Modal de Mapa con Ruta */}
