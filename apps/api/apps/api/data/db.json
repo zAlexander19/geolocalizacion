@@ -11,7 +11,7 @@
       "direccion": "",
       "disponibilidad": "Disponible",
       "estado": true,
-      "imagen": "",
+      "imagen": "/uploads/1763478601355-gym_grande.jpeg",
       "coordinates": [
         {
           "lat": -20.2449558,
@@ -76,7 +76,7 @@
       "direccion": "",
       "disponibilidad": "Disponible",
       "estado": true,
-      "imagen": "",
+      "imagen": "/uploads/1763478612161-cacino.jpeg",
       "coordinates": [
         {
           "lat": -20.245238,
@@ -533,7 +533,7 @@
       "direccion": "",
       "disponibilidad": "Disponible",
       "estado": true,
-      "imagen": "",
+      "imagen": "/uploads/1763478719823-metalurgia.jpeg",
       "coordinates": [
         {
           "lat": -20.2451858,
@@ -1208,7 +1208,7 @@
       "direccion": "",
       "disponibilidad": "Disponible",
       "estado": true,
-      "imagen": "",
+      "imagen": "/uploads/1763478864120-enfermeria.jpeg",
       "coordinates": [
         {
           "lat": -20.244243,
@@ -1434,7 +1434,7 @@
       "direccion": "",
       "disponibilidad": "Disponible",
       "estado": true,
-      "imagen": "",
+      "imagen": "/uploads/1763478903271-gym_pequeÃ±o.jpeg",
       "coordinates": [
         {
           "lat": -20.2444065,

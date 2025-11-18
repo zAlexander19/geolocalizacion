@@ -60,6 +60,7 @@ import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import api from '../../lib/api'
 import BuildingDetailsModal from '../../components/BuildingDetailsModal'
+import SearchBar from '../../components/SearchBar'
 
 // Fix para los iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -115,7 +116,7 @@ function RouteComponent({ start, end, waypoints = [] }) {
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState(0)
+  const [searchType, setSearchType] = useState('todo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
@@ -135,6 +136,8 @@ export default function HomePage() {
   const [routeDestinationData, setRouteDestinationData] = useState(null)
   const [routeWaypoints, setRouteWaypoints] = useState([])
   const [locationAccuracy, setLocationAccuracy] = useState(null)
+  const [selectedFaculty, setSelectedFaculty] = useState(null)
+  const [facultyDetailOpen, setFacultyDetailOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -159,86 +162,257 @@ export default function HomePage() {
     enabled: !!buildings,
   })
 
-  // Query para buscar salas
+  // Query para buscar según el tipo seleccionado
   const { data: searchResults, isLoading: isSearching } = useQuery({
-    queryKey: ['search-rooms', searchQuery],
+    queryKey: ['search', searchType, searchQuery],
     queryFn: async () => {
-      const res = await api.get('/rooms')
-      const rooms = res.data.data
-      
       const query = searchQuery.toLowerCase().trim()
-      
-      // Filtrar por nombre O acrónimo automáticamente
-      const filtered = rooms.filter(room => {
-        const nombre = room.nombre_sala?.toLowerCase() || ''
-        const acronimo = room.acronimo?.toLowerCase() || ''
-        
-        // Busca en ambos campos
-        return nombre.includes(query) || acronimo.includes(query)
-      })
-      
-      // Agregar información de edificio y piso
-      const enriched = filtered.map(room => {
-        const floor = allFloors?.find(f => f.id_piso === room.id_piso)
-        const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
-        return {
-          ...room,
-          floor,
-          building,
-        }
-      })
-      
-      // Si hay ubicación del usuario, calcular distancia
-      if (userLocation && enriched.length > 0) {
-        return enriched.map(room => ({
-          ...room,
-          distance: calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            room.cord_latitud,
-            room.cord_longitud
-          )
-        })).sort((a, b) => a.distance - b.distance)
-      }
-      
-      return enriched
-    },
-    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 1 && !!allFloors, // Solo buscar salas
-  })
+      let allResults = []
 
-  // Query para buscar edificios (busca automáticamente por nombre Y acrónimo)
-  const { data: buildingSearchResults, isLoading: isSearchingBuildings } = useQuery({
-    queryKey: ['search-buildings', searchQuery],
-    queryFn: async () => {
-      if (!buildings) return []
-      
-      const query = searchQuery.toLowerCase().trim()
-      
-      // Filtrar por nombre O acrónimo automáticamente
-      const filtered = buildings.filter(building => {
-        const nombre = building.nombre_edificio?.toLowerCase() || ''
-        const acronimo = building.acronimo?.toLowerCase() || ''
-        
-        // Busca en ambos campos
-        return nombre.includes(query) || acronimo.includes(query)
-      })
-      
-      // Si hay ubicación del usuario, calcular distancia y ordenar
-      if (userLocation && filtered.length > 0) {
-        return filtered.map(building => ({
-          ...building,
-          distance: calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            building.cord_latitud,
-            building.cord_longitud
-          )
-        })).sort((a, b) => a.distance - b.distance)
+      // Si es "todo" Y hay búsqueda, buscar en todos los tipos
+      if (searchType === 'todo' && query) {
+        // Buscar en edificios
+        const buildingsRes = await api.get('/buildings')
+        const buildings = buildingsRes.data.data
+        const buildingsFiltered = buildings.filter(item => {
+          const nombre = item.nombre_edificio?.toLowerCase() || ''
+          const acronimo = item.acronimo?.toLowerCase() || ''
+          return nombre.includes(query) || acronimo.includes(query)
+        }).map(item => ({ ...item, resultType: 'edificio' }))
+
+        // Buscar en salas
+        const roomsRes = await api.get('/rooms')
+        const rooms = roomsRes.data.data
+        const roomsFiltered = rooms.filter(item => {
+          const nombre = item.nombre_sala?.toLowerCase() || ''
+          const acronimo = item.acronimo?.toLowerCase() || ''
+          return nombre.includes(query) || acronimo.includes(query)
+        }).map(room => {
+          const floor = allFloors?.find(f => f.id_piso === room.id_piso)
+          const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
+          return { ...room, floor, building, resultType: 'sala' }
+        })
+
+        // Buscar en baños
+        const bathroomsRes = await api.get('/bathrooms')
+        const bathrooms = bathroomsRes.data.data
+        const bathroomsFiltered = bathrooms.filter(item => {
+          const nombre = item.nombre?.toLowerCase() || ''
+          return nombre.includes(query)
+        }).map(bathroom => {
+          const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
+          const building = buildings?.find(b => b.id_edificio === bathroom.id_edificio)
+          return { ...bathroom, floor, building, resultType: 'bano' }
+        })
+
+        // Buscar en facultades
+        const facultiesRes = await api.get('/faculties')
+        const faculties = facultiesRes.data.data
+        const facultiesFiltered = faculties.filter(item => {
+          const nombre = item.nombre_facultad?.toLowerCase() || ''
+          const codigo = item.codigo_facultad?.toLowerCase() || ''
+          return nombre.includes(query) || codigo.includes(query)
+        }).map(item => ({ ...item, resultType: 'facultad' }))
+
+        // Combinar todos los resultados
+        allResults = [
+          ...buildingsFiltered,
+          ...roomsFiltered,
+          ...bathroomsFiltered,
+          ...facultiesFiltered
+        ]
+
+        // Si hay ubicación, calcular distancia y ordenar
+        if (userLocation && allResults.length > 0) {
+          allResults = allResults.map(item => {
+            let lat, lng
+            
+            if (item.resultType === 'edificio') {
+              lat = item.cord_latitud
+              lng = item.cord_longitud
+            } else if (item.resultType === 'sala') {
+              lat = item.cord_latitud
+              lng = item.cord_longitud
+            } else if (item.resultType === 'bano') {
+              lat = item.cord_latitud
+              lng = item.cord_longitud
+            } else {
+              // Facultades no tienen distancia
+              return { ...item, distance: null }
+            }
+            
+            return {
+              ...item,
+              distance: calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                lat,
+                lng
+              )
+            }
+          }).sort((a, b) => {
+            // Ordenar por distancia, pero poner facultades al final
+            if (a.distance === null) return 1
+            if (b.distance === null) return -1
+            return a.distance - b.distance
+          })
+        }
+
+        return allResults
       }
+
+      // Si es "todo" sin búsqueda, no mostrar nada
+      if (searchType === 'todo' && !query) {
+        return []
+      }
+
+      // Búsqueda por tipo específico
+      let endpoint = ''
+      let data = []
+
+      // Determinar el endpoint según el tipo
+      switch (searchType) {
+        case 'edificio':
+          endpoint = '/buildings'
+          break
+        case 'sala':
+          endpoint = '/rooms'
+          break
+        case 'bano':
+          endpoint = '/bathrooms'
+          break
+        case 'facultad':
+          endpoint = '/faculties'
+          break
+        default:
+          return []
+      }
+
+      // Obtener los datos
+      const res = await api.get(endpoint)
+      data = res.data.data
+
+      // Filtrar según el tipo
+      let filtered = []
       
+      if (searchType === 'edificio') {
+        // Si no hay query, mostrar todos
+        if (!query) {
+          filtered = data.map(item => ({ ...item, resultType: 'edificio' }))
+        } else {
+          filtered = data.filter(item => {
+            const nombre = item.nombre_edificio?.toLowerCase() || ''
+            const acronimo = item.acronimo?.toLowerCase() || ''
+            return nombre.includes(query) || acronimo.includes(query)
+          }).map(item => ({ ...item, resultType: 'edificio' }))
+        }
+        
+        // Ordenar alfabéticamente por nombre
+        filtered = filtered.sort((a, b) => {
+          const nombreA = a.nombre_edificio?.toLowerCase() || ''
+          const nombreB = b.nombre_edificio?.toLowerCase() || ''
+          return nombreA.localeCompare(nombreB)
+        })
+      } else if (searchType === 'sala') {
+        // Si no hay query, mostrar todos
+        if (!query) {
+          filtered = data
+        } else {
+          filtered = data.filter(item => {
+            const nombre = item.nombre_sala?.toLowerCase() || ''
+            const acronimo = item.acronimo?.toLowerCase() || ''
+            return nombre.includes(query) || acronimo.includes(query)
+          })
+        }
+        
+        // Agregar información de edificio y piso para salas
+        filtered = filtered.map(room => {
+          const floor = allFloors?.find(f => f.id_piso === room.id_piso)
+          const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
+          return { ...room, floor, building, resultType: 'sala' }
+        })
+        
+        // Ordenar alfabéticamente por nombre
+        filtered = filtered.sort((a, b) => {
+          const nombreA = a.nombre_sala?.toLowerCase() || ''
+          const nombreB = b.nombre_sala?.toLowerCase() || ''
+          return nombreA.localeCompare(nombreB)
+        })
+      } else if (searchType === 'bano') {
+        // Si no hay query, mostrar todos
+        if (!query) {
+          filtered = data
+        } else {
+          filtered = data.filter(item => {
+            const nombre = item.nombre?.toLowerCase() || ''
+            return nombre.includes(query)
+          })
+        }
+        
+        // Agregar información de edificio y piso para baños
+        filtered = filtered.map(bathroom => {
+          const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
+          const building = buildings?.find(b => b.id_edificio === bathroom.id_edificio)
+          return { ...bathroom, floor, building, resultType: 'bano' }
+        })
+        
+        // Ordenar alfabéticamente por nombre
+        filtered = filtered.sort((a, b) => {
+          const nombreA = a.nombre?.toLowerCase() || ''
+          const nombreB = b.nombre?.toLowerCase() || ''
+          return nombreA.localeCompare(nombreB)
+        })
+      } else if (searchType === 'facultad') {
+        // Si no hay query, mostrar todos
+        if (!query) {
+          filtered = data.map(item => ({ ...item, resultType: 'facultad' }))
+        } else {
+          filtered = data.filter(item => {
+            const nombre = item.nombre_facultad?.toLowerCase() || ''
+            const codigo = item.codigo_facultad?.toLowerCase() || ''
+            return nombre.includes(query) || codigo.includes(query)
+          }).map(item => ({ ...item, resultType: 'facultad' }))
+        }
+        
+        // Ordenar alfabéticamente por nombre
+        filtered = filtered.sort((a, b) => {
+          const nombreA = a.nombre_facultad?.toLowerCase() || ''
+          const nombreB = b.nombre_facultad?.toLowerCase() || ''
+          return nombreA.localeCompare(nombreB)
+        })
+      }
+
+      // Si hay ubicación del usuario Y hay búsqueda, calcular distancia y ordenar
+      if (userLocation && filtered.length > 0 && searchType !== 'facultad' && query) {
+        return filtered.map(item => {
+          let lat, lng
+          
+          if (searchType === 'edificio') {
+            lat = item.cord_latitud
+            lng = item.cord_longitud
+          } else if (searchType === 'sala') {
+            lat = item.cord_latitud
+            lng = item.cord_longitud
+          } else if (searchType === 'bano') {
+            lat = item.cord_latitud
+            lng = item.cord_longitud
+          }
+          
+          return {
+            ...item,
+            distance: calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              lat,
+              lng
+            )
+          }
+        }).sort((a, b) => a.distance - b.distance)
+      }
+
       return filtered
     },
-    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 0 && !!buildings, // Solo buscar edificios
+    enabled: searchTriggered,
   })
 
   // Query para obtener todas las salas
@@ -259,72 +433,13 @@ export default function HomePage() {
     },
   })
 
-  // Query para obtener facultades
+  // Query para obtener todas las facultades
   const { data: allFaculties } = useQuery({
     queryKey: ['all-faculties'],
     queryFn: async () => {
       const res = await api.get('/faculties')
       return res.data.data
     },
-  })
-
-  // Query para buscar baños
-  const { data: bathroomSearchResults, isLoading: isSearchingBathrooms } = useQuery({
-    queryKey: ['search-bathrooms', searchQuery],
-    queryFn: async () => {
-      if (!allBathrooms) return []
-      
-      const filtered = allBathrooms.filter(bathroom => 
-        bathroom.nombre.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      
-      const enriched = filtered.map(bathroom => {
-        const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
-        const building = buildings?.find(b => b.id_edificio === bathroom.id_edificio)
-        return {
-          ...bathroom,
-          floor,
-          building,
-        }
-      })
-      
-      if (userLocation && enriched.length > 0) {
-        return enriched.map(bathroom => ({
-          ...bathroom,
-          distance: calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            bathroom.cord_latitud,
-            bathroom.cord_longitud
-          )
-        })).sort((a, b) => a.distance - b.distance)
-      }
-      
-      return enriched
-    },
-    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 3 && !!allBathrooms,
-  })
-
-  // Query para buscar facultades
-  const { data: facultySearchResults, isLoading: isSearchingFaculties } = useQuery({
-    queryKey: ['search-faculties', searchQuery],
-    queryFn: async () => {
-      if (!allFaculties) return []
-      
-      const query = searchQuery.toLowerCase().trim()
-      
-      // Filtrar por nombre O código automáticamente
-      const filtered = allFaculties.filter(faculty => {
-        const nombre = faculty.nombre_facultad?.toLowerCase() || ''
-        const codigo = faculty.codigo_facultad?.toLowerCase() || ''
-        
-        // Busca en ambos campos
-        return nombre.includes(query) || codigo.includes(query)
-      })
-      
-      return filtered
-    },
-    enabled: searchTriggered && searchQuery.length > 0 && activeTab === 2 && !!allFaculties,
   })
 
   // Función para calcular distancia usando fórmula Haversine
@@ -422,32 +537,16 @@ export default function HomePage() {
     return `https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${origin}&destination=${destination}&mode=walking`
   }
 
-  const searchOptions = [
-    { id: 'edificio', label: 'Edificio', icon: <BuildingIcon /> },
-    { id: 'sala', label: 'Sala', icon: <RoomIcon /> },
-    { id: 'facultad', label: 'Facultad', icon: <SchoolIcon /> },
-    { id: 'baño', label: 'Baño', icon: <BathroomIcon /> }
-  ]
-
-  const handleSearch = () => {
-    if (activeTab === 0 && searchQuery.trim()) { // Edificios
-      setSearchTriggered(true)
-      console.log(`Buscando edificio: ${searchQuery}`)
-    } else if (activeTab === 1 && searchQuery.trim()) { // Salas
-      setSearchTriggered(true)
-      console.log(`Buscando sala: ${searchQuery}`)
-    } else if (activeTab === 2 && searchQuery.trim()) { // Facultades
-      setSearchTriggered(true)
-      console.log(`Buscando facultad: ${searchQuery}`)
-    } else if (activeTab === 3 && searchQuery.trim()) { // Baños
-      setSearchTriggered(true)
-      console.log(`Buscando baño: ${searchQuery}`)
-    } else {
-      setSnackbar({
-        open: true,
-        message: 'Por favor ingresa un término de búsqueda',
-        severity: 'info'
-      })
+  const handleSearch = (searchData) => {
+    setSearchType(searchData.type)
+    setSearchQuery(searchData.query)
+    setSearchTriggered(true)
+    
+    // Si es tipo específico sin query, mostrar todos en orden alfabético
+    if (searchData.type !== 'todo' && !searchData.query.trim()) {
+      console.log(`Mostrando todos los ${searchData.type} en orden alfabético`)
+    } else if (searchData.query.trim()) {
+      console.log(`Buscando ${searchData.type}: ${searchData.query}`)
     }
   }
 
@@ -521,36 +620,6 @@ export default function HomePage() {
             </Typography>
           </Box>
 
-          {/* Search Tabs */}
-          <Tabs
-            value={activeTab}
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            sx={{ 
-              '& .MuiTab-root': { minHeight: 48 },
-              bgcolor: 'grey.100',
-              borderRadius: 2,
-              p: 0.5
-            }}
-          >
-            {searchOptions.map((option, index) => (
-              <Tab
-                key={option.id}
-                icon={option.icon}
-                label={option.label}
-                iconPosition="start"
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 'medium',
-                  borderRadius: 1.5,
-                  '&.Mui-selected': {
-                    bgcolor: 'white',
-                    boxShadow: 1
-                  }
-                }}
-              />
-            ))}
-          </Tabs>
-
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {/* Botón de estado de ubicación */}
             {userLocation ? (
@@ -607,51 +676,29 @@ export default function HomePage() {
             Busca edificios, salas, facultades o baños de forma rápida y sencilla
           </Typography>
 
-          {/* Search Bar */}
-          <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            <Paper elevation={2} sx={{ p: 1, display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Buscar ${searchOptions[activeTab].label.toLowerCase()}...`}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { border: 'none' } }}
-              />
-              <Button 
-                variant="contained"
-                size="large"
-                onClick={handleSearch}
-                sx={{ px: 4 }}
-                disabled={!searchQuery.trim()}
-              >
-                Buscar
-              </Button>
-            </Paper>
+          {/* Search Bar con Selector */}
+          <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+            <SearchBar onSearch={handleSearch} initialType="todo" />
           </Box>
         </Box>
 
-        {/* Search Results Section - Edificios */}
-        {searchTriggered && activeTab === 0 && (
+        {/* Search Results Section - Unificado */}
+        {searchTriggered && (
           <Box sx={{ mb: 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-              Resultados de búsqueda - Edificios
+              {searchQuery ? 'Resultados de búsqueda' : (searchType === 'edificio' ? 'Todos los Edificios' : searchType === 'sala' ? 'Todas las Salas' : searchType === 'bano' ? 'Todos los Baños' : searchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
+              {searchQuery && searchType !== 'todo' && ` - ${searchType === 'edificio' ? 'Edificios' : searchType === 'sala' ? 'Salas' : searchType === 'bano' ? 'Baños' : 'Facultades'}`}
+              {searchResults?.length > 0 && ` (${searchResults.length})`}
             </Typography>
 
-            {isSearchingBuildings ? (
+            {isSearching ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress />
               </Box>
-            ) : buildingSearchResults?.length > 0 ? (
+            ) : searchResults?.length > 0 ? (
               <Grid container spacing={3}>
-                {buildingSearchResults.map((building) => (
+                {/* Resultados para EDIFICIOS */}
+                {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).map((building) => (
                   <Grid item xs={12} md={6} lg={4} key={building.id_edificio}>
                     <Card 
                       sx={{ 
@@ -689,6 +736,17 @@ export default function HomePage() {
                       )}
 
                       <CardContent sx={{ flexGrow: 1 }}>
+                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                        {searchType === 'todo' && (
+                          <Chip 
+                            icon={<BuildingIcon />}
+                            label="Edificio"
+                            size="small"
+                            color="primary"
+                            sx={{ mb: 1 }}
+                          />
+                        )}
+                        
                         {/* Nombre del edificio */}
                         <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
                           {building.nombre_edificio}
@@ -797,35 +855,9 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
-              </Grid>
-            ) : (
-              <Paper sx={{ p: 6, textAlign: 'center' }}>
-                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No se encontraron edificios
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Intenta con otro nombre o acrónimo, o verifica la ortografía
-                </Typography>
-              </Paper>
-            )}
-          </Box>
-        )}
 
-        {/* Search Results Section - Salas */}
-        {searchTriggered && activeTab === 1 && (
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-              Resultados de búsqueda
-            </Typography>
-
-            {isSearching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress />
-              </Box>
-            ) : searchResults?.length > 0 ? (
-              <Grid container spacing={3}>
-                {searchResults.map((room) => (
+                {/* Resultados para SALAS */}
+                {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).map((room) => (
                   <Grid item xs={12} md={6} lg={4} key={room.id_sala}>
                     <Card 
                       sx={{ 
@@ -863,6 +895,17 @@ export default function HomePage() {
                       )}
 
                       <CardContent sx={{ flexGrow: 1 }}>
+                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                        {searchType === 'todo' && (
+                          <Chip 
+                            icon={<RoomIcon />}
+                            label="Sala"
+                            size="small"
+                            color="secondary"
+                            sx={{ mb: 1 }}
+                          />
+                        )}
+                        
                         {/* Nombre de la sala */}
                         <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
                           {room.nombre_sala}
@@ -1000,46 +1043,20 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
-              </Grid>
-            ) : (
-              <Paper sx={{ p: 6, textAlign: 'center' }}>
-                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No se encontraron salas
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Intenta con otro nombre o verifica la ortografía
-                </Typography>
-              </Paper>
-            )}
-          </Box>
-        )}
 
-        {/* Search Results Section - Facultades */}
-        {searchTriggered && activeTab === 2 && (
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-              Resultados de búsqueda - Facultades
-            </Typography>
-
-            {isSearchingFaculties ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress />
-              </Box>
-            ) : facultySearchResults?.length > 0 ? (
-              <Grid container spacing={3}>
-                {facultySearchResults.map((faculty) => {
-                  // Get the associated building
+                {/* Resultados para FACULTADES */}
+                {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
                   const associatedBuilding = faculty.id_edificio
                     ? (buildings || []).find(b => Number(b.id_edificio) === Number(faculty.id_edificio))
                     : null
 
                   return (
-                    <Grid item xs={12} key={faculty.codigo_facultad}>
+                    <Grid item xs={12} md={6} lg={4} key={faculty.codigo_facultad}>
                       <Card 
                         sx={{ 
-                          boxShadow: 2,
-                          borderRadius: 2,
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
                           transition: 'all 0.3s',
                           '&:hover': {
                             boxShadow: 6,
@@ -1047,120 +1064,121 @@ export default function HomePage() {
                           }
                         }}
                       >
-                        <CardContent sx={{ p: 3 }}>
-                          {/* Faculty info: Logo left, Description right */}
-                          <Grid container spacing={3} sx={{ mb: 3 }}>
-                            {/* Logo on the left */}
-                            <Grid item xs={12} sm={3} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {faculty.logo ? (
-                                <Box
-                                  component="img"
-                                  src={faculty.logo.startsWith('http') ? faculty.logo : `http://localhost:4000${faculty.logo}`}
-                                  alt={faculty.nombre_facultad}
-                                  sx={{
-                                    maxWidth: '100%',
-                                    maxHeight: 200,
-                                    objectFit: 'contain',
-                                    borderRadius: 1,
-                                  }}
-                                />
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: 150,
-                                    height: 150,
-                                    bgcolor: 'grey.200',
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <Typography variant="body2" color="text.secondary">
-                                    Sin logo
-                                  </Typography>
-                                </Box>
-                              )}
-                            </Grid>
+                        {/* Logo de la facultad */}
+                        {faculty.logo && !/via\.placeholder\.com/.test(faculty.logo) ? (
+                          <Box
+                            sx={{
+                              height: 200,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'grey.50',
+                              p: 2
+                            }}
+                          >
+                            <Box
+                              component="img"
+                              src={faculty.logo.startsWith('http') ? faculty.logo : `http://localhost:4000${faculty.logo}`}
+                              alt={faculty.nombre_facultad}
+                              sx={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                objectFit: 'contain',
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <Box
+                            sx={{
+                              height: 200,
+                              bgcolor: 'grey.200',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <SchoolIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                          </Box>
+                        )}
 
-                            {/* Description on the right */}
-                            <Grid item xs={12} sm={9}>
-                              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                {faculty.nombre_facultad}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Código: {faculty.codigo_facultad}
-                              </Typography>
-                              <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.6 }}>
-                                {faculty.descripcion || 'Sin descripción'}
-                              </Typography>
-                            </Grid>
-                          </Grid>
+                        <CardContent sx={{ flexGrow: 1 }}>
+                          {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                          {searchType === 'todo' && (
+                            <Chip 
+                              icon={<SchoolIcon />}
+                              label="Facultad"
+                              size="small"
+                              color="info"
+                              sx={{ mb: 1 }}
+                            />
+                          )}
+                          
+                          {/* Nombre de la facultad */}
+                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            {faculty.nombre_facultad}
+                          </Typography>
 
-                          {/* Associated building(s) below */}
+                          {/* Código */}
+                          {faculty.codigo_facultad && (
+                            <Chip 
+                              label={faculty.codigo_facultad}
+                              size="small"
+                              color="info"
+                              variant="outlined"
+                              sx={{ mb: 2 }}
+                            />
+                          )}
+
+                          {/* Descripción breve */}
+                          {faculty.descripcion && (
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary" 
+                              sx={{ 
+                                mb: 2,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                minHeight: 40
+                              }}
+                            >
+                              {faculty.descripcion}
+                            </Typography>
+                          )}
+
+                          {/* Edificio asociado (si existe) */}
                           {associatedBuilding && (
-                            <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 3 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
-                                Edificio Asociado
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                              <BuildingIcon color="action" fontSize="small" />
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Edificio:</strong> {associatedBuilding.nombre_edificio}
                               </Typography>
-                              <Card sx={{ maxWidth: 300, bgcolor: 'grey.50' }}>
-                                <CardMedia
-                                  component="img"
-                                  height="140"
-                                  image={
-                                    associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen)
-                                      ? associatedBuilding.imagen.startsWith('http')
-                                        ? associatedBuilding.imagen
-                                        : `http://localhost:4000${associatedBuilding.imagen}`
-                                      : 'https://via.placeholder.com/300x200?text=Sin+imagen'
-                                  }
-                                  alt={associatedBuilding.nombre_edificio}
-                                />
-                                <CardContent>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                    {associatedBuilding.nombre_edificio}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {associatedBuilding.acronimo || 'Sin acrónimo'}
-                                  </Typography>
-                                </CardContent>
-                              </Card>
                             </Box>
                           )}
+
+                          {/* Botón de acción */}
+                          <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+                            <Button
+                              fullWidth
+                              variant="contained"
+                              onClick={() => {
+                                setSelectedFaculty(faculty)
+                                setFacultyDetailOpen(true)
+                              }}
+                            >
+                              Ver más
+                            </Button>
+                          </Box>
                         </CardContent>
                       </Card>
                     </Grid>
                   )
                 })}
-              </Grid>
-            ) : (
-              <Paper sx={{ p: 6, textAlign: 'center' }}>
-                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No se encontraron facultades
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Intenta con otro nombre o código, o verifica la ortografía
-                </Typography>
-              </Paper>
-            )}
-          </Box>
-        )}
 
-        {/* Search Results Section - Baños */}
-        {searchTriggered && activeTab === 3 && (
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-              Resultados de búsqueda - Baños
-            </Typography>
-
-            {isSearchingBathrooms ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress />
-              </Box>
-            ) : bathroomSearchResults?.length > 0 ? (
-              <Grid container spacing={3}>
-                {bathroomSearchResults.map((bathroom) => (
+                {/* Resultados para BAÑOS */}
+                {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
                   <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
                     <Card 
                       sx={{ 
@@ -1198,6 +1216,17 @@ export default function HomePage() {
                       )}
 
                       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                        {searchType === 'todo' && (
+                          <Chip 
+                            icon={<BathroomIcon />}
+                            label="Baño"
+                            size="small"
+                            color="warning"
+                            sx={{ mb: 0, alignSelf: 'flex-start' }}
+                          />
+                        )}
+                        
                         {/* Nombre */}
                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                           {bathroom.nombre || 'Baño sin nombre'}
@@ -1336,10 +1365,10 @@ export default function HomePage() {
               <Paper sx={{ p: 6, textAlign: 'center' }}>
                 <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No se encontraron baños
+                  No se encontraron resultados
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Intenta con otro nombre o verifica la ortografía
+                  Intenta con otro término de búsqueda o verifica la ortografía
                 </Typography>
               </Paper>
             )}
@@ -1727,6 +1756,230 @@ export default function HomePage() {
             </Box>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalles de la Facultad */}
+      <Dialog
+        open={facultyDetailOpen}
+        onClose={() => setFacultyDetailOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { maxHeight: '90vh' }
+        }}
+      >
+        {selectedFaculty && (
+          <>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <SchoolIcon color="info" sx={{ fontSize: 32 }} />
+                  <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                    {selectedFaculty.nombre_facultad}
+                  </Typography>
+                </Box>
+                <IconButton onClick={() => setFacultyDetailOpen(false)}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Grid container spacing={3}>
+                {/* Logo de la facultad */}
+                <Grid item xs={12} md={4}>
+                  {selectedFaculty.logo && !/via\.placeholder\.com/.test(selectedFaculty.logo) ? (
+                    <Box
+                      component="img"
+                      src={selectedFaculty.logo.startsWith('http') ? selectedFaculty.logo : `http://localhost:4000${selectedFaculty.logo}`}
+                      alt={selectedFaculty.nombre_facultad}
+                      sx={{
+                        width: '100%',
+                        maxHeight: 300,
+                        objectFit: 'contain',
+                        borderRadius: 2,
+                        bgcolor: 'grey.50',
+                        p: 2
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        bgcolor: 'grey.200',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 2
+                      }}
+                    >
+                      <SchoolIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                    </Box>
+                  )}
+                </Grid>
+
+                {/* Información de la facultad */}
+                <Grid item xs={12} md={8}>
+                  <Typography variant="overline" color="text.secondary">Información</Typography>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary">Código</Typography>
+                    <Chip 
+                      label={selectedFaculty.codigo_facultad}
+                      size="small"
+                      color="info"
+                      variant="outlined"
+                      sx={{ mt: 0.5 }}
+                    />
+                  </Box>
+
+                  {selectedFaculty.descripcion && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Descripción
+                      </Typography>
+                      <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
+                        {selectedFaculty.descripcion}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                    <Chip
+                      label={selectedFaculty.estado !== false ? 'Activa' : 'Inactiva'}
+                      size="small"
+                      color={selectedFaculty.estado !== false ? 'success' : 'error'}
+                    />
+                    <Chip
+                      label={selectedFaculty.disponibilidad || 'Disponible'}
+                      size="small"
+                      color={selectedFaculty.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Edificios asociados */}
+              {selectedFaculty.id_edificio && (
+                <Box sx={{ mt: 4 }}>
+                  <Divider sx={{ mb: 3 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    Edificio Asociado
+                  </Typography>
+                  {(() => {
+                    const associatedBuilding = buildings?.find(b => Number(b.id_edificio) === Number(selectedFaculty.id_edificio))
+                    
+                    if (!associatedBuilding) return (
+                      <Typography variant="body2" color="text.secondary">
+                        No se encontró información del edificio
+                      </Typography>
+                    )
+
+                    return (
+                      <Card variant="outlined">
+                        <Grid container>
+                          <Grid item xs={12} sm={4}>
+                            {associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen) ? (
+                              <CardMedia
+                                component="img"
+                                height="200"
+                                image={associatedBuilding.imagen.startsWith('http') ? associatedBuilding.imagen : `http://localhost:4000${associatedBuilding.imagen}`}
+                                alt={associatedBuilding.nombre_edificio}
+                                sx={{ objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <Box
+                                sx={{
+                                  height: 200,
+                                  bgcolor: 'grey.200',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                              </Box>
+                            )}
+                          </Grid>
+                          <Grid item xs={12} sm={8}>
+                            <CardContent>
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                                {associatedBuilding.nombre_edificio}
+                              </Typography>
+                              
+                              {associatedBuilding.acronimo && (
+                                <Chip 
+                                  label={associatedBuilding.acronimo}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                  sx={{ mb: 2 }}
+                                />
+                              )}
+
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <LocationIcon color="action" fontSize="small" />
+                                <Typography variant="body2" color="text.secondary">
+                                  Lat: {associatedBuilding.cord_latitud}, Lon: {associatedBuilding.cord_longitud}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                                <Chip
+                                  label={associatedBuilding.disponibilidad}
+                                  size="small"
+                                  color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                                />
+                                <Chip
+                                  label={associatedBuilding.estado ? 'Activo' : 'Inactivo'}
+                                  size="small"
+                                  color={associatedBuilding.estado ? 'success' : 'error'}
+                                />
+                              </Box>
+
+                              {associatedBuilding.distance !== undefined && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                                  <WalkIcon color="primary" fontSize="small" />
+                                  <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                                    A {associatedBuilding.distance < 1000 
+                                      ? `${associatedBuilding.distance} metros` 
+                                      : `${(associatedBuilding.distance / 1000).toFixed(2)} km`} de ti
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              <Button
+                                variant="outlined"
+                                startIcon={<BuildingIcon />}
+                                size="small"
+                                onClick={() => {
+                                  setSelectedBuilding(associatedBuilding)
+                                  setBuildingDetailOpen(true)
+                                  setFacultyDetailOpen(false)
+                                }}
+                                sx={{ mt: 2 }}
+                              >
+                                Ver detalles del edificio
+                              </Button>
+                            </CardContent>
+                          </Grid>
+                        </Grid>
+                      </Card>
+                    )
+                  })()}
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ p: 2, gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setFacultyDetailOpen(false)}
+              >
+                Cerrar
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
 
       {/* Footer */}
