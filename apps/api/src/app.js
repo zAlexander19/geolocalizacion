@@ -73,7 +73,17 @@ function nextId(items, key) {
 
 export function createApp() {
   const app = express()
-  app.use(cors())
+
+  // Configurar CORS con variable de entorno
+  const corsOptions = {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
+  }
+
+  app.use(cors(corsOptions))
   app.use(express.json({ limit: '5mb' }))
 
   // Static uploads
@@ -92,7 +102,13 @@ export function createApp() {
   const upload = multer({ storage })
 
   // Health
-  app.get('/health', (req, res) => res.json({ ok: true }))
+  app.get('/health', (req, res) => {
+    res.json({ 
+      ok: true, 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    })
+  })
 
   // Buildings
   app.get('/buildings', (req, res) => {
