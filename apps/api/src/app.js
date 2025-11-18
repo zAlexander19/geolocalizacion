@@ -232,6 +232,14 @@ export function createApp() {
     res.json({ ok: true })
   })
 
+  // Get rooms by floor
+  app.get('/floors/:id/rooms', (req, res) => {
+    const db = loadDB()
+    const id = Number(req.params.id)
+    const rooms = (db.rooms || []).filter(r => Number(r.id_piso) === id)
+    res.json({ data: rooms })
+  })
+
   // Rooms
   app.get('/rooms', (req, res) => {
     const db = loadDB()

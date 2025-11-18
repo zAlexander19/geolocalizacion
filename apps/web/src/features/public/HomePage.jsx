@@ -130,11 +130,8 @@ export default function HomePage() {
   const [mapOpen, setMapOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [buildingDetailOpen, setBuildingDetailOpen] = useState(false)
-  const [floorRoomCarousels, setFloorRoomCarousels] = useState({})
   const [selectedBathroom, setSelectedBathroom] = useState(null)
   const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
-  const [selectedFloorImage, setSelectedFloorImage] = useState(null)
-  const [floorImageOpen, setFloorImageOpen] = useState(false)
   const [routeMapOpen, setRouteMapOpen] = useState(false)
   const [routeDestination, setRouteDestination] = useState(null)
   const [routeDestinationName, setRouteDestinationName] = useState('')
@@ -247,17 +244,6 @@ export default function HomePage() {
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 0 && !!buildings, // Solo buscar edificios
   })
 
-  // Query para obtener pisos de un edificio específico
-  const { data: buildingFloors } = useQuery({
-    queryKey: ['building-floors', selectedBuilding?.id_edificio],
-    queryFn: async () => {
-      if (!selectedBuilding) return []
-      const res = await api.get(`/buildings/${selectedBuilding.id_edificio}/floors`)
-      return res.data.data
-    },
-    enabled: !!selectedBuilding && buildingDetailOpen,
-  })
-
   // Query para obtener todas las salas
   const { data: allRooms } = useQuery({
     queryKey: ['all-rooms'],
@@ -343,30 +329,6 @@ export default function HomePage() {
     },
     enabled: searchTriggered && searchQuery.length > 0 && activeTab === 2 && !!allFaculties,
   })
-
-  // Función para obtener salas de un piso específico
-  const getRoomsForFloor = (floorId) => {
-    if (!allRooms) return []
-    return allRooms.filter(room => room.id_piso === floorId)
-  }
-
-  // Función para manejar el carrusel de salas por piso
-  const handleCarouselChange = (floorId, direction) => {
-    setFloorRoomCarousels(prev => {
-      const currentIndex = prev[floorId] || 0
-      const rooms = getRoomsForFloor(floorId)
-      const maxIndex = Math.max(0, rooms.length - 3) // Mostrar 3 salas a la vez
-      
-      let newIndex = currentIndex
-      if (direction === 'next') {
-        newIndex = Math.min(currentIndex + 1, maxIndex)
-      } else {
-        newIndex = Math.max(currentIndex - 1, 0)
-      }
-      
-      return { ...prev, [floorId]: newIndex }
-    })
-  }
 
   // Función para calcular distancia usando fórmula Haversine
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -1819,8 +1781,9 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Detalle del Edificio */}
-      <Dialog
+      {/* Modal de Detalle del Edificio - Optimizado */}
+      <BuildingDetailsModal
+        building={selectedBuilding}
         open={buildingDetailOpen}
         onClose={() => {
           setBuildingDetailOpen(false)
