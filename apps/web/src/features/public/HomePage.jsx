@@ -37,6 +37,8 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Search as SearchIcon,
@@ -53,22 +55,18 @@ import {
   ChevronRight as ChevronRightIcon,
   Close as CloseIcon,
 } from '@mui/icons-material'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import 'leaflet-routing-machine'
-import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
+
 import api from '../../lib/api'
 
-// Fix para los iconos de Leaflet
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-})
+// ✅ IMPORTAR LEAFLET SI ESTÁ INSTALADO, SI NO, COMENTAR
+// import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+// import L from 'leaflet'
+// import 'leaflet/dist/leaflet.css'
+// import 'leaflet-routing-machine'
+// import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 
-// Componente para manejar la ruta en el mapa
+// Componente para manejar la ruta en el mapa - COMENTADO POR AHORA
+/*
 function RouteComponent({ start, end, waypoints = [] }) {
   const map = useMap()
 
@@ -78,7 +76,9 @@ function RouteComponent({ start, end, waypoints = [] }) {
     // Crear array de waypoints: inicio -> puntos intermedios -> destino
     const allWaypoints = [
       L.latLng(start[0], start[1]),
+
       ...waypoints.map(wp => L.latLng(wp[0], wp[1])),
+
       L.latLng(end[0], end[1])
     ]
 
@@ -111,9 +111,13 @@ function RouteComponent({ start, end, waypoints = [] }) {
 
   return null
 }
+*/
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'))
   const [activeTab, setActiveTab] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
@@ -380,68 +384,92 @@ export default function HomePage() {
 
   // Solicitar ubicación al cargar la página
   useEffect(() => {
-    requestUserLocation()
+    setLocationDialog(true)
   }, [])
 
   const requestUserLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Tu navegador no soporta geolocalización')
-      setSnackbar({
-        open: true,
-        message: 'Tu navegador no soporta geolocalización',
-        severity: 'error'
-      })
-      setLocationDialog(false)
       return
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude, accuracy } = position.coords
-        setUserLocation({ latitude, longitude })
+        const { latitude, longitude, accuracy, timestamp } = position.coords
+        
+        // ✅ VALIDACIÓN: Precisión debe ser < 50 metros
+        if (accuracy > 50) {
+          setSnackbar({
+            open: true,
+            message: `⚠️ Precisión baja (${Math.round(accuracy)}m). Intenta en exterior.`,
+            severity: 'warning'
+          })
+          // Pero aun así guardar la ubicación
+        }
+
+        // ✅ VALIDACIÓN: Verificar que las coordenadas sean válidas
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          setLocationError('Coordenadas inválidas')
+          return
+        }
+
+        setUserLocation({ 
+          latitude, 
+          longitude,
+          timestamp,  // Útil para saber si es "fresca"
+          accuracy 
+        })
         setLocationAccuracy(accuracy)
         setLocationDialog(false)
+        setLocationError(null)
         setSnackbar({
           open: true,
           message: `✓ Ubicación activada (precisión: ${Math.round(accuracy)}m)`,
           severity: 'success'
         })
-        console.log('Ubicación del usuario:', { latitude, longitude, accuracy: `${Math.round(accuracy)}m` })
       },
       (error) => {
+        clearTimeout(timeoutId)
         let errorMessage = 'No se pudo obtener tu ubicación'
+        
+        console.error('Error code:', error.code)
+        
         switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Permiso de ubicación denegado'
+          case 1: // PERMISSION_DENIED
+            errorMessage = 'Permiso denegado'
             break
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Ubicación no disponible'
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = 'GPS no disponible'
             break
-          case error.TIMEOUT:
+          case 3: // TIMEOUT
             errorMessage = 'Tiempo de espera agotado'
             break
+          default:
+            errorMessage = `Error: ${error.message}`
         }
+        
         setLocationError(errorMessage)
-        setLocationDialog(false)
+        setLocationDialog(true)
         setSnackbar({
           open: true,
           message: errorMessage,
-          severity: 'warning'
+          severity: 'error'
         })
         console.error('Error de geolocalización:', error)
       },
       {
-        enableHighAccuracy: true,
+        enableHighAccuracy: true,  // ✅ Usa GPS en lugar de solo WiFi
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0  // ✅ No usar caché
       }
     )
   }
 
   const handleRetryLocation = () => {
-    setLocationDialog(true)
     setLocationError(null)
-    requestUserLocation()
+    setTimeout(() => {
+      requestUserLocation()
+    }, 500)
   }
 
   // Función para generar URL de Google Maps embed
@@ -489,13 +517,20 @@ export default function HomePage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      {/* Diálogo de solicitud de ubicación */}
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', pb: 4 }}>
+      {/* Diálogo de solicitud de ubicación - SIMPLIFICADO */}
       <Dialog
         open={locationDialog}
-        onClose={() => setLocationDialog(false)}
+        onClose={() => {}}
+        disableEscapeKeyDown
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            m: isMobile ? 2 : 3,
+            borderRadius: isMobile ? 2 : 3,
+          }
+        }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <MyLocationIcon color="primary" />
@@ -503,31 +538,30 @@ export default function HomePage() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Para brindarte una mejor experiencia y ayudarte a encontrar los lugares más cercanos,
-            necesitamos acceso a tu ubicación.
+            Necesitamos acceso a tu ubicación para encontrar lugares cercanos.
           </DialogContentText>
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
-            <Typography variant="body2" color="info.dark">
-              <strong>¿Por qué necesitamos tu ubicación?</strong>
-              <br />
-              • Encontrar edificios y salas cercanas a ti
-              <br />
-              • Calcular rutas y distancias
-              <br />
-              • Mostrarte los baños más próximos
-            </Typography>
-          </Box>
+          
+          {locationError && (
+            <Alert severity="error" sx={{ my: 2 }}>
+              {locationError}
+            </Alert>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLocationDialog(false)} color="inherit">
-            Ahora no
-          </Button>
+        <DialogActions sx={{ gap: 1, p: 2 }}>
           <Button
-            onClick={requestUserLocation}
+            onClick={handleRetryLocation}
             variant="contained"
+            fullWidth
             startIcon={<MyLocationIcon />}
           >
-            Activar Ubicación
+            Solicitar Ubicación
+          </Button>
+          <Button 
+            onClick={() => setLocationDialog(false)} 
+            fullWidth
+            variant="outlined"
+          >
+            Continuar sin ubicación
           </Button>
         </DialogActions>
       </Dialog>
@@ -550,30 +584,48 @@ export default function HomePage() {
 
       {/* Header / Navbar */}
       <AppBar position="static" elevation={1} sx={{ bgcolor: 'white', color: 'text.primary' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar sx={{ 
+          justifyContent: 'space-between',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1 : 0,
+          py: isMobile ? 1 : 0,
+          minHeight: isMobile ? 'auto' : 64,
+        }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocationIcon color="primary" sx={{ fontSize: 32 }} />
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            <LocationIcon color="primary" sx={{ fontSize: isMobile ? 24 : 32 }} />
+            <Typography 
+              variant={isMobile ? 'body1' : 'h6'} 
+              component="h1" 
+              sx={{ fontWeight: 'bold', color: 'text.primary' }}
+            >
               Geolocalización Campus
             </Typography>
           </Box>
 
-          {/* Search Tabs */}
+          {/* Search Tabs - Responsive */}
           <Tabs
             value={activeTab}
             onChange={(e, newValue) => setActiveTab(newValue)}
+            variant={isMobile ? "scrollable" : "standard"}
+            scrollButtons={isMobile ? "auto" : false}
             sx={{ 
-              '& .MuiTab-root': { minHeight: 48 },
+              '& .MuiTab-root': { 
+                minHeight: isMobile ? 40 : 48,
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                minWidth: isMobile ? 60 : 'auto',
+                px: isMobile ? 1 : 2,
+              },
               bgcolor: 'grey.100',
               borderRadius: 2,
-              p: 0.5
+              p: 0.5,
+              minWidth: isMobile ? '100%' : 'auto',
             }}
           >
-            {searchOptions.map((option, index) => (
+            {searchOptions.map((option) => (
               <Tab
                 key={option.id}
                 icon={option.icon}
-                label={option.label}
+                label={isMobile ? '' : option.label}
                 iconPosition="start"
                 sx={{
                   textTransform: 'none',
@@ -588,71 +640,106 @@ export default function HomePage() {
             ))}
           </Tabs>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            {/* Botón de estado de ubicación */}
+          {/* Location & Login Buttons - Responsive */}
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 1, 
+            alignItems: 'center',
+            width: isMobile ? '100%' : 'auto',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
             {userLocation ? (
-              <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)} metros` : 'Ubicación activada'}>
+              <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)}m` : 'Ubicación activada'}>
                 <Button
-                  size="small"
+                  size={isMobile ? "small" : "medium"}
                   startIcon={<MyLocationIcon />}
-                  sx={{ color: 'success.main', textTransform: 'none' }}
+                  sx={{ 
+                    color: 'success.main', 
+                    textTransform: 'none',
+                    width: isMobile ? '100%' : 'auto',
+                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  }}
                 >
-                  Ubicación activada
+                  {isMobile ? 'GPS ✓' : 'Ubicación activada'}
                   {locationAccuracy && locationAccuracy <= 20 && (
                     <Chip 
                       label={`${Math.round(locationAccuracy)}m`}
                       size="small" 
                       color="success" 
-                      sx={{ ml: 1, height: 20 }}
+                      sx={{ ml: 1, height: isMobile ? 16 : 20 }}
                     />
                   )}
                 </Button>
               </Tooltip>
             ) : (
               <Button
-                size="small"
+                size={isMobile ? "small" : "medium"}
                 startIcon={<MyLocationIcon />}
                 onClick={handleRetryLocation}
-                sx={{ color: 'warning.main', textTransform: 'none' }}
+                sx={{ 
+                  color: 'warning.main', 
+                  textTransform: 'none',
+                  width: isMobile ? '100%' : 'auto',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                }}
               >
-                Activar ubicación
+                {isMobile ? 'Activar GPS' : 'Activar ubicación'}
               </Button>
             )}
 
             <Button 
               variant="contained"
               onClick={() => navigate('/login')}
+              size={isMobile ? "small" : "medium"}
               sx={{ 
                 bgcolor: 'grey.900',
-                '&:hover': { bgcolor: 'grey.800' }
+                '&:hover': { bgcolor: 'grey.800' },
+                width: isMobile ? '100%' : 'auto',
+                textTransform: 'none',
+                fontWeight: 'bold',
               }}
             >
-              Iniciar Sesión
+              {isMobile ? 'Login' : 'Iniciar Sesión'}
             </Button>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Main Content */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
+      {/* Main Content - Responsive */}
+      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8 }}>
         {/* Hero Section */}
-        <Box sx={{ textAlign: 'center', mb: 8 }}>
-          <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-            Encuentra cualquier lugar en el campus
+        <Box sx={{ textAlign: 'center', mb: isMobile ? 4 : 8 }}>
+          <Typography 
+            variant={isMobile ? "h4" : "h3"} 
+            component="h2" 
+            gutterBottom 
+            sx={{ fontWeight: 'bold', mb: 2 }}
+          >
+            Encuentra lugares en campus
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 6 }}>
-            Busca edificios, salas, facultades o baños de forma rápida y sencilla
+          <Typography 
+            variant={isMobile ? "body2" : "h6"} 
+            color="text.secondary" 
+            sx={{ mb: 6 }}
+          >
+            Busca edificios, salas, facultades o baños
           </Typography>
 
-          {/* Search Bar */}
-          <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            <Paper elevation={2} sx={{ p: 1, display: 'flex', gap: 1 }}>
+          {/* Search Bar - Responsive */}
+          <Box sx={{ maxWidth: isMobile ? '100%' : 800, mx: 'auto', px: isMobile ? 2 : 0 }}>
+            <Paper elevation={2} sx={{ 
+              p: isMobile ? 1 : 1, 
+              display: 'flex', 
+              gap: 1,
+              flexDirection: isMobile ? 'column' : 'row',
+            }}>
               <TextField
                 fullWidth
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Buscar ${searchOptions[activeTab].label.toLowerCase()}...`}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                size={isMobile ? "small" : "medium"}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -664,12 +751,17 @@ export default function HomePage() {
               />
               <Button 
                 variant="contained"
-                size="large"
+                size={isMobile ? "small" : "large"}
                 onClick={handleSearch}
-                sx={{ px: 4 }}
+                sx={{ 
+                  px: isMobile ? 2 : 4,
+                  width: isMobile ? '100%' : 'auto',
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                }}
                 disabled={!searchQuery.trim()}
               >
-                Buscar
+                {isMobile ? 'Buscar' : 'BUSCAR'}
               </Button>
             </Paper>
           </Box>
@@ -677,7 +769,7 @@ export default function HomePage() {
 
         {/* Search Results Section - Edificios */}
         {searchTriggered && activeTab === 0 && (
-          <Box sx={{ mb: 6 }}>
+          <Box sx={{ mb: isMobile ? 4 : 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
               Resultados de búsqueda - Edificios
             </Typography>
@@ -834,6 +926,7 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
+
               </Grid>
             ) : (
               <Paper sx={{ p: 6, textAlign: 'center' }}>
@@ -851,7 +944,7 @@ export default function HomePage() {
 
         {/* Search Results Section - Salas */}
         {searchTriggered && activeTab === 1 && (
-          <Box sx={{ mb: 6 }}>
+          <Box sx={{ mb: isMobile ? 4 : 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
               Resultados de búsqueda
             </Typography>
@@ -1037,6 +1130,7 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
+
               </Grid>
             ) : (
               <Paper sx={{ p: 6, textAlign: 'center' }}>
@@ -1054,7 +1148,7 @@ export default function HomePage() {
 
         {/* Search Results Section - Facultades */}
         {searchTriggered && activeTab === 2 && (
-          <Box sx={{ mb: 6 }}>
+          <Box sx={{ mb: isMobile ? 4 : 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
               Resultados de búsqueda - Facultades
             </Typography>
@@ -1186,7 +1280,7 @@ export default function HomePage() {
 
         {/* Search Results Section - Baños */}
         {searchTriggered && activeTab === 3 && (
-          <Box sx={{ mb: 6 }}>
+          <Box sx={{ mb: isMobile ? 4 : 6 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
               Resultados de búsqueda - Baños
             </Typography>
@@ -1368,6 +1462,7 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
+
               </Grid>
             ) : (
               <Paper sx={{ p: 6, textAlign: 'center' }}>
@@ -1388,20 +1483,36 @@ export default function HomePage() {
       <Dialog
         open={roomDetailOpen}
         onClose={() => setRoomDetailOpen(false)}
-        maxWidth="md"
+        maxWidth={isMobile ? "xs" : "md"}
         fullWidth
         PaperProps={{
-          sx: { maxHeight: '90vh' }
+          sx: { 
+            m: isMobile ? 2 : 3,
+            borderRadius: isMobile ? 2 : 3,
+          }
         }}
       >
         {selectedRoom && (
           <>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+            <DialogTitle sx={{ 
+              pb: 1,
+              fontSize: isMobile ? '1rem' : '1.25rem',
+            }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start',
+                gap: 1,
+                flexDirection: isMobile ? 'column' : 'row',
+              }}>
+                <Typography 
+                  variant={isMobile ? "h6" : "h5"} 
+                  component="div" 
+                  sx={{ fontWeight: 'bold' }}
+                >
                   {selectedRoom.nombre_sala}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip
                     label={selectedRoom.tipo_sala || 'Sin tipo'}
                     color="primary"
@@ -1416,7 +1527,7 @@ export default function HomePage() {
               </Box>
             </DialogTitle>
             <DialogContent dividers>
-              <Grid container spacing={3}>
+              <Grid container spacing={isMobile ? 1 : 3}>
                 {/* Columna izquierda: imágenes (Sala, Piso, Edificio) */}
                 <Grid item xs={12} md={6}>
                   {/* Sala - Imagen grande */}
@@ -1510,7 +1621,7 @@ export default function HomePage() {
                     <Typography variant="body2"><strong>Capacidad:</strong> {selectedRoom.capacidad} personas</Typography>
                   </Box>
                   {selectedRoom.distance !== undefined && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 3 }}>
                       <WalkIcon color="primary" fontSize="small" />
                       <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
                         A {selectedRoom.distance < 1000 ? `${selectedRoom.distance} metros` : `${(selectedRoom.distance / 1000).toFixed(2)} km`} de ti
@@ -1522,10 +1633,7 @@ export default function HomePage() {
                   {selectedRoom.floor && (
                     <Box sx={{ mb: 3 }}>
                       <Typography variant="overline" color="text.secondary">Piso</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LocationIcon color="action" fontSize="small" />
-                        <Typography variant="body2">{selectedRoom.floor.nombre_piso}{selectedRoom.floor.numero_piso != null ? ` • N° ${selectedRoom.floor.numero_piso}` : ''}</Typography>
-                      </Box>
+                      <Typography variant="body2">{selectedRoom.floor.nombre_piso}{selectedRoom.floor.numero_piso != null ? ` • N° ${selectedRoom.floor.numero_piso}` : ''}</Typography>
                     </Box>
                   )}
 
@@ -1533,19 +1641,17 @@ export default function HomePage() {
                   {selectedRoom.building && (
                     <Box>
                       <Typography variant="overline" color="text.secondary">Edificio</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BuildingIcon color="action" fontSize="small" />
-                        <Typography variant="body2">{selectedRoom.building.nombre_edificio}{selectedRoom.building.acronimo ? ` (${selectedRoom.building.acronimo})` : ''}</Typography>
-                      </Box>
+                      <Typography variant="body2">{selectedRoom.building.nombre_edificio}{selectedRoom.building.acronimo ? ` (${selectedRoom.building.acronimo})` : ''}</Typography>
                     </Box>
                   )}
                 </Grid>
               </Grid>
             </DialogContent>
-            <DialogActions sx={{ p: 2, gap: 1 }}>
+            <DialogActions sx={{ p: isMobile ? 1 : 2, gap: 1, flexDirection: isMobile ? 'column' : 'row' }}>
               <Button
                 variant="outlined"
                 onClick={() => setRoomDetailOpen(false)}
+                fullWidth={isMobile}
               >
                 Cerrar
               </Button>
@@ -1553,8 +1659,9 @@ export default function HomePage() {
                 variant="contained"
                 startIcon={<LocationIcon />}
                 onClick={() => setMapOpen(true)}
+                fullWidth={isMobile}
               >
-                Mostrar en el mapa
+                Mostrar mapa
               </Button>
             </DialogActions>
           </>
@@ -1565,39 +1672,151 @@ export default function HomePage() {
       <Dialog
         open={mapOpen}
         onClose={() => setMapOpen(false)}
-        maxWidth="lg"
+        maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
+        PaperProps={{
+          sx: { 
+            height: isMobile ? '95vh' : '85vh',
+            m: isMobile ? 1 : 3,
+          }
+        }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocationIcon color="primary" />
-            <Typography variant="h6">
-              Ruta hasta {selectedRoom?.nombre_sala || 'destino'}
+        <DialogTitle>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }}>
+            <Typography variant={isMobile ? "body1" : "h6"}>
+              {isMobile ? 'Ruta' : `Ruta a ${routeDestinationName}`}
             </Typography>
+            <IconButton onClick={() => setRouteMapOpen(false)} size="small">
+              <CloseIcon />
+            </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 0 }}>
-          {!userLocation && (
-            <Alert severity="info" sx={{ m: 2 }}>
-              Activa tu ubicación para ver la ruta completa desde tu posición actual.
-            </Alert>
+        <DialogContent sx={{ 
+          p: isMobile ? 1 : 2, 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1 : 2 
+        }}>
+          {routeMapOpen && routeDestination && userLocation && routeDestinationData && (
+            <>
+              {/* Tarjeta de información - Responsive */}
+              <Card sx={{ 
+                width: isMobile ? '100%' : 300, 
+                flexShrink: 0, 
+                display: 'flex', 
+                flexDirection: 'column',
+                maxHeight: isMobile ? 200 : 'auto',
+                overflow: isMobile ? 'auto' : 'visible',
+              }}>
+                {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
+                    alt={routeDestinationData.name}
+                    sx={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      bgcolor: 'grey.200',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                  </Box>
+                )}
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    {routeDestinationData.name}
+                  </Typography>
+                  
+                  {routeDestinationData.acronym && (
+                    <Chip
+                      label={routeDestinationData.acronym}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ mb: 2 }}
+                    />
+                  )}
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Distancia */}
+                  {routeDestinationData.distance !== undefined && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <WalkIcon color="primary" fontSize="small" />
+                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                        A {routeDestinationData.distance < 1000 
+                          ? `${routeDestinationData.distance} metros` 
+                          : `${(routeDestinationData.distance / 1000).toFixed(2)} km`} de ti
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Coordenadas */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
+                      Lat: {routeDestinationData.latitude}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
+                      Lon: {routeDestinationData.longitude}
+                    </Typography>
+                  </Box>
+
+                  {/* Capacidad si aplica */}
+                  {routeDestinationData.capacity && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PeopleIcon color="action" fontSize="small" />
+                      <Typography variant="body2" color="text.secondary">
+                        Capacidad: {routeDestinationData.capacity} personas
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Mapa - USAR GOOGLE MAPS EN VEZ DE LEAFLET */}
+              <Box sx={{ 
+                flexGrow: 1, 
+                position: 'relative', 
+                borderRadius: 2, 
+                overflow: 'hidden',
+                minHeight: isMobile ? 300 : 'auto',
+              }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${userLocation.latitude},${userLocation.longitude}&destination=${routeDestination.lat},${routeDestination.lng}&mode=walking`}
+                  title="Mapa de ruta"
+                />
+              </Box>
+            </>
           )}
-          <Box sx={{ width: '100%', height: { xs: 400, md: 600 } }}>
-            <iframe
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-              src={getGoogleMapsEmbedUrl()}
-              title="Mapa de ruta"
-            />
-          </Box>
+          {routeMapOpen && (!userLocation || !routeDestination) && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+              <Typography variant="body1" color="text.secondary">
+                {!userLocation ? 'No se pudo obtener tu ubicación' : 'No se pudo obtener el destino'}
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMapOpen(false)}>Cerrar</Button>
-        </DialogActions>
       </Dialog>
 
       {/* Modal de Detalle del Edificio */}
@@ -1729,7 +1948,7 @@ export default function HomePage() {
                               </IconButton>
 
                               {/* Grid de salas visibles */}
-                              <Grid container spacing={2} sx={{ flex: 1 }}>
+                              <Grid container spacing={2} sx={{ flex:  1 }}>
                                 {visibleRooms.map((room) => (
                                   <Grid item xs={4} key={room.id_sala}>
                                     <Tooltip title={room.nombre_sala} arrow placement="top">
@@ -1742,7 +1961,7 @@ export default function HomePage() {
                                           cursor: 'pointer',
                                           transition: 'all 0.3s',
                                           '&:hover': {
-                                            transform: 'scale(1.05)',
+                                                                                       transform: 'scale(1.05)',
                                             boxShadow: 4,
                                             '& .room-name-overlay': {
                                               opacity: 1
@@ -1909,7 +2128,6 @@ export default function HomePage() {
                     latitude: selectedBuilding.cord_latitud,
                     longitude: selectedBuilding.cord_longitud
                   })
-                  setRouteWaypoints([]) // Sin waypoints para edificios
                   setRouteMapOpen(true)
                   setBuildingDetailOpen(false)
                 }}
@@ -1922,31 +2140,52 @@ export default function HomePage() {
         )}
       </Dialog>
 
-      {/* Modal de Mapa con Ruta */}
+      {/* Modal de Mapa con Ruta - SIMPLIFICADO SIN LEAFLET */}
       <Dialog
         open={routeMapOpen}
         onClose={() => setRouteMapOpen(false)}
-        maxWidth="lg"
+        maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
         PaperProps={{
-          sx: { height: '85vh' }
+          sx: { 
+            height: isMobile ? '95vh' : '85vh',
+            m: isMobile ? 1 : 3,
+          }
         }}
       >
         <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">
-              Ruta a {routeDestinationName}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            fontSize: isMobile ? '0.875rem' : '1rem',
+          }}>
+            <Typography variant={isMobile ? "body1" : "h6"}>
+              {isMobile ? 'Ruta' : `Ruta a ${routeDestinationName}`}
             </Typography>
-            <IconButton onClick={() => setRouteMapOpen(false)}>
+            <IconButton onClick={() => setRouteMapOpen(false)} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 2, height: '100%', display: 'flex', gap: 2 }}>
+        <DialogContent sx={{ 
+          p: isMobile ? 1 : 2, 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1 : 2 
+        }}>
           {routeMapOpen && routeDestination && userLocation && routeDestinationData && (
             <>
-              {/* Tarjeta de información del destino */}
-              <Card sx={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+              {/* Tarjeta de información - Responsive */}
+              <Card sx={{ 
+                width: isMobile ? '100%' : 300, 
+                flexShrink: 0, 
+                display: 'flex', 
+                flexDirection: 'column',
+                maxHeight: isMobile ? 200 : 'auto',
+                overflow: isMobile ? 'auto' : 'visible',
+              }}>
                 {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
                   <CardMedia
                     component="img"
@@ -2021,38 +2260,24 @@ export default function HomePage() {
                 </CardContent>
               </Card>
 
-              {/* Mapa */}
-              <Box sx={{ flexGrow: 1, position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
-                <MapContainer
-                  center={[userLocation.latitude, userLocation.longitude]}
-                  zoom={16}
-                  minZoom={15}
-                  maxZoom={20}
-                  maxBounds={[
-                    [-20.2500, -70.1500], // Esquina suroeste
-                    [-20.2350, -70.1320]  // Esquina noreste
-                  ]}
-                  maxBoundsViscosity={1.0}
-                  style={{ height: '100%', width: '100%' }}
-                >
-                  <TileLayer
-                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    maxNativeZoom={18}
-                    maxZoom={20}
-                  />
-                  <RouteComponent 
-                    start={[userLocation.latitude, userLocation.longitude]}
-                    end={[routeDestination.lat, routeDestination.lng]}
-                    waypoints={routeWaypoints}
-                  />
-                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
-                    <Popup>Tu ubicación</Popup>
-                  </Marker>
-                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
-                    <Popup>{routeDestinationName}</Popup>
-                  </Marker>
-                </MapContainer>
+              {/* Mapa - USAR GOOGLE MAPS EN VEZ DE LEAFLET */}
+              <Box sx={{ 
+                flexGrow: 1, 
+                position: 'relative', 
+                borderRadius: 2, 
+                overflow: 'hidden',
+                minHeight: isMobile ? 300 : 'auto',
+              }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${userLocation.latitude},${userLocation.longitude}&destination=${routeDestination.lat},${routeDestination.lng}&mode=walking`}
+                  title="Mapa de ruta"
+                />
               </Box>
             </>
           )}
@@ -2065,24 +2290,6 @@ export default function HomePage() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Footer */}
-      <Box
-        component="footer"
-        sx={{
-          bgcolor: 'white',
-          borderTop: 1,
-          borderColor: 'divider',
-          py: 3,
-          mt: 8
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary" align="center">
-            © 2025 Sistema de Geolocalización Campus. Todos los derechos reservados.
-          </Typography>
-        </Container>
-      </Box>
     </Box>
   )
 }
