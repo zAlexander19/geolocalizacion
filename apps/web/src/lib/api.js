@@ -1,7 +1,13 @@
 import axios from 'axios'
 
-// Usar la variable de entorno de Vite (disponible en construcción)
+// Obtener la URL de la API desde variables de entorno
+// En desarrollo: http://localhost:4000
+// En producción: https://geolocalizacion-m65o.onrender.com (desde .env.production)
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
+console.log('🔗 API Configuration:')
+console.log('  Base URL:', baseURL)
+console.log('  Environment:', import.meta.env.MODE)
 
 const api = axios.create({
   baseURL,
@@ -9,11 +15,5 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 })
-
-// Log para debugging
-if (typeof window !== 'undefined') {
-  console.log('API Base URL:', baseURL)
-  console.log('VITE_API_URL:', import.meta.env.VITE_API_URL)
-}
 
 export default api
