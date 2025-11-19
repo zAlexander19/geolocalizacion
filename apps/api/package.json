@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "build": "echo 'No build needed for Node.js project'"
+    "build": "npm install"
   },
   "dependencies": {
     "cors": "^2.8.5",
