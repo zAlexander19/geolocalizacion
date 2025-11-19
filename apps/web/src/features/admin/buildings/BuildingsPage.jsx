@@ -52,6 +52,7 @@ export default function BuildingsPage() {
     defaultValues: {
       nombre_edificio: '',
       acronimo: '',
+      descripcion: '',
       imagen: '',
       cord_latitud: 0,
       cord_longitud: 0,
@@ -125,6 +126,7 @@ export default function BuildingsPage() {
         if (b) {
           setValue('nombre_edificio', b.nombre_edificio)
           setValue('acronimo', b.acronimo)
+          setValue('descripcion', b.descripcion || '')
           setValue('imagen', b.imagen || '')
           setValue('cord_latitud', b.cord_latitud)
           setValue('cord_longitud', b.cord_longitud)
@@ -158,6 +160,9 @@ export default function BuildingsPage() {
     const formData = new FormData()
     formData.append('nombre_edificio', data.nombre_edificio)
     formData.append('acronimo', data.acronimo)
+    if (data.descripcion) {
+      formData.append('descripcion', data.descripcion)
+    }
     formData.append('cord_latitud', data.cord_latitud)
     formData.append('cord_longitud', data.cord_longitud)
     formData.append('estado', data.estado)
@@ -300,6 +305,20 @@ export default function BuildingsPage() {
               name="acronimo"
               control={control}
               render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth />}
+            />
+            <Controller
+              name="descripcion"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Descripción (Opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Describe el edificio..."
+                />
+              )}
             />
             <Box>
               <Button

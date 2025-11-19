@@ -410,7 +410,8 @@
         "name": "Edificio CEMDIS"
       },
       "created_from_osm": true,
-      "imported_at": "2025-11-12T13:44:47.683Z"
+      "imported_at": "2025-11-12T13:44:47.683Z",
+      "descripcion": "En este edificio se realizan las clases de arquitectura, ingeniería y electrónica entre otras. Algunas de las salas de clases cuentan con restricciones por lo cual se pide que se consulte con los encargados antes de su acceso. Este edificio cuenta con 5 pisos y en el quinto piso se encuentra las oficinas de los académicos de esta carrera."
     },
     {
       "id_edificio": 9,
@@ -2092,23 +2093,7 @@
       "disponibilidad": "Disponible"
     }
   ],
-  "bathrooms": [
-    {
-      "id_bano": 3,
-      "id_edificio": 1,
-      "id_piso": 2,
-      "identificador": "B3",
-      "nombre": "Baño Mixto FIA 1°P",
-      "capacidad": 4,
-      "imagen": "/uploads/1761597351008-bigstock-public-bathrooms-generic-publ-346522573.jpeg",
-      "tipo": "mixto",
-      "acceso_discapacidad": false,
-      "cord_latitud": -20.242938,
-      "cord_longitud": -70.141179,
-      "estado": true,
-      "disponibilidad": "Disponible"
-    }
-  ],
+  "bathrooms": [],
   "faculties": [
     {
       "codigo_facultad": "FIA",

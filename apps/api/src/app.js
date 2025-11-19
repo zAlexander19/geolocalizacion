@@ -109,6 +109,7 @@ export function createApp() {
       id_edificio: id,
       nombre_edificio: String(b.nombre_edificio || '').trim(),
       acronimo: String(b.acronimo || '').trim(),
+      descripcion: b.descripcion ? String(b.descripcion).trim() : '',
       imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen || ''),
       cord_latitud: Number(b.cord_latitud) || 0,
       cord_longitud: Number(b.cord_longitud) || 0,
@@ -131,6 +132,7 @@ export function createApp() {
       ...prev,
       nombre_edificio: b.nombre_edificio || prev.nombre_edificio,
       acronimo: b.acronimo !== undefined ? b.acronimo : prev.acronimo,
+      descripcion: b.descripcion !== undefined ? String(b.descripcion || '').trim() : prev.descripcion,
       imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen !== undefined ? b.imagen : prev.imagen),
       cord_latitud: b.cord_latitud !== undefined ? Number(b.cord_latitud) : prev.cord_latitud,
       cord_longitud: b.cord_longitud !== undefined ? Number(b.cord_longitud) : prev.cord_longitud,
@@ -245,6 +247,7 @@ export function createApp() {
       id_piso: Number(r.id_piso),
       nombre_sala: String(r.nombre_sala || '').trim(),
       acronimo: String(r.acronimo || '').trim(),
+      descripcion: r.descripcion ? String(r.descripcion).trim() : '',
       imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen || ''),
       capacidad: Number(r.capacidad) || 0,
       tipo_sala: r.tipo_sala || '',
@@ -270,6 +273,7 @@ export function createApp() {
       id_piso: r.id_piso !== undefined ? Number(r.id_piso) : prev.id_piso,
       nombre_sala: r.nombre_sala || prev.nombre_sala,
       acronimo: r.acronimo || prev.acronimo,
+      descripcion: r.descripcion !== undefined ? String(r.descripcion || '').trim() : prev.descripcion,
       imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen !== undefined ? r.imagen : prev.imagen),
       capacidad: r.capacidad !== undefined ? Number(r.capacidad) : prev.capacidad,
       tipo_sala: r.tipo_sala !== undefined ? r.tipo_sala : prev.tipo_sala,
@@ -331,6 +335,7 @@ export function createApp() {
     if (exists) return res.status(400).json({ message: 'ya existe un baño con ese identificador en el mismo edificio/piso' })
 
     const imagen = b.imagen || ''
+    const descripcion = String(b.descripcion || '').trim()
 
     const nuevo = {
       id_bano: id,
@@ -338,6 +343,7 @@ export function createApp() {
       id_piso,
       identificador,
       nombre,
+      descripcion,
       capacidad,
       imagen,
       tipo,

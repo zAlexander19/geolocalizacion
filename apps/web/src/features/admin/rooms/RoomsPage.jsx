@@ -50,6 +50,7 @@ export default function RoomsPage() {
       id_piso: '',
       nombre_sala: '',
       acronimo: '',
+      descripcion: '',
       imagen: '',
       capacidad: 0,
       tipo_sala: '',
@@ -142,6 +143,7 @@ export default function RoomsPage() {
           setValue('id_piso', r.id_piso)
           setValue('nombre_sala', r.nombre_sala)
           setValue('acronimo', r.acronimo || '')
+          setValue('descripcion', r.descripcion || '')
           setValue('imagen', r.imagen || '')
           setValue('capacidad', r.capacidad)
           setValue('tipo_sala', r.tipo_sala)
@@ -179,6 +181,9 @@ export default function RoomsPage() {
     formData.append('id_piso', data.id_piso)
     formData.append('nombre_sala', data.nombre_sala)
     formData.append('acronimo', data.acronimo)
+    if (data.descripcion) {
+      formData.append('descripcion', data.descripcion)
+    }
     formData.append('capacidad', data.capacidad)
     formData.append('tipo_sala', data.tipo_sala)
     formData.append('cord_latitud', data.cord_latitud)
@@ -420,6 +425,20 @@ export default function RoomsPage() {
               name="acronimo"
               control={control}
               render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth required />}
+            />
+            <Controller
+              name="descripcion"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Descripción (Opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Describe la sala..."
+                />
+              )}
             />
             <Controller
               name="tipo_sala"

@@ -43,6 +43,7 @@ export default function BathroomsAdmin() {
     id_edificio: '',
     id_piso: '',
     nombre: '',
+    descripcion: '',
     capacidad: '',
     imagen: '',
     tipo: 'mixto',
@@ -122,7 +123,7 @@ export default function BathroomsAdmin() {
       queryClient.invalidateQueries(['bathrooms'])
       setOpen(false)
       setEditId(null)
-      setForm({ id_edificio: '', id_piso: '', nombre: '', capacidad: '', imagen: '', tipo: 'mixto', acceso_discapacidad: false, cord_latitud: '', cord_longitud: '' })
+      setForm({ id_edificio: '', id_piso: '', nombre: '', descripcion: '', capacidad: '', imagen: '', tipo: 'mixto', acceso_discapacidad: false, cord_latitud: '', cord_longitud: '' })
       setMessage({ type: 'success', text: `Baño creado correctamente.` })
     },
     onError: (err) => {
@@ -139,7 +140,7 @@ export default function BathroomsAdmin() {
       queryClient.invalidateQueries(['bathrooms'])
       setOpen(false)
       setEditId(null)
-      setForm({ id_edificio: '', id_piso: '', nombre: '', capacidad: '', imagen: '', tipo: 'mixto', acceso_discapacidad: false, cord_latitud: '', cord_longitud: '' })
+      setForm({ id_edificio: '', id_piso: '', nombre: '', descripcion: '', capacidad: '', imagen: '', tipo: 'mixto', acceso_discapacidad: false, cord_latitud: '', cord_longitud: '' })
       setMessage({ type: 'success', text: 'Baño actualizado correctamente.' })
     },
     onError: (err) => {
@@ -174,6 +175,7 @@ export default function BathroomsAdmin() {
       id_edificio: filterBuilding || '', 
       id_piso: filterFloor || '', 
       nombre: '',
+      descripcion: '',
       capacidad: '',
       imagen: '', 
       tipo: 'mixto', 
@@ -193,6 +195,7 @@ export default function BathroomsAdmin() {
       id_edificio: b.id_edificio,
       id_piso: b.id_piso,
       nombre: b.nombre || '',
+      descripcion: b.descripcion || '',
       capacidad: b.capacidad || '',
       imagen: typeof b.imagen === 'string' ? b.imagen : '',
       tipo: b.tipo || 'mixto',
@@ -239,6 +242,9 @@ export default function BathroomsAdmin() {
     formData.append('id_edificio', Number(form.id_edificio))
     formData.append('id_piso', Number(form.id_piso))
     formData.append('nombre', form.nombre)
+    if (form.descripcion) {
+      formData.append('descripcion', form.descripcion)
+    }
     formData.append('capacidad', form.capacidad ? Number(form.capacidad) : 0)
     formData.append('tipo', form.tipo)
     formData.append('acceso_discapacidad', form.acceso_discapacidad ? 'true' : 'false')
@@ -430,6 +436,17 @@ export default function BathroomsAdmin() {
           )}
 
           <TextField fullWidth label="Nombre" name="nombre" value={form.nombre} onChange={onFormChange} sx={{ mb: 2 }} />
+          <TextField
+            fullWidth
+            label="Descripción (Opcional)"
+            name="descripcion"
+            value={form.descripcion}
+            onChange={onFormChange}
+            multiline
+            rows={3}
+            placeholder="Describe el baño..."
+            sx={{ mb: 2 }}
+          />
           <TextField fullWidth label="Capacidad (personas/cubículos)" name="capacidad" type="number" value={form.capacidad} onChange={onFormChange} sx={{ mb: 2 }} />
 
           <Box sx={{ mb: 2 }}>
