@@ -140,11 +140,23 @@ export default function FloorsPage() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
-      setImageFile(file)
+      // Validar dimensiones de la imagen
+      const img = new Image()
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result)
+      
+      reader.onload = (event) => {
+        img.onload = () => {
+          if (img.width === 1600 && img.height === 1200) {
+            setImageFile(file)
+            setImagePreviewUrl(event.target.result)
+          } else {
+            alert(`La imagen debe tener exactamente 1600x1200 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+            e.target.value = '' // Limpiar el input
+          }
+        }
+        img.src = event.target.result
       }
+      
       reader.readAsDataURL(file)
     } else if (file) {
       alert('Por favor selecciona un archivo PNG o JPG')
@@ -311,6 +323,9 @@ export default function FloorsPage() {
                   onChange={handleImageChange}
                 />
               </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Dimensiones requeridas: 1600x1200 píxeles
+              </Typography>
               {imagePreviewUrl && (
                 <Box
                   component="img"
