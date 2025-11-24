@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Button,
@@ -29,6 +29,16 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
   const [searchType, setSearchType] = useState(initialType)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Efecto para actualizar resultados en tiempo real mientras se escribe
+  useEffect(() => {
+    // Crear un debounce para evitar demasiadas búsquedas
+    const timeoutId = setTimeout(() => {
+      onSearch({ type: searchType, query: searchQuery.trim() })
+    }, 300) // Esperar 300ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, searchType, onSearch])
+
   const handleSearch = () => {
     if (searchQuery.trim()) {
       onSearch({ type: searchType, query: searchQuery.trim() })
@@ -43,7 +53,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
 
   const handleTypeChange = (newType) => {
     setSearchType(newType)
-    // Notificar el cambio de tipo incluso sin búsqueda
+    // Notificar el cambio de tipo con la query actual
     onSearch({ type: newType, query: searchQuery.trim() })
   }
 
@@ -110,7 +120,6 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
           variant="contained"
           size="large"
           onClick={handleSearch}
-          disabled={!searchQuery.trim()}
           sx={{
             px: 4,
             minWidth: 120,

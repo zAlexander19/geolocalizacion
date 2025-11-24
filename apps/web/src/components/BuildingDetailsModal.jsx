@@ -259,18 +259,41 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             {/* Imagen del piso */}
             <Box sx={{ px: 3, pt: 2, pb: 1 }}>
               {selectedFloor.imagen && !/via\.placeholder\.com/.test(selectedFloor.imagen) ? (
-                <Box
-                  component="img"
-                  src={getImageUrl(selectedFloor.imagen)}
-                  alt={selectedFloor.nombre_piso}
-                  sx={{
-                    width: '100%',
-                    height: 160,
-                    objectFit: 'cover',
-                    borderRadius: 2,
-                    boxShadow: 2,
-                  }}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    component="img"
+                    src={getImageUrl(selectedFloor.imagen)}
+                    alt={selectedFloor.nombre_piso}
+                    sx={{
+                      width: '100%',
+                      height: 160,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      boxShadow: 2,
+                    }}
+                  />
+                  {selectedFloor.disponibilidad === 'En mantenimiento' && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 10,
+                        left: 0,
+                        right: 0,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        py: 1,
+                        px: 2,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        transform: 'rotate(-3deg)',
+                        boxShadow: 3,
+                        zIndex: 1
+                      }}
+                    >
+                      ⚠️ EN MANTENIMIENTO
+                    </Box>
+                  )}
+                </Box>
               ) : (
                 <Box
                   sx={{
@@ -360,13 +383,37 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
 
                           {/* Foto de la sala */}
                           {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                            <CardMedia
-                              component="img"
-                              height="140"
-                              image={getImageUrl(room.imagen)}
-                              alt={room.nombre_sala}
-                              sx={{ objectFit: 'cover' }}
-                            />
+                            <Box sx={{ position: 'relative' }}>
+                              <CardMedia
+                                component="img"
+                                height="140"
+                                image={getImageUrl(room.imagen)}
+                                alt={room.nombre_sala}
+                                sx={{ objectFit: 'cover' }}
+                              />
+                              {room.disponibilidad === 'En mantenimiento' && (
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 5,
+                                    left: 0,
+                                    right: 0,
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    py: 0.5,
+                                    px: 1,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    transform: 'rotate(-3deg)',
+                                    boxShadow: 2,
+                                    zIndex: 1
+                                  }}
+                                >
+                                  ⚠️ MANTENIMIENTO
+                                </Box>
+                              )}
+                            </Box>
                           ) : (
                             <Box
                               sx={{

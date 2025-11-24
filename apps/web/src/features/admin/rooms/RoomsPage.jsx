@@ -239,28 +239,32 @@ export default function RoomsPage() {
   const filteredRooms = (() => {
     if (!rooms) return []
     
-    // Si hay búsqueda, filtrar por nombre o acrónimo
+    let result = rooms
+    
+    // Filtrar por búsqueda si hay texto
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
-      return rooms.filter(r => {
+      result = result.filter(r => {
         const nombre = r.nombre_sala?.toLowerCase() || ''
         const acronimo = r.acronimo?.toLowerCase() || ''
         return nombre.includes(query) || acronimo.includes(query)
       })
     }
     
-    // Si hay filtros de edificio y piso
-    if (filterBuilding && filterFloor) {
-      return rooms.filter(r => {
+    // Filtrar por edificio si está seleccionado
+    if (filterBuilding) {
+      result = result.filter(r => {
         const floor = allFloorsData?.find(f => f.id_piso === r.id_piso)
-        if (!floor) return false
-        const matchBuilding = floor.id_edificio === filterBuilding
-        const matchFloor = r.id_piso === filterFloor
-        return matchBuilding && matchFloor
+        return floor && floor.id_edificio === filterBuilding
       })
     }
     
-    return []
+    // Filtrar por piso si está seleccionado
+    if (filterFloor) {
+      result = result.filter(r => r.id_piso === filterFloor)
+    }
+    
+    return result
   })()
 
   return (
@@ -271,14 +275,7 @@ export default function RoomsPage() {
           <TextField
             placeholder="Buscar por nombre o acrónimo..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              // Limpiar filtros de edificio/piso cuando se busca
-              if (e.target.value.trim()) {
-                setFilterBuilding('')
-                setFilterFloor('')
-              }
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
             sx={{ minWidth: 250 }}
             InputProps={{
@@ -289,34 +286,33 @@ export default function RoomsPage() {
               ),
             }}
           />
-          <FormControl sx={{ minWidth: 180 }} disabled={searchQuery.trim() !== ''}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => {
                 setFilterBuilding(e.target.value)
                 setFilterFloor('') // Reset floor filter when building changes
-                setSearchQuery('') // Limpiar búsqueda cuando se filtra
               }}
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {buildings?.map(b => (
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
                 <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding || searchQuery.trim() !== ''}>
-            <InputLabel>Seleccionar piso</InputLabel>
+          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding}>
+            <InputLabel>Filtrar por piso</InputLabel>
             <Select
               value={filterFloor}
               onChange={(e) => setFilterFloor(e.target.value)}
-              label="Seleccionar piso"
+              label="Filtrar por piso"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {filteredFloors?.map(f => (
+              <MenuItem value="">Todos</MenuItem>
+              {filteredFloors?.sort((a, b) => a.nombre_piso.localeCompare(b.nombre_piso)).map(f => (
                 <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso}</MenuItem>
               ))}
             </Select>
@@ -375,15 +371,11 @@ export default function RoomsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {(searchQuery.trim() ? filteredRooms.length === 0 : (!filterBuilding || !filterFloor)) && (
+            {filteredRooms.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    {searchQuery.trim() 
-                      ? 'No se encontraron salas con ese criterio de búsqueda'
-                      : (!filterBuilding 
-                          ? 'Selecciona un edificio o usa el buscador' 
-                          : 'Selecciona un piso para ver sus salas')}
+                    No se encontraron salas
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -529,7 +521,7 @@ export default function RoomsPage() {
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
-                    <MenuItem value="No disponible">No disponible</MenuItem>
+                    <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               )}

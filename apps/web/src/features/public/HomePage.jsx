@@ -696,9 +696,19 @@ export default function HomePage() {
                 <CircularProgress />
               </Box>
             ) : searchResults?.length > 0 ? (
-              <Grid container spacing={3}>
-                {/* Resultados para EDIFICIOS */}
-                {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).map((building) => (
+              <Box>
+                {/* Edificios */}
+                {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    {searchType === 'todo' && (
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <BuildingIcon color="primary" />
+                        Edificios ({searchResults.filter(r => r.resultType === 'edificio').length})
+                      </Typography>
+                    )}
+                    <Grid container spacing={3}>
+                      {/* Resultados para EDIFICIOS */}
+                      {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).map((building) => (
                   <Grid item xs={12} md={6} lg={4} key={building.id_edificio}>
                     <Card 
                       sx={{ 
@@ -714,13 +724,36 @@ export default function HomePage() {
                     >
                       {/* Imagen del edificio */}
                       {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={building.imagen.startsWith('http') ? building.imagen : `http://localhost:4000${building.imagen}`}
-                          alt={building.nombre_edificio}
-                          sx={{ objectFit: 'cover' }}
-                        />
+                        <Box sx={{ position: 'relative' }}>
+                          <CardMedia
+                            component="img"
+                            height="200"
+                            image={building.imagen.startsWith('http') ? building.imagen : `http://localhost:4000${building.imagen}`}
+                            alt={building.nombre_edificio}
+                            sx={{ objectFit: 'cover' }}
+                          />
+                          {building.disponibilidad === 'En mantenimiento' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 10,
+                                left: 0,
+                                right: 0,
+                                bgcolor: 'error.main',
+                                color: 'white',
+                                py: 1,
+                                px: 2,
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                transform: 'rotate(-5deg)',
+                                boxShadow: 3,
+                                zIndex: 1
+                              }}
+                            >
+                              ⚠️ EN MANTENIMIENTO
+                            </Box>
+                          )}
+                        </Box>
                       ) : (
                         <Box
                           sx={{
@@ -855,9 +888,22 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
+                    </Grid>
+                  </Box>
+                )}
 
-                {/* Resultados para SALAS */}
-                {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).map((room) => (
+                {/* Salas */}
+                {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    {searchType === 'todo' && (
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ImageIcon color="primary" />
+                        Salas ({searchResults.filter(r => r.resultType === 'sala').length})
+                      </Typography>
+                    )}
+                    <Grid container spacing={3}>
+                      {/* Resultados para SALAS */}
+                      {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).map((room) => (
                   <Grid item xs={12} md={6} lg={4} key={room.id_sala}>
                     <Card 
                       sx={{ 
@@ -873,13 +919,36 @@ export default function HomePage() {
                     >
                       {/* Imagen de la sala */}
                       {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
-                          alt={room.nombre_sala}
-                          sx={{ objectFit: 'cover' }}
-                        />
+                        <Box sx={{ position: 'relative' }}>
+                          <CardMedia
+                            component="img"
+                            height="200"
+                            image={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
+                            alt={room.nombre_sala}
+                            sx={{ objectFit: 'cover' }}
+                          />
+                          {room.disponibilidad === 'En mantenimiento' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 10,
+                                left: 0,
+                                right: 0,
+                                bgcolor: 'error.main',
+                                color: 'white',
+                                py: 1,
+                                px: 2,
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                transform: 'rotate(-5deg)',
+                                boxShadow: 3,
+                                zIndex: 1
+                              }}
+                            >
+                              ⚠️ EN MANTENIMIENTO
+                            </Box>
+                          )}
+                        </Box>
                       ) : (
                         <Box
                           sx={{
@@ -1043,9 +1112,22 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
+                    </Grid>
+                  </Box>
+                )}
 
-                {/* Resultados para FACULTADES */}
-                {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
+                {/* Facultades */}
+                {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    {searchType === 'todo' && (
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <SchoolIcon color="primary" />
+                        Facultades ({searchResults.filter(r => r.resultType === 'facultad').length})
+                      </Typography>
+                    )}
+                    <Grid container spacing={3}>
+                      {/* Resultados para FACULTADES */}
+                      {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
                   const associatedBuilding = faculty.id_edificio
                     ? (buildings || []).find(b => Number(b.id_edificio) === Number(faculty.id_edificio))
                     : null
@@ -1176,9 +1258,22 @@ export default function HomePage() {
                     </Grid>
                   )
                 })}
+                    </Grid>
+                  </Box>
+                )}
 
-                {/* Resultados para BAÑOS */}
-                {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
+                {/* Baños */}
+                {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    {searchType === 'todo' && (
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <BathroomIcon color="primary" />
+                        Baños ({searchResults.filter(r => r.resultType === 'bano').length})
+                      </Typography>
+                    )}
+                    <Grid container spacing={3}>
+                      {/* Resultados para BAÑOS */}
+                      {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
                   <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
                     <Card 
                       sx={{ 
@@ -1194,13 +1289,36 @@ export default function HomePage() {
                     >
                       {/* Imagen del baño */}
                       {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={bathroom.imagen.startsWith('http') ? bathroom.imagen : `http://localhost:4000${bathroom.imagen}`}
-                          alt={bathroom.nombre}
-                          sx={{ objectFit: 'cover' }}
-                        />
+                        <Box sx={{ position: 'relative' }}>
+                          <CardMedia
+                            component="img"
+                            height="200"
+                            image={bathroom.imagen.startsWith('http') ? bathroom.imagen : `http://localhost:4000${bathroom.imagen}`}
+                            alt={bathroom.nombre}
+                            sx={{ objectFit: 'cover' }}
+                          />
+                          {bathroom.disponibilidad === 'En mantenimiento' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 10,
+                                left: 0,
+                                right: 0,
+                                bgcolor: 'error.main',
+                                color: 'white',
+                                py: 1,
+                                px: 2,
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                transform: 'rotate(-5deg)',
+                                boxShadow: 3,
+                                zIndex: 1
+                              }}
+                            >
+                              ⚠️ EN MANTENIMIENTO
+                            </Box>
+                          )}
+                        </Box>
                       ) : (
                         <Box
                           sx={{
@@ -1360,7 +1478,10 @@ export default function HomePage() {
                     </Card>
                   </Grid>
                 ))}
-              </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </Box>
             ) : (
               <Paper sx={{ p: 6, textAlign: 'center' }}>
                 <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />

@@ -33,6 +33,8 @@ export default function FacultiesPage() {
   const [editId, setEditId] = useState(null)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterBuilding, setFilterBuilding] = useState('')
 
   const { control, handleSubmit, reset, setValue, getValues } = useForm({
     defaultValues: {
@@ -244,13 +246,44 @@ export default function FacultiesPage() {
     setOpen(true)
   }
 
+  const filteredFaculties = faculties?.filter(f => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      f.nombre_facultad.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(f.codigo_facultad || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterBuilding === '' || Number(f.id_edificio) === Number(filterBuilding)
+    return matchesSearch && matchesFilter
+  })
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Facultades</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditId(null); setOpen(true) }}>
-          Agregar Facultad
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar facultades..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Filtrar por edificio</InputLabel>
+            <Select
+              value={filterBuilding}
+              onChange={(e) => setFilterBuilding(e.target.value)}
+              label="Filtrar por edificio"
+              size="small"
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
+                <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditId(null); setOpen(true) }}>
+            Agregar Facultad
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer component={Paper}>
@@ -267,8 +300,9 @@ export default function FacultiesPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {(faculties || []).map((f) => (
-              <TableRow key={f.codigo_facultad || f.nombre_facultad} hover>
+            {filteredFaculties && filteredFaculties.length > 0 ? (
+              filteredFaculties.map((f) => (
+                <TableRow key={f.codigo_facultad || f.nombre_facultad} hover>
                   <TableCell>
                     {f.logo ? (
                       <Box
@@ -282,24 +316,26 @@ export default function FacultiesPage() {
                     )}
                   </TableCell>
                   <TableCell>{f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : ''}</TableCell>
-                <TableCell>{f.nombre_facultad}</TableCell>
-                <TableCell>
-                  {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || f.id_edificio : ''}
-                </TableCell>
-                <TableCell>{f.descripcion}</TableCell>
-                <TableCell>
-                  <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>
-                  <IconButton size="small" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}><DeleteIcon fontSize="small" /></IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {(!faculties || faculties.length === 0) && (
+                  <TableCell>{f.nombre_facultad}</TableCell>
+                  <TableCell>
+                    {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || f.id_edificio : ''}
+                  </TableCell>
+                  <TableCell>{f.descripcion}</TableCell>
+                  <TableCell>
+                    <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}><DeleteIcon fontSize="small" /></IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">No hay facultades registradas</Typography>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No se encontraron facultades
+                  </Typography>
                 </TableCell>
               </TableRow>
             )}

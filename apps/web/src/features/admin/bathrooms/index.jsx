@@ -35,6 +35,7 @@ export default function BathroomsAdmin() {
   const [open, setOpen] = useState(false)
   const [filterBuilding, setFilterBuilding] = useState('')
   const [filterFloor, setFilterFloor] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [editId, setEditId] = useState(null)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
@@ -48,6 +49,7 @@ export default function BathroomsAdmin() {
     imagen: '',
     tipo: 'mixto',
     acceso_discapacidad: false,
+    disponibilidad: 'Disponible',
     cord_latitud: '',
     cord_longitud: ''
   })
@@ -109,11 +111,11 @@ export default function BathroomsAdmin() {
 
   // filtered list
   const list = (allBathrooms || []).filter(b => {
-    // Solo mostrar baños si ambos filtros están seleccionados
-    if (!filterBuilding || !filterFloor) return false
-    if (Number(b.id_edificio) !== Number(filterBuilding)) return false
-    if (Number(b.id_piso) !== Number(filterFloor)) return false
-    return true
+    const matchesSearch = searchQuery.trim() === '' || 
+      b.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesBuilding = filterBuilding === '' || Number(b.id_edificio) === Number(filterBuilding)
+    const matchesFloor = filterFloor === '' || Number(b.id_piso) === Number(filterFloor)
+    return matchesSearch && matchesBuilding && matchesFloor
   })
 
   // create mutation (enviar FormData con encabezado multipart/form-data)
@@ -172,14 +174,15 @@ export default function BathroomsAdmin() {
     setMessage(null)
     setEditId(null)
     setForm({ 
-      id_edificio: filterBuilding || '', 
-      id_piso: filterFloor || '', 
+      id_edificio: '', 
+      id_piso: '', 
       nombre: '',
       descripcion: '',
       capacidad: '',
       imagen: '', 
       tipo: 'mixto', 
-      acceso_discapacidad: false, 
+      acceso_discapacidad: false,
+      disponibilidad: 'Disponible',
       cord_latitud: '', 
       cord_longitud: '' 
     })
@@ -200,6 +203,7 @@ export default function BathroomsAdmin() {
       imagen: typeof b.imagen === 'string' ? b.imagen : '',
       tipo: b.tipo || 'mixto',
       acceso_discapacidad: !!b.acceso_discapacidad,
+      disponibilidad: b.disponibilidad || 'Disponible',
       cord_latitud: b.cord_latitud || '',
       cord_longitud: b.cord_longitud || ''
     })
@@ -288,35 +292,41 @@ export default function BathroomsAdmin() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 600 }}>Baños</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar baños..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
             >
-              <MenuItem value="">--</MenuItem>
-              {buildings?.map(b => <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio || b.acronimo || b.id_edificio}</MenuItem>)}
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => (a.nombre_edificio || a.acronimo || '').localeCompare(b.nombre_edificio || b.acronimo || '')).map(b => <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio || b.acronimo || b.id_edificio}</MenuItem>)}
             </Select>
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Seleccionar piso</InputLabel>
+            <InputLabel>Filtrar por piso</InputLabel>
             <Select
-              label="Seleccionar piso"
+              label="Filtrar por piso"
               value={filterFloor}
               onChange={(e) => setFilterFloor(e.target.value)}
               disabled={!filterBuilding}
             >
-              <MenuItem value="">--</MenuItem>
-              {(floors || []).map(f => <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso || f.numero_piso || f.id_piso}</MenuItem>)}
+              <MenuItem value="">Todos</MenuItem>
+              {(floors || []).sort((a, b) => (a.nombre_piso || '').localeCompare(b.nombre_piso || '')).map(f => <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso || f.numero_piso || f.id_piso}</MenuItem>)}
             </Select>
           </FormControl>
 
           <Button 
             variant="contained" 
             onClick={openCreate}
-            disabled={!filterBuilding || !filterFloor}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             + AGREGAR BAÑO
@@ -339,28 +349,14 @@ export default function BathroomsAdmin() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!filterBuilding && (
+            {list.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#999' }}>
-                  Selecciona un edificio primero
+                  No se encontraron baños
                 </TableCell>
               </TableRow>
-            )}
-            {filterBuilding && !filterFloor && (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#999' }}>
-                  Selecciona un piso
-                </TableCell>
-              </TableRow>
-            )}
-            {filterBuilding && filterFloor && list.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#999' }}>
-                  No hay baños
-                </TableCell>
-              </TableRow>
-            )}
-            {list.map(b => (
+            ) : (
+              list.map(b => (
               <TableRow key={b.id_bano} sx={{ '&:hover': { bgcolor: '#f5f5f5' } }}>
                 <TableCell>{b.id_bano}</TableCell>
                 <TableCell>
@@ -399,7 +395,8 @@ export default function BathroomsAdmin() {
                   <IconButton size="small" color="error" onClick={() => handleDelete(b.id_bano)}><DeleteIcon fontSize="small" /></IconButton>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            )}
           </TableBody>
         </Table>
       </Paper>
@@ -408,11 +405,40 @@ export default function BathroomsAdmin() {
         <DialogTitle sx={{ fontWeight: 600 }}>{editId ? 'Editar baño' : 'Crear nuevo baño'}</DialogTitle>
         <DialogContent dividers>
           {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
-          
+
           {!editId && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Edificio: <strong>{getBuildingName(filterBuilding)}</strong> | Piso: <strong>{getFloorName(filterFloor)}</strong>
-            </Alert>
+            <>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="dialog-edificio-label">Edificio</InputLabel>
+                <Select
+                  labelId="dialog-edificio-label"
+                  id="dialog-edificio"
+                  label="Edificio"
+                  name="id_edificio"
+                  value={form.id_edificio}
+                  onChange={onFormChange}
+                >
+                  <MenuItem value="">-- seleccionar --</MenuItem>
+                  {buildings?.map(b => <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio || b.acronimo || b.id_edificio}</MenuItem>)}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="dialog-piso-label">Piso</InputLabel>
+                <Select
+                  labelId="dialog-piso-label"
+                  id="dialog-piso"
+                  label="Piso"
+                  name="id_piso"
+                  value={form.id_piso}
+                  onChange={onFormChange}
+                  disabled={!form.id_edificio}
+                >
+                  <MenuItem value="">-- seleccionar --</MenuItem>
+                  {(form.id_edificio ? (floors || []) : []).map(f => <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso || f.numero_piso || f.id_piso}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </>
           )}
 
           {editId && (
@@ -483,6 +509,13 @@ export default function BathroomsAdmin() {
               <MenuItem value="h">Hombre</MenuItem>
               <MenuItem value="m">Mujer</MenuItem>
               <MenuItem value="mixto">Mixto</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="dialog-disponibilidad-label">Disponibilidad</InputLabel>
+            <Select labelId="dialog-disponibilidad-label" id="dialog-disponibilidad" label="Disponibilidad" name="disponibilidad" value={form.disponibilidad} onChange={onFormChange}>
+              <MenuItem value="Disponible">Disponible</MenuItem>
+              <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
             </Select>
           </FormControl>
           <FormControlLabel control={<Checkbox name="acceso_discapacidad" checked={!!form.acceso_discapacidad} onChange={onFormChange} />} label="Acceso discapacidad" sx={{ mb: 2 }} />

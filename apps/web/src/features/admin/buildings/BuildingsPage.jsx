@@ -43,6 +43,7 @@ export default function BuildingsPage() {
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -202,21 +203,36 @@ export default function BuildingsPage() {
     }
   }
 
+  const filteredBuildings = buildings?.filter(b => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      b.nombre_edificio.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.acronimo.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterBuilding === '' || b.id_edificio === filterBuilding
+    return matchesSearch && matchesFilter
+  })
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Edificios</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar edificios..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {buildings?.map(b => (
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
                 <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
               ))}
             </Select>
@@ -242,60 +258,61 @@ export default function BuildingsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBuilding && buildings?.filter(b => b.id_edificio === filterBuilding).map((b) => (
-              <TableRow key={b.id_edificio} hover>
-                <TableCell>{b.id_edificio}</TableCell>
-                <TableCell>
-                  {b.imagen && !/via\.placeholder\.com/.test(b.imagen) ? (
-                    <Box
-                      component="img"
-                      src={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
-                      alt={b.nombre_edificio}
-                      sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                      onClick={() => setImagePreview(b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`)}
-                    />
-                  ) : (
-                    <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
-                    </Box>
-                  )}
-                </TableCell>
-                <TableCell>{b.nombre_edificio}</TableCell>
-                <TableCell>{b.acronimo}</TableCell>
-                <TableCell>{b.cord_latitud}</TableCell>
-                <TableCell>{b.cord_longitud}</TableCell>
-                <TableCell>
-                  <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="Ver más">
-                    <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Ver en el mapa">
-                    <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
-                      <MapIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Editar">
-                    <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Eliminar">
-                    <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!filterBuilding && (
+            {filteredBuildings && filteredBuildings.length > 0 ? (
+              filteredBuildings.map((b) => (
+                <TableRow key={b.id_edificio} hover>
+                  <TableCell>{b.id_edificio}</TableCell>
+                  <TableCell>
+                    {b.imagen && !/via\.placeholder\.com/.test(b.imagen) ? (
+                      <Box
+                        component="img"
+                        src={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
+                        alt={b.nombre_edificio}
+                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                        onClick={() => setImagePreview(b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`)}
+                      />
+                    ) : (
+                      <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell>{b.nombre_edificio}</TableCell>
+                  <TableCell>{b.acronimo}</TableCell>
+                  <TableCell>{b.cord_latitud}</TableCell>
+                  <TableCell>{b.cord_longitud}</TableCell>
+                  <TableCell>
+                    <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="Ver más">
+                      <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Ver en el mapa">
+                      <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
+                        <MapIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Editar">
+                      <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar">
+                      <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    Selecciona un edificio para ver sus datos
+                    No se encontraron edificios
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -390,7 +407,7 @@ export default function BuildingsPage() {
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
-                    <MenuItem value="No disponible">No disponible</MenuItem>
+                    <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               )}
