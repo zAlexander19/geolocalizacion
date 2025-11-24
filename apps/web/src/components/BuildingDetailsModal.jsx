@@ -85,8 +85,6 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
     return `http://localhost:4000${imageUrl}`
   }
 
-  if (!building) return null
-
   // Obtener las 3 salas visibles en el carrusel
   const visibleRooms = rooms ? rooms.slice(currentRoomIndex, currentRoomIndex + 3) : []
   
@@ -94,7 +92,15 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
   const maxCarouselPositions = rooms ? Math.max(1, rooms.length - 2) : 1
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+    <Dialog 
+      open={open && !!building} 
+      onClose={handleClose} 
+      maxWidth="lg" 
+      fullWidth
+      keepMounted={false}
+    >
+      {building && (
+        <>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
         <Typography variant="h6" fontWeight="bold">
           {selectedFloor ? `${selectedFloor.nombre_piso} - ${building.nombre_edificio}` : building.nombre_edificio}
@@ -110,65 +116,93 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
         {!selectedFloor ? (
           // Vista de edificio con lista de pisos
           <Box>
-            {/* Imagen del edificio */}
-            <Box sx={{ px: 3, pt: 2, pb: 1, display: 'flex', justifyContent: 'center' }}>
-              {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
-                <Box
-                  component="img"
-                  src={getImageUrl(building.imagen)}
-                  alt={building.nombre_edificio}
-                  sx={{
-                    width: 'auto',
-                    height: 'auto',
-                    maxWidth: '100%',
-                    maxHeight: 300,
-                    objectFit: 'contain',
-                    borderRadius: 2,
-                    boxShadow: 2,
-                  }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: 300,
-                    bgcolor: 'grey.200',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 2,
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary">
-                    Sin imagen
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            {/* Botón Ver Ruta centrado debajo de la imagen */}
-            {isPublic && onViewRoute && (
-              <Box sx={{ px: 3, pb: 2, display: 'flex', justifyContent: 'center' }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<LocationOnIcon />}
-                  onClick={() => {
-                    onViewRoute({
-                      type: 'building',
-                      name: building.nombre_edificio,
-                      acronym: building.acronimo,
-                      image: building.imagen,
-                      distance: building.distance,
-                      latitude: building.cord_latitud,
-                      longitude: building.cord_longitud
-                    })
-                  }}
-                  sx={{ minWidth: 200 }}
-                >
-                  Ver Ruta
-                </Button>
+            {/* Imagen del edificio a la izquierda y descripción a la derecha */}
+            <Box sx={{ px: 3, pt: 2, pb: 2, display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+              {/* Imagen */}
+              <Box sx={{ flex: '0 0 45%', minWidth: 0 }}>
+                {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
+                  <Box
+                    component="img"
+                    src={getImageUrl(building.imagen)}
+                    alt={building.nombre_edificio}
+                    sx={{
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: 350,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      boxShadow: 2,
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 300,
+                      bgcolor: 'grey.200',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="h6" color="text.secondary">
+                      Sin imagen
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-            )}
+
+              {/* Descripción y botón */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Acrónimo */}
+                {building.acronimo && (
+                  <Chip 
+                    label={building.acronimo}
+                    color="primary"
+                    sx={{ alignSelf: 'flex-start' }}
+                  />
+                )}
+
+                {/* Descripción */}
+                {building.descripcion ? (
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Descripción
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      {building.descripcion}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                    No hay descripción disponible para este edificio
+                  </Typography>
+                )}
+
+                {/* Botón Ver Ruta */}
+                {isPublic && onViewRoute && (
+                  <Button
+                    variant="contained"
+                    startIcon={<LocationOnIcon />}
+                    onClick={() => {
+                      onViewRoute({
+                        type: 'building',
+                        name: building.nombre_edificio,
+                        acronym: building.acronimo,
+                        image: building.imagen,
+                        distance: building.distance,
+                        latitude: building.cord_latitud,
+                        longitude: building.cord_longitud
+                      })
+                    }}
+                    sx={{ alignSelf: 'flex-start', minWidth: 200 }}
+                  >
+                    Ver Ruta
+                  </Button>
+                )}
+              </Box>
+            </Box>
 
             {/* Lista de pisos */}
             <Box sx={{ px: 3, pb: 3 }}>
@@ -225,18 +259,41 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             {/* Imagen del piso */}
             <Box sx={{ px: 3, pt: 2, pb: 1 }}>
               {selectedFloor.imagen && !/via\.placeholder\.com/.test(selectedFloor.imagen) ? (
-                <Box
-                  component="img"
-                  src={getImageUrl(selectedFloor.imagen)}
-                  alt={selectedFloor.nombre_piso}
-                  sx={{
-                    width: '100%',
-                    height: 160,
-                    objectFit: 'cover',
-                    borderRadius: 2,
-                    boxShadow: 2,
-                  }}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <Box
+                    component="img"
+                    src={getImageUrl(selectedFloor.imagen)}
+                    alt={selectedFloor.nombre_piso}
+                    sx={{
+                      width: '100%',
+                      height: 160,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      boxShadow: 2,
+                    }}
+                  />
+                  {selectedFloor.disponibilidad === 'En mantenimiento' && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 10,
+                        left: 0,
+                        right: 0,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        py: 1,
+                        px: 2,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        transform: 'rotate(-3deg)',
+                        boxShadow: 3,
+                        zIndex: 1
+                      }}
+                    >
+                      ⚠️ EN MANTENIMIENTO
+                    </Box>
+                  )}
+                </Box>
               ) : (
                 <Box
                   sx={{
@@ -326,13 +383,37 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
 
                           {/* Foto de la sala */}
                           {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                            <CardMedia
-                              component="img"
-                              height="140"
-                              image={getImageUrl(room.imagen)}
-                              alt={room.nombre_sala}
-                              sx={{ objectFit: 'cover' }}
-                            />
+                            <Box sx={{ position: 'relative' }}>
+                              <CardMedia
+                                component="img"
+                                height="140"
+                                image={getImageUrl(room.imagen)}
+                                alt={room.nombre_sala}
+                                sx={{ objectFit: 'cover' }}
+                              />
+                              {room.disponibilidad === 'En mantenimiento' && (
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 5,
+                                    left: 0,
+                                    right: 0,
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    py: 0.5,
+                                    px: 1,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    transform: 'rotate(-3deg)',
+                                    boxShadow: 2,
+                                    zIndex: 1
+                                  }}
+                                >
+                                  ⚠️ MANTENIMIENTO
+                                </Box>
+                              )}
+                            </Box>
                           ) : (
                             <Box
                               sx={{
@@ -442,6 +523,8 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
           </Box>
         )}
       </DialogContent>
+        </>
+      )}
     </Dialog>
   )
 }

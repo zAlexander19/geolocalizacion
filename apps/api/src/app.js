@@ -3,6 +3,7 @@ import cors from 'cors'
 import path from 'path'
 import fs from 'fs'
 import multer from 'multer'
+import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -31,6 +32,35 @@ const upload = multer({
     }
   }
 })
+
+// Middleware para validar dimensiones de imagen
+function validateImageDimensions(expectedWidth, expectedHeight) {
+  return async (req, res, next) => {
+    if (!req.file) {
+      return next()
+    }
+
+    try {
+      const metadata = await sharp(req.file.path).metadata()
+      
+      if (metadata.width !== expectedWidth || metadata.height !== expectedHeight) {
+        // Eliminar el archivo subido
+        fs.unlinkSync(req.file.path)
+        return res.status(400).json({ 
+          message: `La imagen debe tener exactamente ${expectedWidth}x${expectedHeight} píxeles. Imagen recibida: ${metadata.width}x${metadata.height} píxeles` 
+        })
+      }
+      
+      next()
+    } catch (error) {
+      // Eliminar el archivo si hay error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path)
+      }
+      return res.status(400).json({ message: 'Error al procesar la imagen' })
+    }
+  }
+}
 
 // Resolve data file in either /data/db.json or nested /apps/api/data/db.json
 function resolveDataPath() {
@@ -111,7 +141,7 @@ export function createApp() {
     res.json({ data: db.buildings || [] })
   })
 
-  app.post('/buildings', upload.single('imagen'), (req, res) => {
+  app.post('/buildings', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const b = req.body || {}
     const buildings = db.buildings || []
@@ -120,6 +150,7 @@ export function createApp() {
       id_edificio: id,
       nombre_edificio: String(b.nombre_edificio || '').trim(),
       acronimo: String(b.acronimo || '').trim(),
+      descripcion: b.descripcion ? String(b.descripcion).trim() : '',
       imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen || ''),
       cord_latitud: Number(b.cord_latitud) || 0,
       cord_longitud: Number(b.cord_longitud) || 0,
@@ -131,7 +162,7 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/buildings/:id', upload.single('imagen'), (req, res) => {
+  app.put('/buildings/:id', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.buildings || []).findIndex(b => Number(b.id_edificio) === id)
@@ -142,6 +173,7 @@ export function createApp() {
       ...prev,
       nombre_edificio: b.nombre_edificio || prev.nombre_edificio,
       acronimo: b.acronimo !== undefined ? b.acronimo : prev.acronimo,
+      descripcion: b.descripcion !== undefined ? String(b.descripcion || '').trim() : prev.descripcion,
       imagen: req.file ? `/uploads/${req.file.filename}` : (b.imagen !== undefined ? b.imagen : prev.imagen),
       cord_latitud: b.cord_latitud !== undefined ? Number(b.cord_latitud) : prev.cord_latitud,
       cord_longitud: b.cord_longitud !== undefined ? Number(b.cord_longitud) : prev.cord_longitud,
@@ -179,7 +211,7 @@ export function createApp() {
     res.json({ data: floors })
   })
 
-  app.post('/buildings/:id/floors', upload.single('imagen'), (req, res) => {
+  app.post('/buildings/:id/floors', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const id_edificio = Number(req.params.id)
     const f = req.body || {}
@@ -200,7 +232,7 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/floors/:id', upload.single('imagen'), (req, res) => {
+  app.put('/floors/:id', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.floors || []).findIndex(f => Number(f.id_piso) === id)
@@ -246,7 +278,7 @@ export function createApp() {
     res.json({ data: db.rooms || [] })
   })
 
-  app.post('/rooms', upload.single('imagen'), (req, res) => {
+  app.post('/rooms', upload.single('imagen'), validateImageDimensions(1200, 1600), (req, res) => {
     const db = loadDB()
     const r = req.body || {}
     const rooms = db.rooms || []
@@ -256,6 +288,7 @@ export function createApp() {
       id_piso: Number(r.id_piso),
       nombre_sala: String(r.nombre_sala || '').trim(),
       acronimo: String(r.acronimo || '').trim(),
+      descripcion: r.descripcion ? String(r.descripcion).trim() : '',
       imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen || ''),
       capacidad: Number(r.capacidad) || 0,
       tipo_sala: r.tipo_sala || '',
@@ -269,7 +302,7 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/rooms/:id', upload.single('imagen'), (req, res) => {
+  app.put('/rooms/:id', upload.single('imagen'), validateImageDimensions(1200, 1600), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.rooms || []).findIndex(r => Number(r.id_sala) === id)
@@ -281,6 +314,7 @@ export function createApp() {
       id_piso: r.id_piso !== undefined ? Number(r.id_piso) : prev.id_piso,
       nombre_sala: r.nombre_sala || prev.nombre_sala,
       acronimo: r.acronimo || prev.acronimo,
+      descripcion: r.descripcion !== undefined ? String(r.descripcion || '').trim() : prev.descripcion,
       imagen: req.file ? `/uploads/${req.file.filename}` : (r.imagen !== undefined ? r.imagen : prev.imagen),
       capacidad: r.capacidad !== undefined ? Number(r.capacidad) : prev.capacidad,
       tipo_sala: r.tipo_sala !== undefined ? r.tipo_sala : prev.tipo_sala,
@@ -308,7 +342,7 @@ export function createApp() {
     res.json({ data: db.bathrooms || [] })
   })
 
-  app.post('/bathrooms', upload.single('imagen'), (req, res) => {
+  app.post('/bathrooms', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const b = req.body || {}
     if (req.file) {
@@ -342,6 +376,7 @@ export function createApp() {
     if (exists) return res.status(400).json({ message: 'ya existe un baño con ese identificador en el mismo edificio/piso' })
 
     const imagen = b.imagen || ''
+    const descripcion = String(b.descripcion || '').trim()
 
     const nuevo = {
       id_bano: id,
@@ -349,6 +384,7 @@ export function createApp() {
       id_piso,
       identificador,
       nombre,
+      descripcion,
       capacidad,
       imagen,
       tipo,
@@ -363,7 +399,7 @@ export function createApp() {
     res.status(201).json({ data: nuevo })
   })
 
-  app.put('/bathrooms/:id', upload.single('imagen'), (req, res) => {
+  app.put('/bathrooms/:id', upload.single('imagen'), validateImageDimensions(1600, 1200), (req, res) => {
     const db = loadDB()
     const id = Number(req.params.id)
     const idx = (db.bathrooms || []).findIndex(b => Number(b.id_bano) === id)
@@ -394,7 +430,7 @@ export function createApp() {
     res.json({ data: db.faculties || [] })
   })
 
-  app.post('/faculties', upload.single('logo'), (req, res) => {
+  app.post('/faculties', upload.single('logo'), validateImageDimensions(1600, 1200), (req, res) => {
     try {
       const db = loadDB()
       const f = req.body || {}
@@ -447,7 +483,7 @@ export function createApp() {
     }
   })
 
-  app.put('/faculties/:id', upload.single('logo'), (req, res) => {
+  app.put('/faculties/:id', upload.single('logo'), validateImageDimensions(1600, 1200), (req, res) => {
     try {
       const db = loadDB()
       const id = req.params.id

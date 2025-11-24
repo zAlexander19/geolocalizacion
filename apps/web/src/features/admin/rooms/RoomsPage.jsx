@@ -50,6 +50,7 @@ export default function RoomsPage() {
       id_piso: '',
       nombre_sala: '',
       acronimo: '',
+      descripcion: '',
       imagen: '',
       capacidad: 0,
       tipo_sala: '',
@@ -142,6 +143,7 @@ export default function RoomsPage() {
           setValue('id_piso', r.id_piso)
           setValue('nombre_sala', r.nombre_sala)
           setValue('acronimo', r.acronimo || '')
+          setValue('descripcion', r.descripcion || '')
           setValue('imagen', r.imagen || '')
           setValue('capacidad', r.capacidad)
           setValue('tipo_sala', r.tipo_sala)
@@ -163,11 +165,23 @@ export default function RoomsPage() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
-      setImageFile(file)
+      // Validar dimensiones de la imagen
+      const img = new Image()
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result)
+      
+      reader.onload = (event) => {
+        img.onload = () => {
+          if (img.width === 1200 && img.height === 1600) {
+            setImageFile(file)
+            setImagePreviewUrl(event.target.result)
+          } else {
+            alert(`La imagen debe tener exactamente 1200x1600 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+            e.target.value = '' // Limpiar el input
+          }
+        }
+        img.src = event.target.result
       }
+      
       reader.readAsDataURL(file)
     } else if (file) {
       alert('Por favor selecciona un archivo PNG o JPG')
@@ -179,6 +193,9 @@ export default function RoomsPage() {
     formData.append('id_piso', data.id_piso)
     formData.append('nombre_sala', data.nombre_sala)
     formData.append('acronimo', data.acronimo)
+    if (data.descripcion) {
+      formData.append('descripcion', data.descripcion)
+    }
     formData.append('capacidad', data.capacidad)
     formData.append('tipo_sala', data.tipo_sala)
     formData.append('cord_latitud', data.cord_latitud)
@@ -222,28 +239,32 @@ export default function RoomsPage() {
   const filteredRooms = (() => {
     if (!rooms) return []
     
-    // Si hay búsqueda, filtrar por nombre o acrónimo
+    let result = rooms
+    
+    // Filtrar por búsqueda si hay texto
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
-      return rooms.filter(r => {
+      result = result.filter(r => {
         const nombre = r.nombre_sala?.toLowerCase() || ''
         const acronimo = r.acronimo?.toLowerCase() || ''
         return nombre.includes(query) || acronimo.includes(query)
       })
     }
     
-    // Si hay filtros de edificio y piso
-    if (filterBuilding && filterFloor) {
-      return rooms.filter(r => {
+    // Filtrar por edificio si está seleccionado
+    if (filterBuilding) {
+      result = result.filter(r => {
         const floor = allFloorsData?.find(f => f.id_piso === r.id_piso)
-        if (!floor) return false
-        const matchBuilding = floor.id_edificio === filterBuilding
-        const matchFloor = r.id_piso === filterFloor
-        return matchBuilding && matchFloor
+        return floor && floor.id_edificio === filterBuilding
       })
     }
     
-    return []
+    // Filtrar por piso si está seleccionado
+    if (filterFloor) {
+      result = result.filter(r => r.id_piso === filterFloor)
+    }
+    
+    return result
   })()
 
   return (
@@ -254,14 +275,7 @@ export default function RoomsPage() {
           <TextField
             placeholder="Buscar por nombre o acrónimo..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              // Limpiar filtros de edificio/piso cuando se busca
-              if (e.target.value.trim()) {
-                setFilterBuilding('')
-                setFilterFloor('')
-              }
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
             sx={{ minWidth: 250 }}
             InputProps={{
@@ -272,34 +286,33 @@ export default function RoomsPage() {
               ),
             }}
           />
-          <FormControl sx={{ minWidth: 180 }} disabled={searchQuery.trim() !== ''}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => {
                 setFilterBuilding(e.target.value)
                 setFilterFloor('') // Reset floor filter when building changes
-                setSearchQuery('') // Limpiar búsqueda cuando se filtra
               }}
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {buildings?.map(b => (
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
                 <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding || searchQuery.trim() !== ''}>
-            <InputLabel>Seleccionar piso</InputLabel>
+          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding}>
+            <InputLabel>Filtrar por piso</InputLabel>
             <Select
               value={filterFloor}
               onChange={(e) => setFilterFloor(e.target.value)}
-              label="Seleccionar piso"
+              label="Filtrar por piso"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {filteredFloors?.map(f => (
+              <MenuItem value="">Todos</MenuItem>
+              {filteredFloors?.sort((a, b) => a.nombre_piso.localeCompare(b.nombre_piso)).map(f => (
                 <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso}</MenuItem>
               ))}
             </Select>
@@ -358,15 +371,11 @@ export default function RoomsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {(searchQuery.trim() ? filteredRooms.length === 0 : (!filterBuilding || !filterFloor)) && (
+            {filteredRooms.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    {searchQuery.trim() 
-                      ? 'No se encontraron salas con ese criterio de búsqueda'
-                      : (!filterBuilding 
-                          ? 'Selecciona un edificio o usa el buscador' 
-                          : 'Selecciona un piso para ver sus salas')}
+                    No se encontraron salas
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -422,6 +431,20 @@ export default function RoomsPage() {
               render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth required />}
             />
             <Controller
+              name="descripcion"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Descripción (Opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Describe la sala..."
+                />
+              )}
+            />
+            <Controller
               name="tipo_sala"
               control={control}
               render={({ field }) => (
@@ -455,6 +478,9 @@ export default function RoomsPage() {
                   onChange={handleImageChange}
                 />
               </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Dimensiones requeridas: 1200x1600 píxeles
+              </Typography>
               {imagePreviewUrl && (
                 <Box
                   component="img"
@@ -495,7 +521,7 @@ export default function RoomsPage() {
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
-                    <MenuItem value="No disponible">No disponible</MenuItem>
+                    <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               )}

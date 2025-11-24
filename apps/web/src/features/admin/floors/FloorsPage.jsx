@@ -37,6 +37,7 @@ export default function FloorsPage() {
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
 
@@ -140,11 +141,23 @@ export default function FloorsPage() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
-      setImageFile(file)
+      // Validar dimensiones de la imagen
+      const img = new Image()
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result)
+      
+      reader.onload = (event) => {
+        img.onload = () => {
+          if (img.width === 1600 && img.height === 1200) {
+            setImageFile(file)
+            setImagePreviewUrl(event.target.result)
+          } else {
+            alert(`La imagen debe tener exactamente 1600x1200 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+            e.target.value = '' // Limpiar el input
+          }
+        }
+        img.src = event.target.result
       }
+      
       reader.readAsDataURL(file)
     } else if (file) {
       alert('Por favor selecciona un archivo PNG o JPG')
@@ -186,21 +199,35 @@ export default function FloorsPage() {
     return b ? b.nombre_edificio : '—'
   }
 
+  const filteredFloors = allFloorsData?.filter(f => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      f.nombre_piso.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterBuilding === '' || f.id_edificio === filterBuilding
+    return matchesSearch && matchesFilter
+  })
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Pisos</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar pisos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {buildings?.map(b => (
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
                 <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
               ))}
             </Select>
@@ -225,41 +252,42 @@ export default function FloorsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBuilding && allFloorsData?.filter(f => f.id_edificio === filterBuilding).map((f) => (
-              <TableRow key={f.id_piso} hover>
-                <TableCell>{f.id_piso}</TableCell>
-                <TableCell>
-                  {f.imagen && !/via\.placeholder\.com/.test(f.imagen) ? (
-                    <Box
-                      component="img"
-                      src={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
-                      alt={f.nombre_piso}
-                      sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                      onClick={() => setImagePreview(f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`)}
-                    />
-                  ) : (
-                    <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
-                    </Box>
-                  )}
-                </TableCell>
-                <TableCell>{f.nombre_piso}</TableCell>
-                <TableCell>{f.numero_piso ?? '—'}</TableCell>
-                <TableCell>{getBuildingName(f.id_edificio)}</TableCell>
-                <TableCell>
-                  <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>
-                  <IconButton size="small" onClick={() => handleEdit(f.id_piso)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(f.id_piso)}><DeleteIcon fontSize="small" /></IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!filterBuilding && (
+            {filteredFloors && filteredFloors.length > 0 ? (
+              filteredFloors.map((f) => (
+                <TableRow key={f.id_piso} hover>
+                  <TableCell>{f.id_piso}</TableCell>
+                  <TableCell>
+                    {f.imagen && !/via\.placeholder\.com/.test(f.imagen) ? (
+                      <Box
+                        component="img"
+                        src={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
+                        alt={f.nombre_piso}
+                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                        onClick={() => setImagePreview(f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`)}
+                      />
+                    ) : (
+                      <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell>{f.nombre_piso}</TableCell>
+                  <TableCell>{f.numero_piso ?? '—'}</TableCell>
+                  <TableCell>{getBuildingName(f.id_edificio)}</TableCell>
+                  <TableCell>
+                    <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => handleEdit(f.id_piso)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(f.id_piso)}><DeleteIcon fontSize="small" /></IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    Selecciona un edificio para ver sus pisos
+                    No se encontraron pisos
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -311,6 +339,9 @@ export default function FloorsPage() {
                   onChange={handleImageChange}
                 />
               </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Dimensiones requeridas: 1600x1200 píxeles
+              </Typography>
               {imagePreviewUrl && (
                 <Box
                   component="img"
@@ -346,7 +377,7 @@ export default function FloorsPage() {
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
-                    <MenuItem value="No disponible">No disponible</MenuItem>
+                    <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               )}

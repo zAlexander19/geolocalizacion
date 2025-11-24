@@ -43,6 +43,7 @@ export default function BuildingsPage() {
   const [editId, setEditId] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -52,6 +53,7 @@ export default function BuildingsPage() {
     defaultValues: {
       nombre_edificio: '',
       acronimo: '',
+      descripcion: '',
       imagen: '',
       cord_latitud: 0,
       cord_longitud: 0,
@@ -125,6 +127,7 @@ export default function BuildingsPage() {
         if (b) {
           setValue('nombre_edificio', b.nombre_edificio)
           setValue('acronimo', b.acronimo)
+          setValue('descripcion', b.descripcion || '')
           setValue('imagen', b.imagen || '')
           setValue('cord_latitud', b.cord_latitud)
           setValue('cord_longitud', b.cord_longitud)
@@ -143,11 +146,23 @@ export default function BuildingsPage() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (file && (file.type === 'image/png' || file.type === 'image/jpeg')) {
-      setImageFile(file)
+      // Validar dimensiones de la imagen
+      const img = new Image()
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result)
+      
+      reader.onload = (event) => {
+        img.onload = () => {
+          if (img.width === 1600 && img.height === 1200) {
+            setImageFile(file)
+            setImagePreviewUrl(event.target.result)
+          } else {
+            alert(`La imagen debe tener exactamente 1600x1200 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+            e.target.value = '' // Limpiar el input
+          }
+        }
+        img.src = event.target.result
       }
+      
       reader.readAsDataURL(file)
     } else if (file) {
       alert('Por favor selecciona un archivo PNG o JPG')
@@ -158,6 +173,9 @@ export default function BuildingsPage() {
     const formData = new FormData()
     formData.append('nombre_edificio', data.nombre_edificio)
     formData.append('acronimo', data.acronimo)
+    if (data.descripcion) {
+      formData.append('descripcion', data.descripcion)
+    }
     formData.append('cord_latitud', data.cord_latitud)
     formData.append('cord_longitud', data.cord_longitud)
     formData.append('estado', data.estado)
@@ -185,21 +203,36 @@ export default function BuildingsPage() {
     }
   }
 
+  const filteredBuildings = buildings?.filter(b => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      b.nombre_edificio.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.acronimo.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterBuilding === '' || b.id_edificio === filterBuilding
+    return matchesSearch && matchesFilter
+  })
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Edificios</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Buscar edificios..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+          />
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Seleccionar edificio</InputLabel>
+            <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
-              label="Seleccionar edificio"
+              label="Filtrar por edificio"
               size="small"
             >
-              <MenuItem value="">-- Seleccionar --</MenuItem>
-              {buildings?.map(b => (
+              <MenuItem value="">Todos</MenuItem>
+              {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
                 <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
               ))}
             </Select>
@@ -225,60 +258,61 @@ export default function BuildingsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterBuilding && buildings?.filter(b => b.id_edificio === filterBuilding).map((b) => (
-              <TableRow key={b.id_edificio} hover>
-                <TableCell>{b.id_edificio}</TableCell>
-                <TableCell>
-                  {b.imagen && !/via\.placeholder\.com/.test(b.imagen) ? (
-                    <Box
-                      component="img"
-                      src={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
-                      alt={b.nombre_edificio}
-                      sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                      onClick={() => setImagePreview(b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`)}
-                    />
-                  ) : (
-                    <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
-                    </Box>
-                  )}
-                </TableCell>
-                <TableCell>{b.nombre_edificio}</TableCell>
-                <TableCell>{b.acronimo}</TableCell>
-                <TableCell>{b.cord_latitud}</TableCell>
-                <TableCell>{b.cord_longitud}</TableCell>
-                <TableCell>
-                  <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="Ver más">
-                    <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
-                      <VisibilityIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Ver en el mapa">
-                    <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
-                      <MapIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Editar">
-                    <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Eliminar">
-                    <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!filterBuilding && (
+            {filteredBuildings && filteredBuildings.length > 0 ? (
+              filteredBuildings.map((b) => (
+                <TableRow key={b.id_edificio} hover>
+                  <TableCell>{b.id_edificio}</TableCell>
+                  <TableCell>
+                    {b.imagen && !/via\.placeholder\.com/.test(b.imagen) ? (
+                      <Box
+                        component="img"
+                        src={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
+                        alt={b.nombre_edificio}
+                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                        onClick={() => setImagePreview(b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`)}
+                      />
+                    ) : (
+                      <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell>{b.nombre_edificio}</TableCell>
+                  <TableCell>{b.acronimo}</TableCell>
+                  <TableCell>{b.cord_latitud}</TableCell>
+                  <TableCell>{b.cord_longitud}</TableCell>
+                  <TableCell>
+                    <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="Ver más">
+                      <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Ver en el mapa">
+                      <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
+                        <MapIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Editar">
+                      <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar">
+                      <IconButton size="small" color="error" onClick={() => handleDelete(b.id_edificio)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="text.secondary">
-                    Selecciona un edificio para ver sus datos
+                    No se encontraron edificios
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -301,6 +335,20 @@ export default function BuildingsPage() {
               control={control}
               render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth />}
             />
+            <Controller
+              name="descripcion"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Descripción (Opcional)"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  placeholder="Describe el edificio..."
+                />
+              )}
+            />
             <Box>
               <Button
                 variant="outlined"
@@ -316,6 +364,9 @@ export default function BuildingsPage() {
                   onChange={handleImageChange}
                 />
               </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                Dimensiones requeridas: 1600x1200 píxeles
+              </Typography>
               {imagePreviewUrl && (
                 <Box
                   component="img"
@@ -356,7 +407,7 @@ export default function BuildingsPage() {
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
-                    <MenuItem value="No disponible">No disponible</MenuItem>
+                    <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               )}
