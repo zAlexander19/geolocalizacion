@@ -104,13 +104,14 @@ function nextId(items, key) {
 export function createApp() {
   const app = express()
   
-  // ✅ MODIFICAR CORS PARA PERMITIR CELULAR
+  // Configuración de CORS para permitir frontend en Vercel
   app.use(cors({
     origin: [
       'http://localhost:5173',
       'http://localhost:3000',
-      'http://192.168.1.10:5173',  // ← REEMPLAZA CON TU IP
-      'http://127.0.0.1:5173'
+      'https://geolocalizacion-mjqg-irau0w59y-alexander-farias-projects.vercel.app',
+      'https://geolocalizacion-mjqg.vercel.app',
+      /\.vercel\.app$/  // Permitir todos los dominios de Vercel
     ],
     credentials: true
   }))
