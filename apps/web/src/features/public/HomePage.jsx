@@ -120,6 +120,9 @@ function RouteComponent({ start, end, waypoints = [] }) {
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  
   const [searchType, setSearchType] = useState('todo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
