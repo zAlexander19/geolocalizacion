@@ -655,7 +655,6 @@ export default function HomePage() {
       <AppBar position="static" elevation={1} sx={{ bgcolor: 'white', color: 'text.primary' }}>
         <Toolbar sx={{ 
           justifyContent: 'space-between',
-          flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 1 : 0,
           py: isMobile ? 1 : 0,
           minHeight: isMobile ? 'auto' : 64,
@@ -667,64 +666,68 @@ export default function HomePage() {
               component="h1" 
               sx={{ fontWeight: 'bold', color: 'text.primary' }}
             >
-              Geolocalización Campus
+              {isMobile ? 'Campus' : 'Geolocalización Campus'}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: isMobile ? 0.5 : 2, alignItems: 'center' }}>
             {/* Botón de estado de ubicación */}
             {userLocation ? (
               <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)}m` : 'Ubicación activada'}>
                 <Button
-                  size={isMobile ? "small" : "medium"}
-                  startIcon={<MyLocationIcon />}
+                  size="small"
+                  startIcon={!isMobile && <MyLocationIcon />}
                   sx={{ 
                     color: 'success.main', 
                     textTransform: 'none',
-                    width: isMobile ? '100%' : 'auto',
-                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                    fontSize: isMobile ? '0.7rem' : '0.875rem',
+                    minWidth: isMobile ? 'auto' : 'auto',
+                    px: isMobile ? 1 : 2,
                   }}
                 >
-                  {isMobile ? 'GPS ✓' : 'Ubicación activada'}
-                  {locationAccuracy && locationAccuracy <= 20 && (
+                  {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'GPS'}
+                  {locationAccuracy && locationAccuracy <= 20 && !isMobile && (
                     <Chip 
                       label={`${Math.round(locationAccuracy)}m`}
                       size="small" 
                       color="success" 
-                      sx={{ ml: 1, height: isMobile ? 16 : 20 }}
+                      sx={{ ml: 1, height: 20 }}
                     />
                   )}
                 </Button>
               </Tooltip>
             ) : (
               <Button
-                size={isMobile ? "small" : "medium"}
-                startIcon={<MyLocationIcon />}
+                size="small"
+                startIcon={!isMobile && <MyLocationIcon />}
                 onClick={handleRetryLocation}
                 sx={{ 
                   color: 'warning.main', 
                   textTransform: 'none',
-                  width: isMobile ? '100%' : 'auto',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontSize: isMobile ? '0.7rem' : '0.875rem',
+                  minWidth: isMobile ? 'auto' : 'auto',
+                  px: isMobile ? 1 : 2,
                 }}
               >
-                {isMobile ? 'Activar GPS' : 'Activar ubicación'}
+                {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'Activar GPS'}
               </Button>
             )}
 
             <Button 
               variant="contained"
               onClick={() => navigate('/login')}
-              size={isMobile ? "small" : "medium"}
+              size="small"
               sx={{ 
                 bgcolor: 'grey.900',
                 '&:hover': { bgcolor: 'grey.800' },
-                width: isMobile ? '100%' : 'auto',
                 textTransform: 'none',
                 fontWeight: 'bold',
+                fontSize: isMobile ? '0.7rem' : '0.875rem',
+                px: isMobile ? 1.5 : 2,
+                minWidth: isMobile ? 'auto' : 'auto',
               }}
             >
-              {isMobile ? 'Login' : 'Iniciar Sesión'}
+              Login
             </Button>
           </Box>
         </Toolbar>

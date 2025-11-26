@@ -4,10 +4,14 @@ import { useForm, Controller } from 'react-hook-form'
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  CardMedia,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
   Paper,
   Table,
   TableBody,
@@ -23,11 +27,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material'
 import api from '../../../lib/api'
 
 export default function FacultiesPage() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState(null)
@@ -256,23 +264,29 @@ export default function FacultiesPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Facultades</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 0 }}>Facultades</Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 2, 
+          alignItems: isMobile ? 'stretch' : 'center',
+          mt: isMobile ? 2 : 3,
+        }}>
           <TextField
             placeholder="Buscar facultades..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            fullWidth={isMobile}
+            sx={{ minWidth: isMobile ? 'auto' : 250 }}
           />
-          <FormControl sx={{ minWidth: 200 }}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 200 }}>
             <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
               label="Filtrar por edificio"
-              size="small"
             >
               <MenuItem value="">Todos</MenuItem>
               {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
@@ -280,68 +294,148 @@ export default function FacultiesPage() {
               ))}
             </Select>
           </FormControl>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditId(null); setOpen(true) }}>
-            Agregar Facultad
+          <Button 
+            variant="contained" 
+            startIcon={!isMobile && <AddIcon />} 
+            onClick={() => { setEditId(null); setOpen(true) }}
+            fullWidth={isMobile}
+          >
+            {isMobile ? '+ Agregar' : 'Agregar Facultad'}
           </Button>
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'grey.100' }}>
-                    <TableCell>Logo</TableCell>
-                    <TableCell>Código</TableCell>
-                    <TableCell>Nombre</TableCell>
-                    <TableCell>Edificio</TableCell>
-                    <TableCell>Descripción</TableCell>
-                    <TableCell>Estado</TableCell>
-                    <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredFaculties && filteredFaculties.length > 0 ? (
-              filteredFaculties.map((f) => (
-                <TableRow key={f.codigo_facultad || f.nombre_facultad} hover>
-                  <TableCell>
-                    {f.logo ? (
-                      <Box
-                        component="img"
-                        src={f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`}
-                        alt={f.nombre_facultad}
-                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1 }}
+      {/* Vista Mobile - Cards */}
+      {isMobile ? (
+        <Grid container spacing={2}>
+          {filteredFaculties && filteredFaculties.length > 0 ? (
+            filteredFaculties.map((f) => (
+              <Grid item xs={12} key={f.codigo_facultad || f.nombre_facultad}>
+                <Card>
+                  {f.logo && (
+                    <CardMedia
+                      component="img"
+                      height="140"
+                      image={f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`}
+                      alt={f.nombre_facultad}
+                    />
+                  )}
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                      <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                        {f.nombre_facultad}
+                      </Typography>
+                      <Chip 
+                        label={f.estado ? 'Activo' : 'Inactivo'} 
+                        color={f.estado ? 'success' : 'default'} 
+                        size="small" 
                       />
-                    ) : (
-                      <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1 }} />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Código:</strong> {f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Edificio:</strong> {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || '-' : '-'}
+                    </Typography>
+                    {f.descripcion && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        <strong>Descripción:</strong> {f.descripcion}
+                      </Typography>
                     )}
-                  </TableCell>
-                  <TableCell>{f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : ''}</TableCell>
-                  <TableCell>{f.nombre_facultad}</TableCell>
-                  <TableCell>
-                    {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || f.id_edificio : ''}
-                  </TableCell>
-                  <TableCell>{f.descripcion}</TableCell>
-                  <TableCell>
-                    <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}><DeleteIcon fontSize="small" /></IconButton>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}
+                        fullWidth
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}
+                        fullWidth
+                      >
+                        Eliminar
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No se encontraron facultades
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+      ) : (
+        /* Vista Desktop - Tabla */
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableCell>Logo</TableCell>
+                      <TableCell>Código</TableCell>
+                      <TableCell>Nombre</TableCell>
+                      <TableCell>Edificio</TableCell>
+                      <TableCell>Descripción</TableCell>
+                      <TableCell>Estado</TableCell>
+                      <TableCell>Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredFaculties && filteredFaculties.length > 0 ? (
+                filteredFaculties.map((f) => (
+                  <TableRow key={f.codigo_facultad || f.nombre_facultad} hover>
+                    <TableCell>
+                      {f.logo ? (
+                        <Box
+                          component="img"
+                          src={f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`}
+                          alt={f.nombre_facultad}
+                          sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1 }}
+                        />
+                      ) : (
+                        <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1 }} />
+                      )}
+                    </TableCell>
+                    <TableCell>{f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : ''}</TableCell>
+                    <TableCell>{f.nombre_facultad}</TableCell>
+                    <TableCell>
+                      {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || f.id_edificio : ''}
+                    </TableCell>
+                    <TableCell>{f.descripcion}</TableCell>
+                    <TableCell>
+                      <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
+                    </TableCell>
+                    <TableCell>
+                      <IconButton size="small" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}><DeleteIcon fontSize="small" /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      No se encontraron facultades
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    No se encontraron facultades
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editId ? 'Editar Facultad' : 'Nueva Facultad'}</DialogTitle>

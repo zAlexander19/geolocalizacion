@@ -4,6 +4,9 @@ import api from '../../../lib/api'
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  CardMedia,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -17,6 +20,7 @@ import {
   Checkbox,
   Alert,
   CircularProgress,
+  Grid,
   Table,
   TableHead,
   TableRow,
@@ -27,10 +31,14 @@ import {
   IconButton,
   Chip,
   Paper,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material'
 
 export default function BathroomsAdmin() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [filterBuilding, setFilterBuilding] = useState('')
@@ -288,18 +296,25 @@ export default function BathroomsAdmin() {
   }, [filterBuilding])
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>Baños</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+    <Box sx={{ p: isMobile ? 2 : 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 600, mb: isMobile ? 2 : 0 }}>Baños</Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 2, 
+          alignItems: isMobile ? 'stretch' : 'center',
+          mt: isMobile ? 2 : 3,
+        }}>
           <TextField
             placeholder="Buscar baños..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            fullWidth={isMobile}
+            sx={{ minWidth: isMobile ? 'auto' : 250 }}
           />
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 200 }}>
             <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               label="Filtrar por edificio"
@@ -311,7 +326,7 @@ export default function BathroomsAdmin() {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 180 }}>
             <InputLabel>Filtrar por piso</InputLabel>
             <Select
               label="Filtrar por piso"
@@ -327,79 +342,156 @@ export default function BathroomsAdmin() {
           <Button 
             variant="contained" 
             onClick={openCreate}
+            fullWidth={isMobile}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
-            + AGREGAR BAÑO
+            {isMobile ? '+ Agregar' : '+ AGREGAR BAÑO'}
           </Button>
         </Box>
       </Box>
 
-      <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
-        <Table>
-          <TableHead sx={{ bgcolor: '#fafafa' }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>ID</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Imagen</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Nombre</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Capacidad</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Tipo</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Estado</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Acceso discapacidad</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: '#333' }}>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#999' }}>
-                  No se encontraron baños
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map(b => (
-              <TableRow key={b.id_bano} sx={{ '&:hover': { bgcolor: '#f5f5f5' } }}>
-                <TableCell>{b.id_bano}</TableCell>
-                <TableCell>
-                  {(() => {
-                    const img = b.imagen
-                    const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="%23e5e7eb"/><text x="50%" y="50%" dy=".3em" text-anchor="middle" font-size="10" fill="%23aaa">Sin imagen</text></svg>'
-                    if (!img || /via\.placeholder\.com/.test(img)) {
-                      return (
-                        <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Box component="img" src={placeholder} alt="Sin imagen" sx={{ width: 40, height: 40 }} />
-                        </Box>
-                      )
-                    }
-                    if (typeof img !== 'string') return '—'
-                    const src = img.startsWith('http') ? img : `http://localhost:4000${img}`
-                    return (
-                      <Box
+      {/* Vista Mobile - Cards */}
+      {isMobile ? (
+        <Grid container spacing={2}>
+          {list && list.length > 0 ? (
+            list.map((b) => {
+              const img = b.imagen
+              const hasValidImage = img && typeof img === 'string' && !(/via\.placeholder\.com/.test(img))
+              const imgSrc = hasValidImage ? (img.startsWith('http') ? img : `http://localhost:4000${img}`) : null
+              
+              return (
+                <Grid item xs={12} key={b.id_bano}>
+                  <Card>
+                    {imgSrc && (
+                      <CardMedia
                         component="img"
-                        src={src}
-                        alt=""
-                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                        onClick={() => setImagePreview(src)}
+                        height="140"
+                        image={imgSrc}
+                        alt={b.nombre}
                       />
-                    )
-                  })()}
-                </TableCell>
-                <TableCell>{b.nombre || '—'}</TableCell>
-                <TableCell>{b.capacidad || '—'}</TableCell>
-                <TableCell>{b.tipo}</TableCell>
-                <TableCell>
-                  <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>{b.acceso_discapacidad ? 'Sí' : 'No'}</TableCell>
-                <TableCell>
-                  <IconButton size="small" onClick={() => openEdit(b)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(b.id_bano)}><DeleteIcon fontSize="small" /></IconButton>
-                </TableCell>
+                    )}
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                          {b.nombre || 'Sin nombre'}
+                        </Typography>
+                        <Chip 
+                          label={b.estado ? 'Activo' : 'Inactivo'} 
+                          color={b.estado ? 'success' : 'default'} 
+                          size="small" 
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Tipo:</strong> {b.tipo} | <strong>Capacidad:</strong> {b.capacidad || '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        <strong>Acceso discapacidad:</strong> {b.acceso_discapacidad ? 'Sí' : 'No'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined"
+                          startIcon={<EditIcon />}
+                          onClick={() => openEdit(b)}
+                          fullWidth
+                        >
+                          Editar
+                        </Button>
+                        <Button 
+                          size="small" 
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => handleDelete(b.id_bano)}
+                          fullWidth
+                        >
+                          Eliminar
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )
+            })
+          ) : (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No se encontraron baños
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+      ) : (
+        /* Vista Desktop - Tabla */
+        <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
+          <Table>
+            <TableHead sx={{ bgcolor: '#fafafa' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Imagen</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Capacidad</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Tipo</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Acceso discapacidad</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#333' }}>Acciones</TableCell>
               </TableRow>
-            ))
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
+            </TableHead>
+            <TableBody>
+              {list.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#999' }}>
+                    No se encontraron baños
+                  </TableCell>
+                </TableRow>
+              ) : (
+                list.map(b => (
+                <TableRow key={b.id_bano} sx={{ '&:hover': { bgcolor: '#f5f5f5' } }}>
+                  <TableCell>{b.id_bano}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const img = b.imagen
+                      const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="%23e5e7eb"/><text x="50%" y="50%" dy=".3em" text-anchor="middle" font-size="10" fill="%23aaa">Sin imagen</text></svg>'
+                      if (!img || /via\.placeholder\.com/.test(img)) {
+                        return (
+                          <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Box component="img" src={placeholder} alt="Sin imagen" sx={{ width: 40, height: 40 }} />
+                          </Box>
+                        )
+                      }
+                      if (typeof img !== 'string') return '—'
+                      const src = img.startsWith('http') ? img : `http://localhost:4000${img}`
+                      return (
+                        <Box
+                          component="img"
+                          src={src}
+                          alt=""
+                          sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                          onClick={() => setImagePreview(src)}
+                        />
+                      )
+                    })()}
+                  </TableCell>
+                  <TableCell>{b.nombre || '—'}</TableCell>
+                  <TableCell>{b.capacidad || '—'}</TableCell>
+                  <TableCell>{b.tipo}</TableCell>
+                  <TableCell>
+                    <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>{b.acceso_discapacidad ? 'Sí' : 'No'}</TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => openEdit(b)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(b.id_bano)}><DeleteIcon fontSize="small" /></IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 600 }}>{editId ? 'Editar baño' : 'Crear nuevo baño'}</DialogTitle>

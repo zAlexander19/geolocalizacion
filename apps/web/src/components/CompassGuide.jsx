@@ -8,6 +8,8 @@ import {
   Typography,
   Button,
   Alert,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Close as CloseIcon,
@@ -15,6 +17,8 @@ import {
 } from '@mui/icons-material'
 
 export default function CompassGuide({ open, onClose, userLocation, destination, destinationName }) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [heading, setHeading] = useState(0) // Orientación del dispositivo
   const [bearing, setBearing] = useState(0) // Dirección hacia el destino
   const [distance, setDistance] = useState(0)
@@ -149,16 +153,25 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
           bgcolor: '#000',
           color: '#fff',
-          minHeight: '60vh'
+          minHeight: isMobile ? '100vh' : '60vh',
+          m: isMobile ? 0 : 2,
         }
       }}
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-        <Typography variant="h6" sx={{ color: '#fff' }}>
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        pb: 1,
+        fontSize: isMobile ? '1rem' : '1.25rem',
+        py: isMobile ? 1.5 : 2,
+      }}>
+        <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ color: '#fff', fontWeight: 'bold' }}>
           Guía de Navegación
         </Typography>
         <IconButton onClick={handleClose} sx={{ color: '#fff' }}>
@@ -166,7 +179,14 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 4 }}>
+      <DialogContent sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: isMobile ? 2 : 3, 
+        py: isMobile ? 2 : 4,
+        px: isMobile ? 2 : 3,
+      }}>
         {error && (
           <Alert severity="error" sx={{ width: '100%' }}>
             {error}
@@ -216,8 +236,8 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
             <Box
               sx={{
                 position: 'relative',
-                width: 250,
-                height: 250,
+                width: isMobile ? 200 : 250,
+                height: isMobile ? 200 : 250,
                 borderRadius: '50%',
                 border: '4px solid #333',
                 display: 'flex',

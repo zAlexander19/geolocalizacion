@@ -4,11 +4,15 @@ import { useForm, Controller } from 'react-hook-form'
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  CardMedia,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  Grid,
   InputLabel,
   MenuItem,
   Paper,
@@ -24,6 +28,8 @@ import {
   IconButton,
   Chip,
   InputAdornment,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -34,6 +40,8 @@ import {
 import api from '../../../lib/api'
 
 export default function RoomsPage() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState(null)
@@ -269,15 +277,22 @@ export default function RoomsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Salas</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 0 }}>Salas</Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 2, 
+          alignItems: isMobile ? 'stretch' : 'center',
+          mt: isMobile ? 2 : 3,
+        }}>
           <TextField
             placeholder="Buscar por nombre o acrónimo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            fullWidth={isMobile}
+            sx={{ minWidth: isMobile ? 'auto' : 250 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -286,7 +301,7 @@ export default function RoomsPage() {
               ),
             }}
           />
-          <FormControl sx={{ minWidth: 180 }}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 180 }}>
             <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
@@ -295,7 +310,6 @@ export default function RoomsPage() {
                 setFilterFloor('') // Reset floor filter when building changes
               }}
               label="Filtrar por edificio"
-              size="small"
             >
               <MenuItem value="">Todos</MenuItem>
               {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
@@ -303,13 +317,12 @@ export default function RoomsPage() {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 180 }} disabled={!filterBuilding}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 180 }} disabled={!filterBuilding}>
             <InputLabel>Filtrar por piso</InputLabel>
             <Select
               value={filterFloor}
               onChange={(e) => setFilterFloor(e.target.value)}
               label="Filtrar por piso"
-              size="small"
             >
               <MenuItem value="">Todos</MenuItem>
               {filteredFloors?.sort((a, b) => a.nombre_piso.localeCompare(b.nombre_piso)).map(f => (
@@ -317,72 +330,150 @@ export default function RoomsPage() {
               ))}
             </Select>
           </FormControl>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditId(null); setOpen(true) }}>
-            Agregar Sala
+          <Button 
+            variant="contained" 
+            startIcon={!isMobile && <AddIcon />} 
+            onClick={() => { setEditId(null); setOpen(true) }}
+            fullWidth={isMobile}
+          >
+            {isMobile ? '+ Agregar' : 'Agregar Sala'}
           </Button>
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>ID</TableCell>
-              <TableCell>Imagen</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Acrónimo</TableCell>
-              <TableCell>Tipo</TableCell>
-              <TableCell>Capacidad</TableCell>
-              <TableCell>Piso</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredRooms?.map((r) => (
-              <TableRow key={r.id_sala} hover>
-                <TableCell>{r.id_sala}</TableCell>
-                <TableCell>
-                  {r.imagen && !/via\.placeholder\.com/.test(r.imagen) ? (
-                    <Box
+      {/* Vista Mobile - Cards */}
+      {isMobile ? (
+        <Grid container spacing={2}>
+          {filteredRooms && filteredRooms.length > 0 ? (
+            filteredRooms.map((r) => (
+              <Grid item xs={12} key={r.id_sala}>
+                <Card>
+                  {r.imagen && !/via\.placeholder\.com/.test(r.imagen) && (
+                    <CardMedia
                       component="img"
-                      src={r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`}
+                      height="140"
+                      image={r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`}
                       alt={r.nombre_sala}
-                      sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                      onClick={() => setImagePreview(r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`)}
                     />
-                  ) : (
-                    <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
-                    </Box>
                   )}
-                </TableCell>
-                <TableCell>{r.nombre_sala}</TableCell>
-                <TableCell>{r.acronimo || '-'}</TableCell>
-                <TableCell>{r.tipo_sala}</TableCell>
-                <TableCell>{r.capacidad}</TableCell>
-                <TableCell>{getFloorName(r.id_piso)}</TableCell>
-                <TableCell>
-                  <Chip label={r.estado ? 'Activa' : 'Inactiva'} color={r.estado ? 'success' : 'default'} size="small" />
-                </TableCell>
-                <TableCell>
-                  <IconButton size="small" onClick={() => handleEdit(r.id_sala)}><EditIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(r.id_sala)}><DeleteIcon fontSize="small" /></IconButton>
-                </TableCell>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                      <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                        {r.nombre_sala}
+                      </Typography>
+                      <Chip 
+                        label={r.estado ? 'Activa' : 'Inactiva'} 
+                        color={r.estado ? 'success' : 'default'} 
+                        size="small" 
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Acrónimo:</strong> {r.acronimo || '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Tipo:</strong> {r.tipo_sala} | <strong>Capacidad:</strong> {r.capacidad}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      <strong>Piso:</strong> {getFloorName(r.id_piso)}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleEdit(r.id_sala)}
+                        fullWidth
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(r.id_sala)}
+                        fullWidth
+                      >
+                        Eliminar
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No se encontraron salas
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+      ) : (
+        /* Vista Desktop - Tabla */
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableCell>ID</TableCell>
+                <TableCell>Imagen</TableCell>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Acrónimo</TableCell>
+                <TableCell>Tipo</TableCell>
+                <TableCell>Capacidad</TableCell>
+                <TableCell>Piso</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Acciones</TableCell>
               </TableRow>
-            ))}
-            {filteredRooms.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    No se encontraron salas
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredRooms?.map((r) => (
+                <TableRow key={r.id_sala} hover>
+                  <TableCell>{r.id_sala}</TableCell>
+                  <TableCell>
+                    {r.imagen && !/via\.placeholder\.com/.test(r.imagen) ? (
+                      <Box
+                        component="img"
+                        src={r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`}
+                        alt={r.nombre_sala}
+                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                        onClick={() => setImagePreview(r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`)}
+                      />
+                    ) : (
+                      <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell>{r.nombre_sala}</TableCell>
+                  <TableCell>{r.acronimo || '-'}</TableCell>
+                  <TableCell>{r.tipo_sala}</TableCell>
+                  <TableCell>{r.capacidad}</TableCell>
+                  <TableCell>{getFloorName(r.id_piso)}</TableCell>
+                  <TableCell>
+                    <Chip label={r.estado ? 'Activa' : 'Inactiva'} color={r.estado ? 'success' : 'default'} size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => handleEdit(r.id_sala)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(r.id_sala)}><DeleteIcon fontSize="small" /></IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredRooms.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      No se encontraron salas
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editId ? 'Editar Sala' : 'Nueva Sala'}</DialogTitle>
