@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import {
@@ -38,6 +38,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material'
 import api from '../../../lib/api'
+import MapLocationPicker from '../../../components/MapLocationPicker'
 
 export default function RoomsPage() {
   const theme = useTheme()
@@ -52,6 +53,7 @@ export default function RoomsPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [selectedBuilding, setSelectedBuilding] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -157,6 +159,7 @@ export default function RoomsPage() {
           setValue('tipo_sala', r.tipo_sala)
           setValue('cord_latitud', r.cord_latitud)
           setValue('cord_longitud', r.cord_longitud)
+          setMapCoordinates({ latitude: r.cord_latitud, longitude: r.cord_longitud })
           setValue('estado', r.estado)
           setValue('disponibilidad', r.disponibilidad)
           setImagePreviewUrl(r.imagen ? (r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`) : null)
@@ -274,6 +277,12 @@ export default function RoomsPage() {
     
     return result
   })()
+
+  const handleMapCoordinatesChange = useCallback((coords) => {
+    setMapCoordinates(coords)
+    setValue('cord_latitud', coords.latitude)
+    setValue('cord_longitud', coords.longitude)
+  }, [setValue])
 
   return (
     <Box>
@@ -581,16 +590,13 @@ export default function RoomsPage() {
                 />
               )}
             </Box>
-            <Controller
-              name="cord_latitud"
-              control={control}
-              render={({ field }) => <TextField {...field} label="Latitud" type="number" fullWidth />}
+            
+            <MapLocationPicker
+              latitude={mapCoordinates.latitude}
+              longitude={mapCoordinates.longitude}
+              onChange={handleMapCoordinatesChange}
             />
-            <Controller
-              name="cord_longitud"
-              control={control}
-              render={({ field }) => <TextField {...field} label="Longitud" type="number" fullWidth />}
-            />
+            
             <Controller
               name="estado"
               control={control}

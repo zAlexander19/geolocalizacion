@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
@@ -41,6 +41,7 @@ import {
 } from '@mui/icons-material'
 import api from '../../../lib/api'
 import BuildingDetailsModal from '../../../components/BuildingDetailsModal'
+import MapLocationPicker from '../../../components/MapLocationPicker'
 
 export default function BuildingsPage() {
   const theme = useTheme()
@@ -56,6 +57,7 @@ export default function BuildingsPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState(null)
+  const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
 
   const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
@@ -139,6 +141,7 @@ export default function BuildingsPage() {
           setValue('imagen', b.imagen || '')
           setValue('cord_latitud', b.cord_latitud)
           setValue('cord_longitud', b.cord_longitud)
+          setMapCoordinates({ latitude: b.cord_latitud, longitude: b.cord_longitud })
           setValue('estado', b.estado)
           setValue('disponibilidad', b.disponibilidad)
           setImagePreviewUrl(b.imagen ? (b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`) : null)
@@ -219,6 +222,12 @@ export default function BuildingsPage() {
     return matchesSearch && matchesFilter
   })
 
+  const handleMapCoordinatesChange = useCallback((coords) => {
+    setMapCoordinates(coords)
+    setValue('cord_latitud', coords.latitude)
+    setValue('cord_longitud', coords.longitude)
+  }, [setValue])
+
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
@@ -254,7 +263,14 @@ export default function BuildingsPage() {
           <Button 
             variant="contained" 
             startIcon={!isMobile && <AddIcon />} 
-            onClick={() => { setEditId(null); setOpen(true) }}
+            onClick={() => { 
+              setEditId(null)
+              setMapCoordinates({ latitude: -33.0367, longitude: -71.5963 })
+              reset()
+              setImageFile(null)
+              setImagePreviewUrl(null)
+              setOpen(true)
+            }}
             fullWidth={isMobile}
           >
             {isMobile ? '+ Agregar' : 'Agregar Edificio'}
@@ -295,25 +311,6 @@ export default function BuildingsPage() {
                       <strong>Coordenadas:</strong> {b.cord_latitud}, {b.cord_longitud}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
-                      <Button 
-                        size="small" 
-                        variant="outlined"
-                        startIcon={<VisibilityIcon />}
-                        onClick={() => handleViewDetails(b)}
-                        fullWidth
-                      >
-                        Ver más
-                      </Button>
-                      <Button 
-                        size="small" 
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<MapIcon />}
-                        onClick={() => handleViewOnMap(b)}
-                        sx={{ flex: 1 }}
-                      >
-                        Mapa
-                      </Button>
                       <Button 
                         size="small" 
                         variant="outlined"
@@ -392,16 +389,6 @@ export default function BuildingsPage() {
                       <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
                     </TableCell>
                     <TableCell>
-                      <Tooltip title="Ver más">
-                        <IconButton size="small" color="info" onClick={() => handleViewDetails(b)}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Ver en el mapa">
-                        <IconButton size="small" color="primary" onClick={() => handleViewOnMap(b)}>
-                          <MapIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
                       <Tooltip title="Editar">
                         <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
                           <EditIcon fontSize="small" />
@@ -484,16 +471,13 @@ export default function BuildingsPage() {
                 />
               )}
             </Box>
-            <Controller
-              name="cord_latitud"
-              control={control}
-              render={({ field }) => <TextField {...field} label="Latitud" type="number" fullWidth />}
+            
+            <MapLocationPicker
+              latitude={mapCoordinates.latitude}
+              longitude={mapCoordinates.longitude}
+              onChange={handleMapCoordinatesChange}
             />
-            <Controller
-              name="cord_longitud"
-              control={control}
-              render={({ field }) => <TextField {...field} label="Longitud" type="number" fullWidth />}
-            />
+            
             <Controller
               name="estado"
               control={control}

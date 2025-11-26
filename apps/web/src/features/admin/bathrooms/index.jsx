@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../../lib/api'
+import MapLocationPicker from '../../../components/MapLocationPicker'
 import {
   Box,
   Button,
@@ -48,6 +49,7 @@ export default function BathroomsAdmin() {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
   const [form, setForm] = useState({
     id_edificio: '',
     id_piso: '',
@@ -194,6 +196,7 @@ export default function BathroomsAdmin() {
       cord_latitud: '', 
       cord_longitud: '' 
     })
+    setMapCoordinates({ latitude: -33.0367, longitude: -71.5963 })
     setImageFile(null)
     setImagePreviewUrl(null)
     setOpen(true)
@@ -214,6 +217,10 @@ export default function BathroomsAdmin() {
       disponibilidad: b.disponibilidad || 'Disponible',
       cord_latitud: b.cord_latitud || '',
       cord_longitud: b.cord_longitud || ''
+    })
+    setMapCoordinates({ 
+      latitude: b.cord_latitud || -33.0367, 
+      longitude: b.cord_longitud || -71.5963 
     })
     setImageFile(null)
     // calcular preview de forma segura
@@ -294,6 +301,15 @@ export default function BathroomsAdmin() {
   useEffect(() => {
     setFilterFloor('')
   }, [filterBuilding])
+
+  const handleMapCoordinatesChange = useCallback((coords) => {
+    setMapCoordinates(coords)
+    setForm(prev => ({
+      ...prev,
+      cord_latitud: coords.latitude,
+      cord_longitud: coords.longitude
+    }))
+  }, [])
 
   return (
     <Box sx={{ p: isMobile ? 2 : 3 }}>
@@ -611,8 +627,12 @@ export default function BathroomsAdmin() {
             </Select>
           </FormControl>
           <FormControlLabel control={<Checkbox name="acceso_discapacidad" checked={!!form.acceso_discapacidad} onChange={onFormChange} />} label="Acceso discapacidad" sx={{ mb: 2 }} />
-          <TextField fullWidth label="Latitud" name="cord_latitud" value={form.cord_latitud} onChange={onFormChange} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Longitud" name="cord_longitud" value={form.cord_longitud} onChange={onFormChange} />
+          
+          <MapLocationPicker
+            latitude={mapCoordinates.latitude}
+            longitude={mapCoordinates.longitude}
+            onChange={handleMapCoordinatesChange}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => { setOpen(false); setEditId(null); setImageFile(null); setImagePreviewUrl(null); }} disabled={submitting}>Cancelar</Button>
