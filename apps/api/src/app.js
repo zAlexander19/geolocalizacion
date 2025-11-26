@@ -104,15 +104,23 @@ function nextId(items, key) {
 export function createApp() {
   const app = express()
   
-  // Configuración de CORS para permitir frontend en Vercel
+  // Configuración de CORS para permitir frontend
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : ['http://localhost:5173', 'http://localhost:3000']
+  
   app.use(cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://geolocalizacion-mjqg-irau0w59y-alexander-farias-projects.vercel.app',
-      'https://geolocalizacion-mjqg.vercel.app',
-      /\.vercel\.app$/  // Permitir todos los dominios de Vercel
-    ],
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (como mobile apps o curl)
+      if (!origin) return callback(null, true)
+      
+      // Verificar si el origin está en la lista permitida o coincide con patrón Vercel
+      if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true
   }))
   
