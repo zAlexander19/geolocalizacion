@@ -4,11 +4,15 @@ import { useForm, Controller } from 'react-hook-form'
 import {
   Box,
   Button,
+  Card,
+  CardContent,
+  CardMedia,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  Grid,
   InputLabel,
   MenuItem,
   Paper,
@@ -23,6 +27,8 @@ import {
   Typography,
   IconButton,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -32,6 +38,8 @@ import {
 import api from '../../../lib/api'
 
 export default function FloorsPage() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState(null)
@@ -208,23 +216,29 @@ export default function FloorsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Pisos</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', mb: isMobile ? 2 : 0 }}>Pisos</Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 2, 
+          alignItems: isMobile ? 'stretch' : 'center',
+          mt: isMobile ? 2 : 3,
+        }}>
           <TextField
             placeholder="Buscar pisos..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            fullWidth={isMobile}
+            sx={{ minWidth: isMobile ? 'auto' : 250 }}
           />
-          <FormControl sx={{ minWidth: 200 }}>
+          <FormControl size="small" fullWidth={isMobile} sx={{ minWidth: isMobile ? 'auto' : 200 }}>
             <InputLabel>Filtrar por edificio</InputLabel>
             <Select
               value={filterBuilding}
               onChange={(e) => setFilterBuilding(e.target.value)}
               label="Filtrar por edificio"
-              size="small"
             >
               <MenuItem value="">Todos</MenuItem>
               {buildings?.sort((a, b) => a.nombre_edificio.localeCompare(b.nombre_edificio)).map(b => (
@@ -232,39 +246,115 @@ export default function FloorsPage() {
               ))}
             </Select>
           </FormControl>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditId(null); setOpen(true) }}>
-            Agregar Piso
+          <Button 
+            variant="contained" 
+            startIcon={!isMobile && <AddIcon />} 
+            onClick={() => { setEditId(null); setOpen(true) }}
+            fullWidth={isMobile}
+          >
+            {isMobile ? '+ Agregar' : 'Agregar Piso'}
           </Button>
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'grey.100' }}>
-              <TableCell>ID</TableCell>
-              <TableCell>Imagen</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Número</TableCell>
-              <TableCell>Edificio</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredFloors && filteredFloors.length > 0 ? (
-              filteredFloors.map((f) => (
-                <TableRow key={f.id_piso} hover>
-                  <TableCell>{f.id_piso}</TableCell>
-                  <TableCell>
-                    {f.imagen && !/via\.placeholder\.com/.test(f.imagen) ? (
-                      <Box
-                        component="img"
-                        src={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
-                        alt={f.nombre_piso}
-                        sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                        onClick={() => setImagePreview(f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`)}
+      {/* Vista Mobile - Cards */}
+      {isMobile ? (
+        <Grid container spacing={2}>
+          {filteredFloors && filteredFloors.length > 0 ? (
+            filteredFloors.map((f) => (
+              <Grid item xs={12} key={f.id_piso}>
+                <Card>
+                  {f.imagen && !/via\.placeholder\.com/.test(f.imagen) && (
+                    <CardMedia
+                      component="img"
+                      height="140"
+                      image={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
+                      alt={f.nombre_piso}
+                    />
+                  )}
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                      <Box>
+                        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                          {f.nombre_piso}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Piso {f.numero_piso ?? '—'}
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={f.estado ? 'Activo' : 'Inactivo'} 
+                        color={f.estado ? 'success' : 'default'} 
+                        size="small" 
                       />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      <strong>Edificio:</strong> {getBuildingName(f.id_edificio)}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleEdit(f.id_piso)}
+                        fullWidth
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(f.id_piso)}
+                        fullWidth
+                      >
+                        Eliminar
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No se encontraron pisos
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+      ) : (
+        /* Vista Desktop - Tabla */
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                <TableCell>ID</TableCell>
+                <TableCell>Imagen</TableCell>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Número</TableCell>
+                <TableCell>Edificio</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredFloors && filteredFloors.length > 0 ? (
+                filteredFloors.map((f) => (
+                  <TableRow key={f.id_piso} hover>
+                    <TableCell>{f.id_piso}</TableCell>
+                    <TableCell>
+                      {f.imagen && !/via\.placeholder\.com/.test(f.imagen) ? (
+                        <Box
+                          component="img"
+                          src={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
+                          alt={f.nombre_piso}
+                          sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
+                          onClick={() => setImagePreview(f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`)}
+                        />
                     ) : (
                       <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography variant="caption" color="text.secondary">Sin imagen</Typography>
@@ -295,6 +385,7 @@ export default function FloorsPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editId ? 'Editar Piso' : 'Nuevo Piso'}</DialogTitle>

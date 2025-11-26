@@ -44,6 +44,7 @@ export default function OSMImportPage() {
     skipDuplicates: true,
   })
   const [importResult, setImportResult] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
 
   // Query para obtener preview de datos OSM
   const { data: previewData, isLoading: isLoadingPreview, refetch: refetchPreview } = useQuery({
@@ -57,12 +58,23 @@ export default function OSMImportPage() {
 
   // Mutation para importar datos OSM
   const importMutation = useMutation({
-    mutationFn: async (options) => {
-      const res = await api.post('/import/osm', options)
+    mutationFn: async ({ file, options }) => {
+      const formData = new FormData()
+      if (file) {
+        formData.append('osmFile', file)
+      }
+      formData.append('options', JSON.stringify(options))
+      
+      const res = await api.post('/import/osm', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
       return res.data
     },
     onSuccess: (data) => {
       setImportResult(data)
+      setSelectedFile(null)
       console.log('Import successful:', data)
     },
     onError: (error) => {
@@ -74,13 +86,26 @@ export default function OSMImportPage() {
     },
   })
 
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.name.endsWith('.osm') || file.type === 'application/xml' || file.type === 'text/xml') {
+        setSelectedFile(file)
+        setImportResult(null)
+      } else {
+        alert('Por favor selecciona un archivo .osm válido')
+        event.target.value = ''
+      }
+    }
+  }
+
   const handlePreview = async () => {
     await refetchPreview()
     setPreviewOpen(true)
   }
 
   const handleImport = () => {
-    importMutation.mutate(importOptions)
+    importMutation.mutate({ file: selectedFile, options: importOptions })
   }
 
   return (
@@ -96,6 +121,44 @@ export default function OSMImportPage() {
           </Typography>
         </Box>
       </Box>
+
+      {/* File Upload Card */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Seleccionar Archivo OSM
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<UploadIcon />}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              Seleccionar archivo .osm
+              <input
+                type="file"
+                hidden
+                accept=".osm,application/xml,text/xml"
+                onChange={handleFileChange}
+              />
+            </Button>
+            
+            {selectedFile && (
+              <Alert severity="info" icon={<SuccessIcon />}>
+                <Typography variant="body2">
+                  <strong>Archivo seleccionado:</strong> {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                </Typography>
+              </Alert>
+            )}
+            
+            <Typography variant="body2" color="text.secondary">
+              Selecciona un archivo .osm exportado desde OpenStreetMap o utiliza el archivo predeterminado del servidor.
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Import Options Card */}
       <Card sx={{ mb: 3 }}>
@@ -166,20 +229,12 @@ export default function OSMImportPage() {
       {/* Action Buttons */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <Button
-          variant="outlined"
-          startIcon={isLoadingPreview ? <CircularProgress size={20} /> : <PreviewIcon />}
-          onClick={handlePreview}
-          disabled={isLoadingPreview}
-        >
-          Vista Previa
-        </Button>
-        <Button
           variant="contained"
           startIcon={importMutation.isPending ? <CircularProgress size={20} /> : <UploadIcon />}
           onClick={handleImport}
           disabled={importMutation.isPending}
         >
-          Importar Datos
+          {selectedFile ? 'Importar Archivo Seleccionado' : 'Importar desde Servidor'}
         </Button>
       </Box>
 
@@ -222,9 +277,9 @@ export default function OSMImportPage() {
             ℹ️ Información
           </Typography>
           <Typography variant="body2" paragraph>
-            Esta herramienta importa datos desde el archivo <strong>map.osm</strong> ubicado
-            en el servidor. El archivo contiene el mapa del campus exportado desde
-            OpenStreetMap.
+            Esta herramienta importa datos desde un archivo .osm que puedes subir o desde el 
+            archivo <strong>map.osm</strong> predeterminado ubicado en el servidor. 
+            Los archivos OSM contienen mapas exportados desde OpenStreetMap.
           </Typography>
           <Typography variant="body2" paragraph>
             <strong>Datos que se importan:</strong>

@@ -8,6 +8,8 @@ import {
   Paper,
   Select,
   TextField,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Search as SearchIcon,
@@ -26,6 +28,8 @@ const searchTypes = [
 ]
 
 export default function SearchBar({ onSearch, initialType = 'todo' }) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [searchType, setSearchType] = useState(initialType)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -58,19 +62,28 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
   }
 
   return (
-    <Paper elevation={3} sx={{ p: 1.5, borderRadius: 3 }}>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+    <Paper elevation={3} sx={{ p: isMobile ? 1 : 1.5, borderRadius: isMobile ? 2 : 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column-reverse' : 'row',
+        gap: isMobile ? 1.5 : 1, 
+        alignItems: 'stretch',
+      }}>
         {/* Input de búsqueda */}
         <TextField
           fullWidth
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder={searchType === 'todo' ? 'Buscar edificio, sala, facultad o baño...' : `Buscar ${searchTypes.find(t => t.value === searchType)?.label.toLowerCase()}...`}
+          placeholder={isMobile 
+            ? 'Buscar...' 
+            : (searchType === 'todo' ? 'Buscar edificio, sala, facultad o baño...' : `Buscar ${searchTypes.find(t => t.value === searchType)?.label.toLowerCase()}...`)
+          }
+          size={isMobile ? "small" : "medium"}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon color="action" />
+                <SearchIcon color="action" sx={{ fontSize: isMobile ? 20 : 24 }} />
               </InputAdornment>
             ),
           }}
@@ -85,19 +98,22 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
         />
 
         {/* Selector de tipo */}
-        <FormControl sx={{ minWidth: 160 }}>
+        <FormControl sx={{ minWidth: isMobile ? '100%' : 160 }}>
           <Select
             value={searchType}
             onChange={(e) => handleTypeChange(e.target.value)}
+            size={isMobile ? "small" : "medium"}
             sx={{
               bgcolor: 'primary.main',
               color: 'white',
-              borderRadius: 2,
+              borderRadius: isMobile ? 1.5 : 2,
+              fontSize: isMobile ? '0.875rem' : '1rem',
               '& .MuiOutlinedInput-notchedOutline': {
                 border: 'none',
               },
               '& .MuiSvgIcon-root': {
                 color: 'white',
+                fontSize: isMobile ? 20 : 24,
               },
               '&:hover': {
                 bgcolor: 'primary.dark',
@@ -114,22 +130,6 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
             ))}
           </Select>
         </FormControl>
-
-        {/* Botón de búsqueda */}
-        <Button
-          variant="contained"
-          size="large"
-          onClick={handleSearch}
-          sx={{
-            px: 4,
-            minWidth: 120,
-            height: 56,
-            borderRadius: 2,
-            fontWeight: 'bold',
-          }}
-        >
-          Buscar
-        </Button>
       </Box>
     </Paper>
   )

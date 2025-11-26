@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-routing-machine'
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import {
   Alert,
   AppBar,
@@ -54,24 +59,23 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Close as CloseIcon,
+  Navigation as NavigationIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
 import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
+import CompassGuide from '../../components/CompassGuide'
 
-// Fix para los iconos de Leaflet - COMENTADO porque no se usa Leaflet actualmente
-/*
+// Fix para los iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
-*/
 
-// Componente para manejar la ruta en el mapa - COMENTADO POR AHORA
-/*
+// Componente para manejar la ruta en el mapa con Leaflet Routing Machine
 function RouteComponent({ start, end, waypoints = [] }) {
   const map = useMap()
 
@@ -116,7 +120,6 @@ function RouteComponent({ start, end, waypoints = [] }) {
 
   return null
 }
-*/
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -145,6 +148,7 @@ export default function HomePage() {
   const [locationAccuracy, setLocationAccuracy] = useState(null)
   const [selectedFaculty, setSelectedFaculty] = useState(null)
   const [facultyDetailOpen, setFacultyDetailOpen] = useState(false)
+  const [compassGuideOpen, setCompassGuideOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -651,7 +655,6 @@ export default function HomePage() {
       <AppBar position="static" elevation={1} sx={{ bgcolor: 'white', color: 'text.primary' }}>
         <Toolbar sx={{ 
           justifyContent: 'space-between',
-          flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 1 : 0,
           py: isMobile ? 1 : 0,
           minHeight: isMobile ? 'auto' : 64,
@@ -663,64 +666,68 @@ export default function HomePage() {
               component="h1" 
               sx={{ fontWeight: 'bold', color: 'text.primary' }}
             >
-              Geolocalización Campus
+              {isMobile ? 'Campus' : 'Geolocalización Campus'}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: isMobile ? 0.5 : 2, alignItems: 'center' }}>
             {/* Botón de estado de ubicación */}
             {userLocation ? (
               <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)}m` : 'Ubicación activada'}>
                 <Button
-                  size={isMobile ? "small" : "medium"}
-                  startIcon={<MyLocationIcon />}
+                  size="small"
+                  startIcon={!isMobile && <MyLocationIcon />}
                   sx={{ 
                     color: 'success.main', 
                     textTransform: 'none',
-                    width: isMobile ? '100%' : 'auto',
-                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                    fontSize: isMobile ? '0.7rem' : '0.875rem',
+                    minWidth: isMobile ? 'auto' : 'auto',
+                    px: isMobile ? 1 : 2,
                   }}
                 >
-                  {isMobile ? 'GPS ✓' : 'Ubicación activada'}
-                  {locationAccuracy && locationAccuracy <= 20 && (
+                  {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'GPS'}
+                  {locationAccuracy && locationAccuracy <= 20 && !isMobile && (
                     <Chip 
                       label={`${Math.round(locationAccuracy)}m`}
                       size="small" 
                       color="success" 
-                      sx={{ ml: 1, height: isMobile ? 16 : 20 }}
+                      sx={{ ml: 1, height: 20 }}
                     />
                   )}
                 </Button>
               </Tooltip>
             ) : (
               <Button
-                size={isMobile ? "small" : "medium"}
-                startIcon={<MyLocationIcon />}
+                size="small"
+                startIcon={!isMobile && <MyLocationIcon />}
                 onClick={handleRetryLocation}
                 sx={{ 
                   color: 'warning.main', 
                   textTransform: 'none',
-                  width: isMobile ? '100%' : 'auto',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontSize: isMobile ? '0.7rem' : '0.875rem',
+                  minWidth: isMobile ? 'auto' : 'auto',
+                  px: isMobile ? 1 : 2,
                 }}
               >
-                {isMobile ? 'Activar GPS' : 'Activar ubicación'}
+                {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'Activar GPS'}
               </Button>
             )}
 
             <Button 
               variant="contained"
               onClick={() => navigate('/login')}
-              size={isMobile ? "small" : "medium"}
+              size="small"
               sx={{ 
                 bgcolor: 'grey.900',
                 '&:hover': { bgcolor: 'grey.800' },
-                width: isMobile ? '100%' : 'auto',
                 textTransform: 'none',
                 fontWeight: 'bold',
+                fontSize: isMobile ? '0.7rem' : '0.875rem',
+                px: isMobile ? 1.5 : 2,
+                minWidth: isMobile ? 'auto' : 'auto',
               }}
             >
-              {isMobile ? 'Login' : 'Iniciar Sesión'}
+              Login
             </Button>
           </Box>
         </Toolbar>
@@ -2189,24 +2196,36 @@ export default function HomePage() {
                 </CardContent>
               </Card>
 
-              {/* Mapa - USAR GOOGLE MAPS EN VEZ DE LEAFLET */}
+              {/* Mapa con OpenStreetMap y Leaflet Routing */}
               <Box sx={{ 
                 flexGrow: 1, 
                 position: 'relative', 
                 borderRadius: 2, 
                 overflow: 'hidden',
                 minHeight: isMobile ? 300 : 'auto',
+                height: '100%',
               }}>
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${userLocation.latitude},${userLocation.longitude}&destination=${routeDestination.lat},${routeDestination.lng}&mode=walking`}
-                  title="Mapa de ruta"
-                />
+                <MapContainer
+                  center={[userLocation.latitude, userLocation.longitude]}
+                  zoom={17}
+                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
+                    <Popup>Tu ubicación</Popup>
+                  </Marker>
+                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
+                    <Popup>{routeDestinationName}</Popup>
+                  </Marker>
+                  <RouteComponent
+                    start={[userLocation.latitude, userLocation.longitude]}
+                    end={[routeDestination.lat, routeDestination.lng]}
+                    waypoints={routeWaypoints}
+                  />
+                </MapContainer>
               </Box>
             </>
           )}
@@ -2352,34 +2371,58 @@ export default function HomePage() {
 
                   {/* Capacidad si aplica */}
                   {routeDestinationData.capacity && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                       <PeopleIcon color="action" fontSize="small" />
                       <Typography variant="body2" color="text.secondary">
                         Capacidad: {routeDestinationData.capacity} personas
                       </Typography>
                     </Box>
                   )}
+
+                  {/* Botón de Guía con Brújula */}
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="success"
+                    startIcon={<NavigationIcon />}
+                    onClick={() => setCompassGuideOpen(true)}
+                    sx={{ mt: 2 }}
+                  >
+                    Activar Guía
+                  </Button>
                 </CardContent>
               </Card>
 
-              {/* Mapa - USAR GOOGLE MAPS EN VEZ DE LEAFLET */}
+              {/* Mapa con OpenStreetMap y Leaflet Routing */}
               <Box sx={{ 
                 flexGrow: 1, 
                 position: 'relative', 
                 borderRadius: 2, 
                 overflow: 'hidden',
                 minHeight: isMobile ? 300 : 'auto',
+                height: '100%',
               }}>
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${userLocation.latitude},${userLocation.longitude}&destination=${routeDestination.lat},${routeDestination.lng}&mode=walking`}
-                  title="Mapa de ruta"
-                />
+                <MapContainer
+                  center={[userLocation.latitude, userLocation.longitude]}
+                  zoom={17}
+                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
+                    <Popup>Tu ubicación</Popup>
+                  </Marker>
+                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
+                    <Popup>{routeDestinationName}</Popup>
+                  </Marker>
+                  <RouteComponent
+                    start={[userLocation.latitude, userLocation.longitude]}
+                    end={[routeDestination.lat, routeDestination.lng]}
+                    waypoints={routeWaypoints}
+                  />
+                </MapContainer>
               </Box>
             </>
           )}
@@ -2634,6 +2677,15 @@ export default function HomePage() {
           </Typography>
         </Container>
       </Box>
+
+      {/* Compass Guide Modal */}
+      <CompassGuide
+        open={compassGuideOpen}
+        onClose={() => setCompassGuideOpen(false)}
+        userLocation={userLocation}
+        destination={routeDestination}
+        destinationName={routeDestinationName}
+      />
     </Box>
   )
 }
