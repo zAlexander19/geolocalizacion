@@ -272,6 +272,13 @@ export default function BuildingsPage() {
               setOpen(true)
             }}
             fullWidth={isMobile}
+            sx={{
+              background: 'rgba(0, 0, 0, 0.85) !important',
+              color: 'white !important',
+              '&:hover': {
+                background: 'rgba(0, 0, 0, 0.95) !important',
+              }
+            }}
           >
             {isMobile ? '+ Agregar' : 'Agregar Edificio'}
           </Button>

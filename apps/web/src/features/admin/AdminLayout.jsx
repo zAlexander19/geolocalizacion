@@ -57,27 +57,23 @@ export default function AdminLayout() {
   ]
 
   const drawer = (
-    <Box>
-      <Toolbar sx={{ bgcolor: 'primary.main', color: 'white' }}>
-        <Typography variant="h6" noWrap>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #000000 0%, #1a1a1a 100%)' }}>
+      <Toolbar sx={{ bgcolor: 'rgba(0, 0, 0, 0.5)', color: 'white', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
           Administración
         </Typography>
       </Toolbar>
-      <List>
+      <List sx={{ flexGrow: 1, pt: 2 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.path} disablePadding>
+          <ListItem key={item.path} disablePadding sx={{ px: 1, mb: 0.5 }}>
             <ListItemButton
-              // marcar si la ruta actual empieza por la ruta del item o si el estado local la indica
               selected={ (location && location.pathname && location.pathname.startsWith(item.path)) || activePath.startsWith(item.path) }
               onClick={() => {
-                // Interceptar el click en Baños: no usar navigate (evita redirección al lobby si ruta no existe)
                 if (item.path === '/admin/banos' || item.path === '/admin/bathrooms') {
                   setActivePath(item.path)
                   try {
-                    // actualizar URL en la barra sin disparar la navegación del router
                     window.history.pushState(null, '', item.path)
                   } catch (e) {
-                    // fallback: intentar navigate si pushState falla
                     navigate(item.path)
                   }
                 } else {
@@ -85,17 +81,49 @@ export default function AdminLayout() {
                   navigate(item.path)
                 }
               }}
+              sx={{
+                borderRadius: 2,
+                color: 'rgba(255, 255, 255, 0.8)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                },
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  fontWeight: 600,
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                },
+              }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemText 
+                primary={item.label} 
+                primaryTypographyProps={{ 
+                  fontWeight: (location && location.pathname && location.pathname.startsWith(item.path)) || activePath.startsWith(item.path) ? 600 : 400,
+                  fontSize: '0.95rem',
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-      <List sx={{ mt: 'auto', pt: 2, borderTop: 1, borderColor: 'divider' }}>
+      <List sx={{ pt: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)', px: 1, pb: 2 }}>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
+          <ListItemButton 
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2,
+              color: 'rgba(255, 255, 255, 0.8)',
+              '&:hover': {
+                bgcolor: 'rgba(239, 68, 68, 0.2)',
+                color: '#ef4444',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText primary="Cerrar Sesión" />
@@ -106,12 +134,17 @@ export default function AdminLayout() {
   )
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', margin: 0, padding: 0 }}>
       <AppBar
         position="fixed"
+        elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          background: 'rgba(0, 0, 0, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          color: 'white',
         }}
       >
         <Toolbar>
@@ -123,7 +156,7 @@ export default function AdminLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
             Geolocalización Campus - Panel Admin
           </Typography>
         </Toolbar>
@@ -159,7 +192,15 @@ export default function AdminLayout() {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{ 
+          flexGrow: 1, 
+          p: 3, 
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          background: 'linear-gradient(135deg, #0a2540 0%, #0d335a 25%, #164e85 50%, #0d335a 100%)',
+          minHeight: '100vh',
+          margin: 0,
+          overflow: 'auto',
+        }}
       >
         <Toolbar />
         {isBathroomsRoute ? <BathroomsAdmin /> : <Outlet />}
