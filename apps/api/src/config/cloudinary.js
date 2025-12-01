@@ -1,8 +1,8 @@
-import { v2 as cloudinary } from 'cloudinary'
+import { v2 as cloudinary } from 'cloudinary';
 
-// Configurar Cloudinary con la URL del .env
 cloudinary.config({
-  cloudinary_url: process.env.CLOUDINARY_URL
-})
+  url: process.env.CLOUDINARY_URL,
+  secure: true,
+});
 
-export default cloudinary
+export default cloudinary;
