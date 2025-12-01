@@ -20,6 +20,7 @@ import {
   Wc as BathroomIcon,
   ExitToApp as LogoutIcon,
   CloudUpload as UploadIcon,
+  People as PeopleIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -31,7 +32,8 @@ const drawerWidth = 240
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const isSuperAdmin = user?.role === 'super-admin'
   // estado local para controlar la sección activa (evita que el router te saque al lobby si la ruta no está registrada)
   const [activePath, setActivePath] = useState(location?.pathname || '/admin')
   // considerar baños si la URL actual o el estado local indican la ruta
@@ -45,7 +47,6 @@ export default function AdminLayout() {
   const handleLogout = () => {
     logout()
   }
-
   const menuItems = [
     { label: 'Edificios', icon: <BuildingIcon />, path: '/admin/edificios' },
     { label: 'Pisos', icon: <LayersIcon />, path: '/admin/pisos' },
@@ -53,6 +54,7 @@ export default function AdminLayout() {
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
     { label: 'Importar OSM', icon: <UploadIcon />, path: '/admin/osm-import' },
+    ...(isSuperAdmin ? [{ label: 'Usuarios', icon: <PeopleIcon />, path: '/admin/usuarios' }] : []),
   ]
 
   const drawer = (

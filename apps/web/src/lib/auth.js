@@ -74,16 +74,32 @@ export const authService = {
     // TODO: Reemplazar con llamada real al backend
     // const response = await api.post('/auth/login', { email, password })
     
-    // Por ahora simulamos un login exitoso
-    if (email && password) {
-      // Simular token JWT (en producción viene del backend)
-      const mockToken = this.generateMockToken(email)
+    // Super Admin
+    if (email === 'admin@example.com' && password === 'admin123') {
       const mockUser = {
+        id: '1',
         email,
-        name: 'Admin',
+        name: 'Administrador Principal',
+        role: 'super-admin'
+      }
+      const mockToken = this.generateMockToken(mockUser)
+      
+      this.setToken(mockToken)
+      this.setUser(mockUser)
+
+      return { token: mockToken, user: mockUser }
+    }
+    
+    // Admin Regular (ejemplo)
+    if (email === 'staff@example.com' && password === 'staff123') {
+      const mockUser = {
+        id: '2',
+        email,
+        name: 'Administrador Secundario',
         role: 'admin'
       }
-
+      const mockToken = this.generateMockToken(mockUser)
+      
       this.setToken(mockToken)
       this.setUser(mockUser)
 
@@ -94,15 +110,33 @@ export const authService = {
   },
 
   // Generar token mock (solo para desarrollo)
-  generateMockToken(email) {
+  generateMockToken(user) {
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
     const payload = btoa(JSON.stringify({
-      email,
-      role: 'admin',
+      userId: user.id,
+      email: user.email,
+      role: user.role,
       exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // Expira en 24 horas
     }))
     const signature = 'mock-signature'
     
     return `${header}.${payload}.${signature}`
+  },
+
+  // Obtener rol del usuario actual
+  getUserRole() {
+    const user = this.getUser()
+    return user?.role || null
+  },
+
+  // Verificar si es super admin
+  isSuperAdmin() {
+    return this.getUserRole() === 'super-admin'
+  },
+
+  // Verificar si es admin (cualquier tipo)
+  isAdmin() {
+    const role = this.getUserRole()
+    return role === 'admin' || role === 'super-admin'
   }
 }

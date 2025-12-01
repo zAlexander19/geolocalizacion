@@ -14,6 +14,7 @@ import RoomsPage from './features/admin/rooms/RoomsPage.jsx'
 import FacultiesPage from './features/admin/faculties/FacultiesPage.jsx'
 import OSMImportPage from './features/admin/osm/OSMImportPage.jsx'
 import MapViewPage from './features/admin/map/MapViewPage.jsx'
+import UsersPage from './features/admin/users/UsersPage.jsx'
 import './index.css'
 
 const queryClient = new QueryClient()
@@ -39,6 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="facultades" element={<FacultiesPage />} />
               <Route path="mapa" element={<MapViewPage />} />
               <Route path="osm-import" element={<OSMImportPage />} />
+              <Route path="usuarios" element={<UsersPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
