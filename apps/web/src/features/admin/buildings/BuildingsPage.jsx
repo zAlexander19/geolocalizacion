@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
@@ -138,7 +139,7 @@ export default function BuildingsPage() {
           setMapCoordinates({ latitude: b.cord_latitud, longitude: b.cord_longitud })
           setValue('estado', b.estado)
           setValue('disponibilidad', b.disponibilidad)
-          setImagePreviewUrl(b.imagen ? (b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`) : null)
+          setImagePreviewUrl(b.imagen ? getFullImageUrl(b.imagen) : null)
         }
       } else {
         reset()
@@ -290,7 +291,7 @@ export default function BuildingsPage() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
+                      image={getFullImageUrl(b.imagen)}
                       alt={b.nombre_edificio}
                     />
                   )}
@@ -371,10 +372,10 @@ export default function BuildingsPage() {
                       {b.imagen && !/via\.placeholder\.com/.test(b.imagen) ? (
                         <Box
                           component="img"
-                          src={b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`}
+                          src={getFullImageUrl(b.imagen)}
                           alt={b.nombre_edificio}
                           sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                          onClick={() => setImagePreview(b.imagen.startsWith('http') ? b.imagen : `http://localhost:4000${b.imagen}`)}
+                          onClick={() => setImagePreview(getFullImageUrl(b.imagen))}
                         />
                       ) : (
                         <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

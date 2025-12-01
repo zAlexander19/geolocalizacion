@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getFullImageUrl } from '../../utils/imageUrl'
 import {
   Box,
   Card,
@@ -79,7 +80,7 @@ export default function FacultiesPage() {
                     {faculty.logo ? (
                       <Box
                         component="img"
-                        src={faculty.logo.startsWith('http') ? faculty.logo : `http://localhost:4000${faculty.logo}`}
+                        src={getFullImageUrl(faculty.logo)}
                         alt={faculty.nombre_facultad}
                         sx={{
                           maxWidth: '100%',

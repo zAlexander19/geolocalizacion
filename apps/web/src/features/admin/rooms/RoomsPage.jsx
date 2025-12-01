@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
@@ -162,7 +163,7 @@ export default function RoomsPage() {
           setMapCoordinates({ latitude: r.cord_latitud, longitude: r.cord_longitud })
           setValue('estado', r.estado)
           setValue('disponibilidad', r.disponibilidad)
-          setImagePreviewUrl(r.imagen ? (r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`) : null)
+          setImagePreviewUrl(r.imagen ? getFullImageUrl(r.imagen) : null)
         }
       } else {
         reset()
@@ -361,7 +362,7 @@ export default function RoomsPage() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`}
+                      image={getFullImageUrl(r.imagen)}
                       alt={r.nombre_sala}
                     />
                   )}
@@ -445,10 +446,10 @@ export default function RoomsPage() {
                     {r.imagen && !/via\.placeholder\.com/.test(r.imagen) ? (
                       <Box
                         component="img"
-                        src={r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`}
+                        src={getFullImageUrl(r.imagen)}
                         alt={r.nombre_sala}
                         sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                        onClick={() => setImagePreview(r.imagen.startsWith('http') ? r.imagen : `http://localhost:4000${r.imagen}`)}
+                        onClick={() => setImagePreview(getFullImageUrl(r.imagen))}
                       />
                     ) : (
                       <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

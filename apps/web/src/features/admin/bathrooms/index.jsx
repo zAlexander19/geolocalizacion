@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../../lib/api'
 import MapLocationPicker from '../../../components/MapLocationPicker'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
@@ -226,7 +227,7 @@ export default function BathroomsAdmin() {
     // calcular preview de forma segura
     const img = b.imagen
     const preview = (typeof img === 'string' && img)
-      ? (img.startsWith('http') ? img : `http://localhost:4000${img}`)
+      ? getFullImageUrl(img)
       : null
     setImagePreviewUrl(preview)
     setOpen(true)
@@ -373,7 +374,7 @@ export default function BathroomsAdmin() {
             list.map((b) => {
               const img = b.imagen
               const hasValidImage = img && typeof img === 'string' && !(/via\.placeholder\.com/.test(img))
-              const imgSrc = hasValidImage ? (img.startsWith('http') ? img : `http://localhost:4000${img}`) : null
+              const imgSrc = hasValidImage ? getFullImageUrl(img) : null
               
               return (
                 <Grid item xs={12} key={b.id_bano}>
@@ -478,7 +479,7 @@ export default function BathroomsAdmin() {
                         )
                       }
                       if (typeof img !== 'string') return '—'
-                      const src = img.startsWith('http') ? img : `http://localhost:4000${img}`
+                      const src = getFullImageUrl(img)
                       return (
                         <Box
                           component="img"

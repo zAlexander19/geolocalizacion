@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
@@ -125,7 +126,7 @@ export default function FacultiesPage() {
           setValue('descripcion', f.descripcion || '')
           setValue('id_edificio', f.id_edificio || '')
           // set preview if logo exists
-          setImagePreviewUrl(f.logo ? (f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`) : null)
+          setImagePreviewUrl(f.logo ? getFullImageUrl(f.logo) : null)
         }
       } else {
         reset()
@@ -316,7 +317,7 @@ export default function FacultiesPage() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`}
+                      image={getFullImageUrl(f.logo)}
                       alt={f.nombre_facultad}
                     />
                   )}
@@ -400,7 +401,7 @@ export default function FacultiesPage() {
                       {f.logo ? (
                         <Box
                           component="img"
-                          src={f.logo.startsWith('http') ? f.logo : `http://localhost:4000${f.logo}`}
+                          src={getFullImageUrl(f.logo)}
                           alt={f.nombre_facultad}
                           sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1 }}
                         />

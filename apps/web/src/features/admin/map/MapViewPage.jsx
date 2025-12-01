@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Card,
@@ -296,7 +297,7 @@ export default function MapViewPage() {
                   src={
                     selectedBuilding.imagen.startsWith('http')
                       ? selectedBuilding.imagen
-                      : `http://localhost:4000${selectedBuilding.imagen}`
+                      : getFullImageUrl(selectedBuilding.imagen)
                   }
                   alt={selectedBuilding.nombre_edificio}
                   sx={{

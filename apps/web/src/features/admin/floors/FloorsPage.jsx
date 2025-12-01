@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
+import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
@@ -136,7 +137,7 @@ export default function FloorsPage() {
           setValue('codigo_qr', f.codigo_qr || '')
           setValue('estado', f.estado)
           setValue('disponibilidad', f.disponibilidad)
-          setImagePreviewUrl(f.imagen ? (f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`) : null)
+          setImagePreviewUrl(f.imagen ? getFullImageUrl(f.imagen) : null)
         }
       } else {
         reset()
@@ -268,7 +269,7 @@ export default function FloorsPage() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
+                      image={getFullImageUrl(f.imagen)}
                       alt={f.nombre_piso}
                     />
                   )}
@@ -350,10 +351,10 @@ export default function FloorsPage() {
                       {f.imagen && !/via\.placeholder\.com/.test(f.imagen) ? (
                         <Box
                           component="img"
-                          src={f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`}
+                          src={getFullImageUrl(f.imagen)}
                           alt={f.nombre_piso}
                           sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1, cursor: 'pointer' }}
-                          onClick={() => setImagePreview(f.imagen.startsWith('http') ? f.imagen : `http://localhost:4000${f.imagen}`)}
+                          onClick={() => setImagePreview(getFullImageUrl(f.imagen))}
                         />
                     ) : (
                       <Box sx={{ width: 60, height: 60, bgcolor: 'grey.200', borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
