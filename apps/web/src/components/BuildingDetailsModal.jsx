@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getFullImageUrl } from '../utils/imageUrl'
 import {
   Box,
   Button,
@@ -84,12 +85,6 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
     onClose()
   }
 
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return null
-    if (imageUrl.startsWith('http')) return imageUrl
-    return `http://localhost:4000${imageUrl}`
-  }
-
   // Determinar cuántas salas mostrar según el dispositivo
   const roomsPerPage = isMobile ? 1 : 3
   
@@ -131,7 +126,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
                   <Box
                     component="img"
-                    src={getImageUrl(building.imagen)}
+                    src={getFullImageUrl(building.imagen)}
                     alt={building.nombre_edificio}
                     sx={{
                       width: '100%',
@@ -270,7 +265,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 <Box sx={{ position: 'relative' }}>
                   <Box
                     component="img"
-                    src={getImageUrl(selectedFloor.imagen)}
+                    src={getFullImageUrl(selectedFloor.imagen)}
                     alt={selectedFloor.nombre_piso}
                     sx={{
                       width: '100%',

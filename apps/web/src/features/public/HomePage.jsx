@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tantml:parameter>
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
+import { getFullImageUrl } from '../../utils/imageUrl'
 import {
   Alert,
   AppBar,
@@ -997,7 +998,7 @@ export default function HomePage() {
                           <CardMedia
                             component="img"
                             height="200"
-                            image={building.imagen.startsWith('http') ? building.imagen : `http://localhost:4000${building.imagen}`}
+                            image={getFullImageUrl(building.imagen)}
                             alt={building.nombre_edificio}
                             sx={{ objectFit: 'cover' }}
                           />
@@ -1177,7 +1178,7 @@ export default function HomePage() {
                           <CardMedia
                             component="img"
                             height="200"
-                            image={room.imagen.startsWith('http') ? room.imagen : `http://localhost:4000${room.imagen}`}
+                            image={getFullImageUrl(room.imagen)}
                             alt={room.nombre_sala}
                             sx={{ objectFit: 'cover' }}
                           />
@@ -1414,7 +1415,7 @@ export default function HomePage() {
                           >
                             <Box
                               component="img"
-                              src={faculty.logo.startsWith('http') ? faculty.logo : `http://localhost:4000${faculty.logo}`}
+                              src={getFullImageUrl(faculty.logo)}
                               alt={faculty.nombre_facultad}
                               sx={{
                                 maxWidth: '100%',
@@ -1547,7 +1548,7 @@ export default function HomePage() {
                           <CardMedia
                             component="img"
                             height="200"
-                            image={bathroom.imagen.startsWith('http') ? bathroom.imagen : `http://localhost:4000${bathroom.imagen}`}
+                            image={getFullImageUrl(bathroom.imagen)}
                             alt={bathroom.nombre}
                             sx={{ objectFit: 'cover' }}
                           />
@@ -1812,7 +1813,7 @@ export default function HomePage() {
                   {selectedRoom.imagen && !/via\.placeholder\.com/.test(selectedRoom.imagen) ? (
                     <Box
                       component="img"
-                      src={selectedRoom.imagen.startsWith('http') ? selectedRoom.imagen : `http://localhost:4000${selectedRoom.imagen}`}
+                      src={getFullImageUrl(selectedRoom.imagen)}
                       alt={selectedRoom.nombre_sala}
                       sx={{
                         width: '100%',
@@ -1920,7 +1921,7 @@ export default function HomePage() {
                       {selectedRoom.floor.imagen && !/via\.placeholder\.com/.test(selectedRoom.floor.imagen) ? (
                         <Box
                           component="img"
-                          src={selectedRoom.floor.imagen.startsWith('http') ? selectedRoom.floor.imagen : `http://localhost:4000${selectedRoom.floor.imagen}`}
+                          src={getFullImageUrl(selectedRoom.floor.imagen)}
                           alt={selectedRoom.floor.nombre_piso}
                           sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
                         />
@@ -1939,7 +1940,7 @@ export default function HomePage() {
                       {selectedRoom.building.imagen && !/via\.placeholder\.com/.test(selectedRoom.building.imagen) ? (
                         <Box
                           component="img"
-                          src={selectedRoom.building.imagen.startsWith('http') ? selectedRoom.building.imagen : `http://localhost:4000${selectedRoom.building.imagen}`}
+                          src={getFullImageUrl(selectedRoom.building.imagen)}
                           alt={selectedRoom.building.nombre_edificio}
                           sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
                         />
@@ -2052,7 +2053,7 @@ export default function HomePage() {
                   {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
                     <Box
                       component="img"
-                      src={selectedBathroom.imagen.startsWith('http') ? selectedBathroom.imagen : `http://localhost:4000${selectedBathroom.imagen}`}
+                      src={getFullImageUrl(selectedBathroom.imagen)}
                       alt={selectedBathroom.nombre}
                       sx={{
                         width: '100%',
@@ -2167,7 +2168,7 @@ export default function HomePage() {
                       {selectedBathroom.floor.imagen && !/via\.placeholder\.com/.test(selectedBathroom.floor.imagen) ? (
                         <Box
                           component="img"
-                          src={selectedBathroom.floor.imagen.startsWith('http') ? selectedBathroom.floor.imagen : `http://localhost:4000${selectedBathroom.floor.imagen}`}
+                          src={getFullImageUrl(selectedBathroom.floor.imagen)}
                           alt={selectedBathroom.floor.nombre_piso}
                           sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
                         />
@@ -2186,7 +2187,7 @@ export default function HomePage() {
                       {selectedBathroom.building.imagen && !/via\.placeholder\.com/.test(selectedBathroom.building.imagen) ? (
                         <Box
                           component="img"
-                          src={selectedBathroom.building.imagen.startsWith('http') ? selectedBathroom.building.imagen : `http://localhost:4000${selectedBathroom.building.imagen}`}
+                          src={getFullImageUrl(selectedBathroom.building.imagen)}
                           alt={selectedBathroom.building.nombre_edificio}
                           sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
                         />
@@ -2643,7 +2644,7 @@ export default function HomePage() {
                   {selectedFaculty.logo && !/via\.placeholder\.com/.test(selectedFaculty.logo) ? (
                     <Box
                       component="img"
-                      src={selectedFaculty.logo.startsWith('http') ? selectedFaculty.logo : `http://localhost:4000${selectedFaculty.logo}`}
+                      src={getFullImageUrl(selectedFaculty.logo)}
                       alt={selectedFaculty.nombre_facultad}
                       sx={{
                         width: '100%',
@@ -2736,7 +2737,7 @@ export default function HomePage() {
                               <CardMedia
                                 component="img"
                                 height="200"
-                                image={associatedBuilding.imagen.startsWith('http') ? associatedBuilding.imagen : `http://localhost:4000${associatedBuilding.imagen}`}
+                                image={getFullImageUrl(associatedBuilding.imagen)}
                                 alt={associatedBuilding.nombre_edificio}
                                 sx={{ objectFit: 'cover' }}
                               />
