@@ -9,22 +9,40 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Alert,
+  CircularProgress,
 } from '@mui/material'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
-    // Placeholder: aquí iría la llamada real al endpoint de login
-    // Por ahora solo simulamos éxito y redirigimos al admin
-    navigate('/admin')
+    setError('')
+    setLoading(true)
+
+    const result = await login(email, password)
+
+    if (result.success) {
+      // Redirigir a la página que intentaba acceder o al admin
+      const from = location.state?.from?.pathname || '/admin'
+      navigate(from, { replace: true })
+    } else {
+      setError(result.error || 'Error al iniciar sesión')
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -110,6 +128,11 @@ export default function LoginPage() {
             </Typography>
           </Box>
           <Box component="form" onSubmit={onSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+            {error && (
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {error}
+              </Alert>
+            )}
             <TextField
               label="Correo"
               type="email"
@@ -117,6 +140,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
               required
+              disabled={loading}
             />
             <TextField
               label="Contraseña"
@@ -125,11 +149,25 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               fullWidth
               required
+              disabled={loading}
             />
-            <Button type="submit" variant="contained" fullWidth sx={{ mt: 1 }}>
-              Entrar
+            <Button 
+              type="submit" 
+              variant="contained" 
+              fullWidth 
+              sx={{ mt: 1 }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Entrar'}
             </Button>
-            <Button variant="text" fullWidth onClick={() => navigate('/')}>Volver</Button>
+            <Button 
+              variant="text" 
+              fullWidth 
+              onClick={() => navigate('/')}
+              disabled={loading}
+            >
+              Volver
+            </Button>
           </Box>
         </Paper>
     </Box>

@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useAuth } from '../../contexts/AuthContext'
 import BathroomsAdmin from './bathrooms' // render directo si la ruta coincide
 
 const drawerWidth = 240
@@ -30,6 +31,7 @@ const drawerWidth = 240
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth()
   // estado local para controlar la sección activa (evita que el router te saque al lobby si la ruta no está registrada)
   const [activePath, setActivePath] = useState(location?.pathname || '/admin')
   // considerar baños si la URL actual o el estado local indican la ruta
@@ -41,8 +43,7 @@ export default function AdminLayout() {
   }
 
   const handleLogout = () => {
-    // Placeholder: aquí iría logout real (limpiar token)
-    navigate('/')
+    logout()
   }
 
   const menuItems = [
