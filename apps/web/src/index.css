@@ -1,0 +1,292 @@
+/* Estilos globales para efectos glassmorphism y 3D */
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Eliminar márgenes blancos */
+body, html {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+#root {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Títulos y texto en páginas de admin */
+h1, h2, h3, h4, h5, h6 {
+  color: white !important;
+}
+
+/* Glassmorphism cards */
+.MuiCard-root {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.35) !important;
+}
+
+/* Dialog glassmorphism */
+.MuiDialog-paper {
+  background: linear-gradient(135deg, #0a2540 0%, #0d335a 50%, #164e85 100%) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  box-shadow: 0 20px 60px 0 rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Títulos y texto de diálogos en blanco */
+.MuiDialog-paper .MuiDialogTitle-root,
+.MuiDialog-paper .MuiDialogContent-root,
+.MuiDialog-paper .MuiDialogContentText-root,
+.MuiDialog-paper .MuiTypography-root {
+  color: white !important;
+}
+
+/* TextFields dentro de diálogos - fondo negro */
+.MuiDialog-paper .MuiTextField-root {
+  background: rgba(0, 0, 0, 0.6) !important;
+  border-radius: 8px !important;
+}
+
+.MuiDialog-paper .MuiTextField-root .MuiInputBase-root {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+}
+
+.MuiDialog-paper .MuiTextField-root .MuiInputBase-input {
+  color: white !important;
+}
+
+.MuiDialog-paper .MuiTextField-root .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.MuiDialog-paper .MuiTextField-root .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.MuiDialog-paper .MuiTextField-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.MuiDialog-paper .MuiTextField-root .Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(33, 150, 243, 0.8) !important;
+}
+
+/* Select dentro de diálogos */
+.MuiDialog-paper .MuiSelect-root {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+}
+
+/* Botones en diálogos */
+.MuiDialog-paper .MuiButton-root {
+  color: white !important;
+}
+
+.MuiDialog-paper .MuiButton-contained {
+  background: rgba(33, 150, 243, 0.9) !important;
+}
+
+.MuiDialog-paper .MuiButton-contained:hover {
+  background: rgba(33, 150, 243, 1) !important;
+}
+
+.MuiDialog-paper .MuiButton-outlined {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.MuiDialog-paper .MuiButton-outlined:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Paper glassmorphism - Excluir AppBar */
+.MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper) {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper) .MuiTypography-root {
+  color: white !important;
+}
+
+/* AppBar con fondo negro */
+.MuiAppBar-root {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+}
+
+/* TextField dentro del SearchBar y Admin */
+.MuiTextField-root {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+.MuiTextField-root .MuiInputBase-root {
+  background: transparent !important;
+  color: white !important;
+}
+
+.MuiTextField-root .MuiInputBase-input {
+  color: white !important;
+}
+
+.MuiTextField-root .MuiInputBase-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+  opacity: 1 !important;
+}
+
+.MuiTextField-root .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.MuiTextField-root .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Select/Dropdown negro */
+.MuiSelect-root,
+.MuiInputBase-root.MuiOutlinedInput-root {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: white !important;
+}
+
+.MuiSelect-select {
+  color: white !important;
+}
+
+.MuiSelect-icon {
+  color: white !important;
+}
+
+.MuiInputLabel-root {
+  color: white !important;
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: white !important;
+}
+
+.MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline legend {
+  color: white !important;
+}
+
+.MuiFormLabel-root {
+  color: white !important;
+}
+
+/* MenuItem dentro del dropdown */
+.MuiMenuItem-root {
+  color: white !important;
+  background: rgba(13, 51, 90, 0.95) !important;
+}
+
+.MuiMenuItem-root:hover {
+  background: rgba(22, 78, 133, 0.95) !important;
+}
+
+.MuiMenuItem-root.Mui-selected {
+  background: rgba(33, 150, 243, 0.95) !important;
+}
+
+/* Menú desplegable */
+.MuiPopover-paper,
+.MuiMenu-paper {
+  background: rgba(13, 51, 90, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Tablas en modo oscuro - Admin */
+.MuiTableContainer-root,
+.MuiTable-root,
+table {
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  color: white !important;
+}
+
+.MuiTable-root {
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.MuiTableHead-root,
+thead {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.MuiTableHead-root .MuiTableCell-root,
+thead th,
+thead td {
+  color: white !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root,
+tbody tr {
+  background: rgba(50, 50, 50, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root:nth-of-type(odd),
+tbody tr:nth-of-type(odd) {
+  background: rgba(40, 40, 40, 0.6) !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root:hover,
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.MuiTableBody-root .MuiTableCell-root,
+tbody td,
+tbody th {
+  color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Input de búsqueda en tablas */
+input[type="text"],
+input[type="search"] {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}

@@ -586,7 +586,57 @@ export default function HomePage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', pb: 4 }}>
+    <>
+      {/* Background con degradado UNAP (azul marino) y patrón */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            radial-gradient(ellipse at 20% 30%, rgba(22, 78, 133, 0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 70%, rgba(13, 51, 90, 0.3) 0%, transparent 50%),
+            linear-gradient(135deg, #0a2540 0%, #0d335a 25%, #164e85 50%, #1a5a9e 75%, #0d335a 100%)
+          `,
+          backgroundSize: '100% 100%, 100% 100%, cover',
+          backgroundAttachment: 'fixed', // Efecto parallax
+          zIndex: -2,
+        }}
+      >
+        {/* Patrón de puntos decorativo */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `
+              radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+              radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            backgroundPosition: '0 0, 25px 25px',
+            opacity: 0.4,
+          }}
+        />
+      </Box>
+      
+      {/* Overlay adicional con difuminado sutil */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(180deg, rgba(10, 37, 64, 0.4) 0%, rgba(13, 51, 90, 0.6) 50%, rgba(10, 37, 64, 0.7) 100%)',
+          backdropFilter: 'blur(2px)',
+          zIndex: -1,
+        }}
+      />
       {/* Diálogo de solicitud de ubicación - SIMPLIFICADO */}
       <Dialog
         open={locationDialog}
@@ -651,22 +701,44 @@ export default function HomePage() {
         </Alert>
       </Snackbar>
 
-      {/* Header / Navbar */}
-      <AppBar position="static" elevation={1} sx={{ bgcolor: 'white', color: 'text.primary' }}>
+      {/* Header / Navbar con efecto glassmorphism */}
+      <AppBar 
+        position="sticky" 
+        elevation={0} 
+        sx={{ 
+          background: 'rgba(0, 0, 0, 0.9)',
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.4)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        }}
+      >
         <Toolbar sx={{ 
           justifyContent: 'space-between',
           gap: isMobile ? 1 : 0,
-          py: isMobile ? 1 : 0,
-          minHeight: isMobile ? 'auto' : 64,
+          py: isMobile ? 1.5 : 1,
+          minHeight: isMobile ? 'auto' : 70,
+          px: isMobile ? 2 : 4,
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocationIcon color="primary" sx={{ fontSize: isMobile ? 24 : 32 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <LocationIcon 
+              sx={{ 
+                fontSize: isMobile ? 28 : 36,
+                color: 'white',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              }} 
+            />
             <Typography 
               variant={isMobile ? 'body1' : 'h6'} 
               component="h1" 
-              sx={{ fontWeight: 'bold', color: 'text.primary' }}
+              sx={{ 
+                fontWeight: 800, 
+                color: 'white',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                letterSpacing: '-0.5px',
+              }}
             >
-              {isMobile ? 'Campus' : 'Geolocalización Campus'}
+              {isMobile ? 'Campus UNAP' : 'Geolocalización Campus UNAP'}
             </Typography>
           </Box>
 
@@ -678,20 +750,31 @@ export default function HomePage() {
                   size="small"
                   startIcon={!isMobile && <MyLocationIcon />}
                   sx={{ 
-                    color: 'success.main', 
+                    color: 'white',
+                    background: 'rgba(16, 185, 129, 0.2)',
                     textTransform: 'none',
                     fontSize: isMobile ? '0.7rem' : '0.875rem',
                     minWidth: isMobile ? 'auto' : 'auto',
                     px: isMobile ? 1 : 2,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    '&:hover': {
+                      background: 'rgba(16, 185, 129, 0.3)',
+                    }
                   }}
                 >
-                  {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'GPS'}
+                  {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'GPS Activo'}
                   {locationAccuracy && locationAccuracy <= 20 && !isMobile && (
                     <Chip 
                       label={`${Math.round(locationAccuracy)}m`}
                       size="small" 
-                      color="success" 
-                      sx={{ ml: 1, height: 20 }}
+                      sx={{ 
+                        ml: 1, 
+                        height: 22,
+                        background: '#10b981',
+                        color: 'white',
+                        fontWeight: 600,
+                      }}
                     />
                   )}
                 </Button>
@@ -702,11 +785,17 @@ export default function HomePage() {
                 startIcon={!isMobile && <MyLocationIcon />}
                 onClick={handleRetryLocation}
                 sx={{ 
-                  color: 'warning.main', 
+                  color: 'white',
+                  background: 'rgba(245, 158, 11, 0.2)',
                   textTransform: 'none',
                   fontSize: isMobile ? '0.7rem' : '0.875rem',
                   minWidth: isMobile ? 'auto' : 'auto',
                   px: isMobile ? 1 : 2,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  '&:hover': {
+                    background: 'rgba(245, 158, 11, 0.3)',
+                  }
                 }}
               >
                 {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'Activar GPS'}
@@ -718,13 +807,22 @@ export default function HomePage() {
               onClick={() => navigate('/login')}
               size="small"
               sx={{ 
-                bgcolor: 'grey.900',
-                '&:hover': { bgcolor: 'grey.800' },
+                background: 'linear-gradient(135deg, #0d335a 0%, #164e85 100%)',
+                boxShadow: '0 4px 15px 0 rgba(13, 51, 90, 0.3)',
+                color: 'white',
+                '&:hover': { 
+                  background: 'linear-gradient(135deg, #164e85 0%, #0d335a 100%)',
+                  boxShadow: '0 6px 20px 0 rgba(13, 51, 90, 0.4)',
+                  transform: 'translateY(-2px)',
+                },
                 textTransform: 'none',
-                fontWeight: 'bold',
-                fontSize: isMobile ? '0.7rem' : '0.875rem',
-                px: isMobile ? 1.5 : 2,
+                fontWeight: 700,
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                px: isMobile ? 2 : 3,
+                py: isMobile ? 0.75 : 1,
                 minWidth: isMobile ? 'auto' : 'auto',
+                borderRadius: 2,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             >
               Login
@@ -733,39 +831,133 @@ export default function HomePage() {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content - Responsive */}
-      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8 }}>
-        {/* Hero Section */}
-        <Box sx={{ textAlign: 'center', mb: isMobile ? 4 : 8 }}>
+      {/* Main Content - Con efectos 3D y glassmorphism */}
+      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8, position: 'relative', zIndex: 1 }}>
+        {/* Hero Section con efecto 3D */}
+        <Box sx={{ 
+          textAlign: 'center', 
+          mb: isMobile ? 4 : 8,
+          animation: 'fadeInUp 0.8s ease-out',
+          '@keyframes fadeInUp': {
+            '0%': {
+              opacity: 0,
+              transform: 'translateY(30px)',
+            },
+            '100%': {
+              opacity: 1,
+              transform: 'translateY(0)',
+            },
+          },
+        }}>
+          {/* Logo UNAP */}
+          <Box
+            sx={{
+              mb: 4,
+              display: 'flex',
+              justifyContent: 'center',
+              animation: 'fadeInUp 0.6s ease-out',
+            }}
+          >
+            <Box
+              sx={{
+                width: isMobile ? 120 : 180,
+                height: 'auto',
+                filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4))',
+                '& img': {
+                  width: '100%',
+                  height: 'auto',
+                }
+              }}
+            >
+              <Box
+                component="img"
+                src="/unap-logo.svg"
+                alt="UNAP Logo"
+                sx={{
+                  width: '100%',
+                  height: 'auto',
+                  filter: 'brightness(0) invert(1)', // Convertir a blanco
+                }}
+              />
+            </Box>
+          </Box>
+
           <Typography 
-            variant={isMobile ? "h4" : "h3"} 
+            variant={isMobile ? "h4" : "h2"} 
             component="h2" 
             gutterBottom 
-            sx={{ fontWeight: 'bold', mb: 2 }}
+            sx={{ 
+              fontWeight: 900, 
+              mb: 2,
+              color: 'white',
+              textShadow: '0 4px 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.1)',
+              letterSpacing: '-1px',
+              lineHeight: 1.2,
+            }}
           >
-            Encuentra lugares en campus
+            Encuentra lugares en el Campus
           </Typography>
           <Typography 
-            variant={isMobile ? "body2" : "h6"} 
-            color="text.secondary" 
-            sx={{ mb: 6 }}
+            variant={isMobile ? "body1" : "h5"} 
+            sx={{ 
+              mb: 6,
+              color: 'rgba(255, 255, 255, 0.95)',
+              textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+              fontWeight: 500,
+              maxWidth: 700,
+              mx: 'auto',
+            }}
           >
             Busca edificios, salas, facultades o baños
           </Typography>
 
-          {/* Search Bar con Selector */}
-          <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+          {/* Search Bar con efecto glassmorphism mejorado */}
+          <Box sx={{ 
+            maxWidth: 900, 
+            mx: 'auto',
+            '& > *': {
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              borderRadius: 3,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              },
+              '& .MuiInputAdornment-root svg': {
+                color: 'white !important',
+              }
+            }
+          }}>
             <SearchBar onSearch={handleSearch} initialType="todo" />
           </Box>
         </Box>
 
-        {/* Search Results Section - Unificado */}
+        {/* Search Results Section - Con efectos glassmorphism */}
         {searchTriggered && (
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+          <Box sx={{ 
+            mb: 6,
+            animation: 'fadeIn 0.5s ease-out',
+            '@keyframes fadeIn': {
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
+            },
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 800, 
+                mb: 3,
+                color: 'white',
+                textShadow: '0 2px 15px rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
               {searchQuery ? 'Resultados de búsqueda' : (searchType === 'edificio' ? 'Todos los Edificios' : searchType === 'sala' ? 'Todas las Salas' : searchType === 'bano' ? 'Todos los Baños' : searchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
               {searchQuery && searchType !== 'todo' && ` - ${searchType === 'edificio' ? 'Edificios' : searchType === 'sala' ? 'Salas' : searchType === 'bano' ? 'Baños' : 'Facultades'}`}
-              {searchResults?.length > 0 && ` (${searchResults.length})`}
             </Typography>
 
             {isSearching ? (
@@ -778,9 +970,9 @@ export default function HomePage() {
                 {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BuildingIcon color="primary" />
-                        Edificios ({searchResults.filter(r => r.resultType === 'edificio').length})
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        <BuildingIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                        Edificios
                       </Typography>
                     )}
                     <Grid container spacing={3}>
@@ -873,21 +1065,6 @@ export default function HomePage() {
                           />
                         )}
 
-                        {/* Coordenadas */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <LocationIcon color="action" fontSize="small" />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Latitud:</strong> {building.cord_latitud}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <LocationIcon color="action" fontSize="small" />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Longitud:</strong> {building.cord_longitud}
-                          </Typography>
-                        </Box>
-
                         {/* Estado y Disponibilidad */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <Chip
@@ -973,9 +1150,9 @@ export default function HomePage() {
                 {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ImageIcon color="primary" />
-                        Salas ({searchResults.filter(r => r.resultType === 'sala').length})
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        <ImageIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                        Salas
                       </Typography>
                     )}
                     <Grid container spacing={3}>
@@ -1197,9 +1374,9 @@ export default function HomePage() {
                 {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <SchoolIcon color="primary" />
-                        Facultades ({searchResults.filter(r => r.resultType === 'facultad').length})
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        <SchoolIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                        Facultades
                       </Typography>
                     )}
                     <Grid container spacing={3}>
@@ -1343,9 +1520,9 @@ export default function HomePage() {
                 {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BathroomIcon color="primary" />
-                        Baños ({searchResults.filter(r => r.resultType === 'bano').length})
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        <BathroomIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                        Baños
                       </Typography>
                     )}
                     <Grid container spacing={3}>
@@ -1560,12 +1737,19 @@ export default function HomePage() {
                 )}
               </Box>
             ) : (
-              <Paper sx={{ p: 6, textAlign: 'center' }}>
-                <SearchIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
+              <Paper sx={{ 
+                p: 6, 
+                textAlign: 'center',
+                background: 'rgba(0, 0, 0, 0.7) !important',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}>
+                <SearchIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.4)', mb: 2 }} />
+                <Typography variant="h6" sx={{ color: 'white', mb: 1 }} gutterBottom>
                   No se encontraron resultados
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                   Intenta con otro término de búsqueda o verifica la ortografía
                 </Typography>
               </Paper>
@@ -2259,6 +2443,11 @@ export default function HomePage() {
           setRouteMapOpen(true)
           setBuildingDetailOpen(false)
         }}
+        onRoomClick={(room) => {
+          setSelectedRoom(room)
+          setRoomDetailOpen(true)
+          setBuildingDetailOpen(false)
+        }}
       />
 
       {/* Modal de Mapa con Ruta - SIMPLIFICADO SIN LEAFLET */}
@@ -2304,13 +2493,11 @@ export default function HomePage() {
                 flexShrink: 0, 
                 display: 'flex', 
                 flexDirection: 'column',
-                maxHeight: isMobile ? 200 : 'auto',
-                overflow: isMobile ? 'auto' : 'visible',
               }}>
                 {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
                   <CardMedia
                     component="img"
-                    height="200"
+                    height={isMobile ? "120" : "200"}
                     image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
                     alt={routeDestinationData.name}
                     sx={{ objectFit: 'cover' }}
@@ -2318,7 +2505,7 @@ export default function HomePage() {
                 ) : (
                   <Box
                     sx={{
-                      height: 200,
+                      height: isMobile ? 120 : 200,
                       bgcolor: 'grey.200',
                       display: 'flex',
                       alignItems: 'center',
@@ -2356,18 +2543,6 @@ export default function HomePage() {
                       </Typography>
                     </Box>
                   )}
-
-                  {/* Coordenadas */}
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                      Lat: {routeDestinationData.latitude}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                      Lon: {routeDestinationData.longitude}
-                    </Typography>
-                  </Box>
 
                   {/* Capacidad si aplica */}
                   {routeDestinationData.capacity && (
@@ -2685,7 +2860,9 @@ export default function HomePage() {
         userLocation={userLocation}
         destination={routeDestination}
         destinationName={routeDestinationName}
+        destinationImage={routeDestinationData?.image}
+        destinationType={routeDestinationData?.type}
       />
-    </Box>
+    </>
   )
 }

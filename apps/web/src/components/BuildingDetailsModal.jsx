@@ -14,6 +14,8 @@ import {
   CardMedia,
   Chip,
   Grid,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import {
   Close as CloseIcon,
@@ -25,9 +27,11 @@ import {
 } from '@mui/icons-material'
 import api from '../lib/api'
 
-export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute }) {
+export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute, onRoomClick }) {
   const [selectedFloor, setSelectedFloor] = useState(null)
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   // Obtener pisos del edificio
   const { data: floors } = useQuery({
@@ -62,7 +66,8 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
   }
 
   const handleNextRoom = () => {
-    if (rooms && currentRoomIndex < rooms.length - 3) {
+    const roomsPerPage = isMobile ? 1 : 3
+    if (rooms && currentRoomIndex < rooms.length - roomsPerPage) {
       setCurrentRoomIndex(currentRoomIndex + 1)
     }
   }
@@ -85,11 +90,14 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
     return `http://localhost:4000${imageUrl}`
   }
 
-  // Obtener las 3 salas visibles en el carrusel
-  const visibleRooms = rooms ? rooms.slice(currentRoomIndex, currentRoomIndex + 3) : []
+  // Determinar cuántas salas mostrar según el dispositivo
+  const roomsPerPage = isMobile ? 1 : 3
+  
+  // Obtener las salas visibles en el carrusel
+  const visibleRooms = rooms ? rooms.slice(currentRoomIndex, currentRoomIndex + roomsPerPage) : []
   
   // Calcular la cantidad máxima de posiciones del carrusel
-  const maxCarouselPositions = rooms ? Math.max(1, rooms.length - 2) : 1
+  const maxCarouselPositions = rooms ? Math.max(1, rooms.length - (roomsPerPage - 1)) : 1
 
   return (
     <Dialog 
@@ -316,202 +324,102 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             {/* Contador de salas */}
             {rooms && rooms.length > 0 && (
               <Box sx={{ px: 3, pb: 2 }}>
-                <Typography variant="body2" color="text.secondary" fontWeight="medium">
-                  {rooms.length} {rooms.length === 1 ? 'sala' : 'salas'} en este piso
+                <Typography variant="h6" fontWeight="bold">
+                  Salas
                 </Typography>
               </Box>
             )}
 
-            {/* Carrusel de 3 salas */}
-            {visibleRooms.length > 0 ? (
-              <Box sx={{ position: 'relative', px: 3, pb: 2, overflow: 'hidden' }}>
-                {/* Botón anterior - Solo visible si no está en el inicio */}
-                {currentRoomIndex > 0 && (
-                  <IconButton
-                    onClick={handlePrevRoom}
-                    sx={{
-                      position: 'absolute',
-                      left: -20,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'white',
-                      boxShadow: 3,
-                      zIndex: 10,
-                      '&:hover': { bgcolor: 'grey.100' },
-                    }}
-                  >
-                    <ChevronLeftIcon fontSize="large" />
-                  </IconButton>
-                )}
-
-                {/* Contenedor con overflow */}
-                <Box sx={{ overflow: 'hidden', position: 'relative', width: '100%' }}>
-                  {/* Grid de salas con animación de deslizamiento */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      transform: `translateX(calc(-${currentRoomIndex} * (33.333% + 10.67px)))`,
-                      transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                      gap: 2,
-                      width: 'fit-content',
-                    }}
-                  >
-                    {rooms && rooms.map((room) => (
-                      <Box
-                        key={room.id_sala}
-                        sx={{
-                          minWidth: 'calc(33.333% - 10.67px)',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Card
-                          sx={{
-                            height: '100%',
-                            transition: 'all 0.3s',
-                            '&:hover': {
-                              transform: 'translateY(-8px)',
-                              boxShadow: 6,
-                            },
-                          }}
-                        >
-                          {/* Nombre de la sala */}
-                          <Box sx={{ p: 1.5, bgcolor: 'grey.100', textAlign: 'center' }}>
-                            <Typography variant="subtitle2" fontWeight="bold" noWrap>
-                              {room.nombre_sala}
-                            </Typography>
-                          </Box>
-
-                          {/* Foto de la sala */}
-                          {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                            <Box sx={{ position: 'relative' }}>
-                              <CardMedia
-                                component="img"
-                                height="140"
-                                image={getImageUrl(room.imagen)}
-                                alt={room.nombre_sala}
-                                sx={{ objectFit: 'cover' }}
-                              />
-                              {room.disponibilidad === 'En mantenimiento' && (
-                                <Box
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 5,
-                                    left: 0,
-                                    right: 0,
-                                    bgcolor: 'error.main',
-                                    color: 'white',
-                                    py: 0.5,
-                                    px: 1,
-                                    fontSize: '0.7rem',
-                                    fontWeight: 'bold',
-                                    textAlign: 'center',
-                                    transform: 'rotate(-3deg)',
-                                    boxShadow: 2,
-                                    zIndex: 1
-                                  }}
-                                >
-                                  ⚠️ MANTENIMIENTO
-                                </Box>
-                              )}
-                            </Box>
-                          ) : (
-                            <Box
-                              sx={{
-                                height: 140,
-                                bgcolor: 'grey.200',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              <RoomIcon sx={{ fontSize: 50, color: 'grey.400' }} />
-                            </Box>
-                          )}
-
-                          {/* Etiquetas (chips) */}
-                          <CardContent sx={{ pt: 1, pb: 1 }}>
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
-                              {room.acronimo && (
-                                <Chip 
-                                  label={room.acronimo}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              )}
-                              {room.tipo_sala && (
-                                <Chip 
-                                  label={room.tipo_sala}
-                                  size="small"
-                                  color="secondary"
-                                  variant="outlined"
-                                />
-                              )}
-                              <Chip
-                                label={`${room.capacidad}p`}
+            {/* Lista de salas */}
+            {rooms && rooms.length > 0 ? (
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {rooms.map((room) => (
+                    <Card 
+                      key={room.id_sala} 
+                      variant="outlined"
+                      sx={{
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          boxShadow: 3,
+                        }
+                      }}
+                    >
+                      <CardContent sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        p: 2, 
+                        gap: 2,
+                        flexDirection: isMobile ? 'column' : 'row',
+                        '&:last-child': { pb: 2 } 
+                      }}>
+                        <Box sx={{ flex: 1, width: '100%' }}>
+                          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            {room.nombre_sala}
+                          </Typography>
+                          
+                          {/* Chips de información */}
+                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                            {room.acronimo && (
+                              <Chip 
+                                label={room.acronimo}
                                 size="small"
-                                icon={<PeopleIcon />}
+                                color="primary"
                                 variant="outlined"
                               />
-                            </Box>
-                            
-                            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, justifyContent: 'center' }}>
-                              <Chip
-                                label={room.estado ? 'Activa' : 'Inactiva'}
+                            )}
+                            {room.tipo_sala && (
+                              <Chip 
+                                label={room.tipo_sala}
                                 size="small"
-                                color={room.estado ? 'success' : 'error'}
+                                color="secondary"
+                                variant="outlined"
                               />
-                              <Chip
-                                label={room.disponibilidad}
-                                size="small"
-                                color={room.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                              />
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Box>
-                    ))}
-                  </Box>
+                            )}
+                            <Chip
+                              label={`${room.capacidad} personas`}
+                              size="small"
+                              icon={<PeopleIcon />}
+                              variant="outlined"
+                              sx={{
+                                bgcolor: 'white',
+                                color: 'black'
+                              }}
+                            />
+                          </Box>
+
+                          {/* Estado y Disponibilidad */}
+                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                            <Chip
+                              label={room.estado ? 'Activa' : 'Inactiva'}
+                              size="small"
+                              color={room.estado ? 'success' : 'error'}
+                            />
+                            <Chip
+                              label={room.disponibilidad}
+                              size="small"
+                              color={room.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                            />
+                          </Box>
+                        </Box>
+
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => {
+                            if (onRoomClick) {
+                              onRoomClick(room)
+                            }
+                          }}
+                          sx={{ minWidth: isMobile ? '100%' : 100 }}
+                        >
+                          Ver más
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </Box>
-
-                {/* Botón siguiente - Solo visible si no está en el final */}
-                {currentRoomIndex < rooms.length - 3 && (
-                  <IconButton
-                    onClick={handleNextRoom}
-                    sx={{
-                      position: 'absolute',
-                      right: -20,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'white',
-                      boxShadow: 3,
-                      zIndex: 10,
-                      '&:hover': { bgcolor: 'grey.100' },
-                    }}
-                  >
-                    <ChevronRightIcon fontSize="large" />
-                  </IconButton>
-                )}
-
-                {/* Indicador de posición - Solo si hay más de 3 salas */}
-                {rooms && rooms.length > 3 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1.5 }}>
-                    {Array.from({ length: maxCarouselPositions }).map((_, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          bgcolor: idx === currentRoomIndex ? 'primary.main' : 'grey.300',
-                          transition: 'all 0.3s',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => setCurrentRoomIndex(idx)}
-                      />
-                    ))}
-                  </Box>
-                )}
               </Box>
             ) : (
               <Box sx={{ p: 4, textAlign: 'center' }}>
