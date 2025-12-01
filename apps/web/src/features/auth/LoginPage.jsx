@@ -6,13 +6,17 @@ import {
   Container,
   Paper,
   TextField,
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -26,6 +30,7 @@ export default function LoginPage() {
   return (
     <Box sx={{ 
       minHeight: '100vh',
+      width: '100%',
       position: 'relative',
       overflow: 'hidden',
       display: 'flex',
@@ -83,17 +88,28 @@ export default function LoginPage() {
         }}
       />
 
-      <Container component="main" maxWidth="xs">
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
-            <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-              <LockOutlinedIcon />
+      <Paper 
+        elevation={6} 
+        sx={{ 
+          p: isMobile ? 2.5 : 4, 
+          width: isMobile ? 'calc(100% - 32px)' : 400,
+          maxWidth: isMobile ? 'calc(100% - 32px)' : 400,
+          mx: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRadius: 2,
+        }}
+      >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2, width: '100%' }}>
+            <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56 }}>
+              <LockOutlinedIcon sx={{ fontSize: 32 }} />
             </Avatar>
-            <Typography component="h1" variant="h5" sx={{ fontWeight: 'bold' }}>
+            <Typography component="h1" variant={isMobile ? "h6" : "h5"} sx={{ fontWeight: 'bold' }}>
               Iniciar sesión
             </Typography>
           </Box>
-          <Box component="form" onSubmit={onSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box component="form" onSubmit={onSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
             <TextField
               label="Correo"
               type="email"
@@ -116,7 +132,6 @@ export default function LoginPage() {
             <Button variant="text" fullWidth onClick={() => navigate('/')}>Volver</Button>
           </Box>
         </Paper>
-      </Container>
     </Box>
   )
 }

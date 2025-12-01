@@ -10,13 +10,17 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  Card,
+  CardMedia,
 } from '@mui/material'
 import {
   Close as CloseIcon,
   Navigation as NavigationIcon,
+  Business as BuildingIcon,
+  MeetingRoom as RoomIcon,
 } from '@mui/icons-material'
 
-export default function CompassGuide({ open, onClose, userLocation, destination, destinationName }) {
+export default function CompassGuide({ open, onClose, userLocation, destination, destinationName, destinationImage, destinationType }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [heading, setHeading] = useState(0) // Orientación del dispositivo
@@ -212,6 +216,39 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
 
         {permission === 'granted' && (
           <>
+            {/* Imagen del destino */}
+            {destinationImage && !/via\.placeholder\.com/.test(destinationImage) ? (
+              <Card sx={{ width: '100%', maxWidth: 300, mb: 2 }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={destinationImage.startsWith('http') ? destinationImage : `http://localhost:4000${destinationImage}`}
+                  alt={destinationName}
+                  sx={{ objectFit: 'cover' }}
+                />
+              </Card>
+            ) : (
+              <Box
+                sx={{
+                  width: '100%',
+                  maxWidth: 300,
+                  height: 200,
+                  bgcolor: '#222',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 2,
+                  mb: 2,
+                }}
+              >
+                {destinationType === 'building' ? (
+                  <BuildingIcon sx={{ fontSize: 80, color: '#444' }} />
+                ) : (
+                  <RoomIcon sx={{ fontSize: 80, color: '#444' }} />
+                )}
+              </Box>
+            )}
+
             {/* Información del destino */}
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: '#aaa', mb: 0.5 }}>

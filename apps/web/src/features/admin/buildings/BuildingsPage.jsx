@@ -36,7 +36,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Map as MapIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material'
 import api from '../../../lib/api'
@@ -119,11 +118,6 @@ export default function BuildingsPage() {
       queryClient.invalidateQueries(['buildings'])
     },
   })
-
-  const handleViewOnMap = (building) => {
-    // Navigate to map with building ID in URL
-    navigate(`/admin/mapa?buildingId=${building.id_edificio}`)
-  }
 
   const handleViewDetails = (building) => {
     setSelectedBuilding(building)

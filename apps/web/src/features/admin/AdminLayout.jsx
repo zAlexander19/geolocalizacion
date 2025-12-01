@@ -19,7 +19,6 @@ import {
   MeetingRoom as RoomIcon,
   Wc as BathroomIcon,
   ExitToApp as LogoutIcon,
-  Map as MapIcon,
   CloudUpload as UploadIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
@@ -52,7 +51,6 @@ export default function AdminLayout() {
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
-    { label: 'Ver Mapa', icon: <MapIcon />, path: '/admin/mapa' },
     { label: 'Importar OSM', icon: <UploadIcon />, path: '/admin/osm-import' },
   ]
 

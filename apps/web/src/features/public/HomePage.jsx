@@ -2493,13 +2493,11 @@ export default function HomePage() {
                 flexShrink: 0, 
                 display: 'flex', 
                 flexDirection: 'column',
-                maxHeight: isMobile ? 200 : 'auto',
-                overflow: isMobile ? 'auto' : 'visible',
               }}>
                 {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
                   <CardMedia
                     component="img"
-                    height="200"
+                    height={isMobile ? "120" : "200"}
                     image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
                     alt={routeDestinationData.name}
                     sx={{ objectFit: 'cover' }}
@@ -2507,7 +2505,7 @@ export default function HomePage() {
                 ) : (
                   <Box
                     sx={{
-                      height: 200,
+                      height: isMobile ? 120 : 200,
                       bgcolor: 'grey.200',
                       display: 'flex',
                       alignItems: 'center',
@@ -2545,18 +2543,6 @@ export default function HomePage() {
                       </Typography>
                     </Box>
                   )}
-
-                  {/* Coordenadas */}
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                      Lat: {routeDestinationData.latitude}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                      Lon: {routeDestinationData.longitude}
-                    </Typography>
-                  </Box>
 
                   {/* Capacidad si aplica */}
                   {routeDestinationData.capacity && (
@@ -2874,6 +2860,8 @@ export default function HomePage() {
         userLocation={userLocation}
         destination={routeDestination}
         destinationName={routeDestinationName}
+        destinationImage={routeDestinationData?.image}
+        destinationType={routeDestinationData?.type}
       />
     </>
   )
