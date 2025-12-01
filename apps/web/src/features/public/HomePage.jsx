@@ -2311,7 +2311,7 @@ export default function HomePage() {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
+                    image={getFullImageUrl(routeDestinationData.image)}
                     alt={routeDestinationData.name}
                     sx={{ objectFit: 'cover' }}
                   />
@@ -2499,7 +2499,7 @@ export default function HomePage() {
                   <CardMedia
                     component="img"
                     height={isMobile ? "120" : "200"}
-                    image={routeDestinationData.image.startsWith('http') ? routeDestinationData.image : `http://localhost:4000${routeDestinationData.image}`}
+                    image={getFullImageUrl(routeDestinationData.image)}
                     alt={routeDestinationData.name}
                     sx={{ objectFit: 'cover' }}
                   />

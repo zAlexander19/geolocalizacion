@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getFullImageUrl } from '../utils/imageUrl'
 import {
   Dialog,
   DialogContent,
@@ -222,7 +223,7 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
                 <CardMedia
                   component="img"
                   height="200"
-                  image={destinationImage.startsWith('http') ? destinationImage : `http://localhost:4000${destinationImage}`}
+                  image={getFullImageUrl(destinationImage)}
                   alt={destinationName}
                   sx={{ objectFit: 'cover' }}
                 />
