@@ -25,7 +25,7 @@ import {
 } from '@mui/icons-material'
 import api from '../lib/api'
 
-export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute }) {
+export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute, onRoomClick }) {
   const [selectedFloor, setSelectedFloor] = useState(null)
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0)
 
@@ -368,15 +368,21 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                           sx={{
                             height: '100%',
                             transition: 'all 0.3s',
+                            cursor: 'pointer',
                             '&:hover': {
                               transform: 'translateY(-8px)',
                               boxShadow: 6,
                             },
                           }}
+                          onClick={() => {
+                            if (onRoomClick) {
+                              onRoomClick(room)
+                            }
+                          }}
                         >
                           {/* Nombre de la sala */}
-                          <Box sx={{ p: 1.5, bgcolor: 'grey.100', textAlign: 'center' }}>
-                            <Typography variant="subtitle2" fontWeight="bold" noWrap>
+                          <Box sx={{ p: 1.5, bgcolor: '#000000', textAlign: 'center' }}>
+                            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ color: 'white' }}>
                               {room.nombre_sala}
                             </Typography>
                           </Box>
@@ -452,6 +458,10 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                                 size="small"
                                 icon={<PeopleIcon />}
                                 variant="outlined"
+                                sx={{ 
+                                  bgcolor: 'white',
+                                  borderColor: 'grey.300'
+                                }}
                               />
                             </Box>
                             

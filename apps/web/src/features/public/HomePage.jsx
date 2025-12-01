@@ -1065,21 +1065,6 @@ export default function HomePage() {
                           />
                         )}
 
-                        {/* Coordenadas */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <LocationIcon color="action" fontSize="small" />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Latitud:</strong> {building.cord_latitud}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <LocationIcon color="action" fontSize="small" />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Longitud:</strong> {building.cord_longitud}
-                          </Typography>
-                        </Box>
-
                         {/* Estado y Disponibilidad */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <Chip
@@ -2456,6 +2441,11 @@ export default function HomePage() {
           setRouteDestinationData(destination)
           setRouteWaypoints([])
           setRouteMapOpen(true)
+          setBuildingDetailOpen(false)
+        }}
+        onRoomClick={(room) => {
+          setSelectedRoom(room)
+          setRoomDetailOpen(true)
           setBuildingDetailOpen(false)
         }}
       />
