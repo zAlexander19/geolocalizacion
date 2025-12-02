@@ -17,7 +17,17 @@ import MapViewPage from './features/admin/map/MapViewPage.jsx'
 import UsersPage from './features/admin/users/UsersPage.jsx'
 import './index.css'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - datos considerados frescos
+      cacheTime: 10 * 60 * 1000, // 10 minutos - mantener en caché
+      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
+      refetchOnMount: false, // No refetch al montar si hay datos en caché
+      retry: 1, // Solo 1 reintento en caso de error
+    },
+  },
+})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

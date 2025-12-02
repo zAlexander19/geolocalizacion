@@ -17,3 +17,15 @@ export function getFullImageUrl(imagePath) {
   // Si no tiene prefijo, asumir que es /uploads/
   return `${API_BASE_URL}/${imagePath}`
 }
+
+// Optimización: imagen placeholder mientras carga
+export function getOptimizedImageUrl(imagePath, width = 800) {
+  const url = getFullImageUrl(imagePath)
+  
+  // Si es Cloudinary, agregar transformaciones
+  if (url.includes('cloudinary')) {
+    return url.replace('/upload/', `/upload/w_${width},q_auto,f_auto/`)
+  }
+  
+  return url
+}
