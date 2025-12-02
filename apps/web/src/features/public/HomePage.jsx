@@ -1325,15 +1325,29 @@ export default function HomePage() {
                                 return
                               }
                               
-                              // Si la sala tiene edificio, pasar primero por su entrada
-                              const waypoints = []
+                              // La ruta lleva al edificio, la brújula guía a la sala
+                              let routeDestLat, routeDestLng, compassDestLat, compassDestLng
+                              
                               if (room.building && room.building.cord_latitud && room.building.cord_longitud) {
-                                waypoints.push([room.building.cord_latitud, room.building.cord_longitud])
+                                // Si hay edificio, la ruta va al edificio
+                                routeDestLat = room.building.cord_latitud
+                                routeDestLng = room.building.cord_longitud
+                                // La brújula apunta a la sala
+                                compassDestLat = room.cord_latitud
+                                compassDestLng = room.cord_longitud
+                                console.log('🏢 Ruta al edificio, brújula a la sala')
+                              } else {
+                                // Si no hay edificio, todo apunta a la sala
+                                routeDestLat = room.cord_latitud
+                                routeDestLng = room.cord_longitud
+                                compassDestLat = room.cord_latitud
+                                compassDestLng = room.cord_longitud
+                                console.log('⚠️ Sin edificio, ruta directa a la sala')
                               }
                               
                               setRouteDestination({
-                                lat: room.cord_latitud,
-                                lng: room.cord_longitud
+                                lat: routeDestLat,
+                                lng: routeDestLng
                               })
                               setRouteDestinationName(`Sala ${room.nombre_sala}`)
                               setRouteDestinationData({
@@ -1342,11 +1356,11 @@ export default function HomePage() {
                                 acronym: room.nombre_edificio,
                                 image: room.imagen,
                                 distance: room.distance,
-                                latitude: room.cord_latitud,
-                                longitude: room.cord_longitud,
+                                latitude: compassDestLat,
+                                longitude: compassDestLng,
                                 capacity: room.capacidad_personas
                               })
-                              setRouteWaypoints(waypoints)
+                              setRouteWaypoints([])
                               setRouteMapOpen(true)
                             }}
                           >
@@ -1689,15 +1703,29 @@ export default function HomePage() {
                                 return
                               }
                               
-                              // Si el baño tiene edificio, pasar primero por su entrada
-                              const waypoints = []
+                              // La ruta lleva al edificio, la brújula guía al baño
+                              let routeDestLat, routeDestLng, compassDestLat, compassDestLng
+                              
                               if (bathroom.building && bathroom.building.cord_latitud && bathroom.building.cord_longitud) {
-                                waypoints.push([bathroom.building.cord_latitud, bathroom.building.cord_longitud])
+                                // Si hay edificio, la ruta va al edificio
+                                routeDestLat = bathroom.building.cord_latitud
+                                routeDestLng = bathroom.building.cord_longitud
+                                // La brújula apunta al baño
+                                compassDestLat = bathroom.cord_latitud
+                                compassDestLng = bathroom.cord_longitud
+                                console.log('🏢 Ruta al edificio, brújula al baño')
+                              } else {
+                                // Si no hay edificio, todo apunta al baño
+                                routeDestLat = bathroom.cord_latitud
+                                routeDestLng = bathroom.cord_longitud
+                                compassDestLat = bathroom.cord_latitud
+                                compassDestLng = bathroom.cord_longitud
+                                console.log('⚠️ Sin edificio, ruta directa al baño')
                               }
                               
                               setRouteDestination({
-                                lat: bathroom.cord_latitud,
-                                lng: bathroom.cord_longitud
+                                lat: routeDestLat,
+                                lng: routeDestLng
                               })
                               setRouteDestinationName(`Baño en ${bathroom.nombre_edificio}`)
                               setRouteDestinationData({
@@ -1706,11 +1734,11 @@ export default function HomePage() {
                                 acronym: bathroom.nombre_piso,
                                 image: bathroom.imagen,
                                 distance: bathroom.distance,
-                                latitude: bathroom.cord_latitud,
-                                longitude: bathroom.cord_longitud,
+                                latitude: compassDestLat,
+                                longitude: compassDestLng,
                                 capacity: bathroom.capacidad_personas
                               })
-                              setRouteWaypoints(waypoints)
+                              setRouteWaypoints([])
                               setRouteMapOpen(true)
                             }}
                             sx={{ textTransform: 'none', fontWeight: 'bold' }}
