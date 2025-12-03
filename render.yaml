@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: geolocalizacion-api
+    runtime: node
+    rootDir: apps/api
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSL
+        value: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
