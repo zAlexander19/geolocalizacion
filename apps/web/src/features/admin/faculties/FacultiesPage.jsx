@@ -229,11 +229,15 @@ export default function FacultiesPage() {
       
       reader.onload = (event) => {
         img.onload = () => {
-          if (img.width === 1600 && img.height === 1200) {
+          // Validar que las dimensiones estén en un rango razonable (entre 900 y 1600 píxeles)
+          const isValidWidth = img.width >= 900 && img.width <= 1600
+          const isValidHeight = img.height >= 900 && img.height <= 1600
+          
+          if (isValidWidth && isValidHeight) {
             setImageFile(file)
             setImagePreviewUrl(event.target.result)
           } else {
-            alert(`La imagen debe tener exactamente 1600x1200 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+            alert(`La imagen debe tener dimensiones entre 900x900 y 1600x1600 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
             e.target.value = '' // Limpiar el input
           }
         }
@@ -478,7 +482,7 @@ export default function FacultiesPage() {
                 />
               </Button>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                Dimensiones requeridas: 1600x1200 píxeles
+                Dimensiones requeridas: 900-1600 píxeles (ancho y alto)
               </Typography>
               {imagePreviewUrl && (
                 <Box
