@@ -247,15 +247,15 @@ export default function BathroomsAdmin() {
     
     reader.onload = (event) => {
       img.onload = () => {
-        // Validar que las dimensiones estén en un rango razonable (entre 900 y 1600 píxeles)
-        const isValidWidth = img.width >= 900 && img.width <= 1600
-        const isValidHeight = img.height >= 900 && img.height <= 1600
+        // Validar que las dimensiones estén en un rango razonable (entre 500 y 1800 píxeles)
+        const isValidWidth = img.width >= 500 && img.width <= 1800
+        const isValidHeight = img.height >= 500 && img.height <= 1800
         
         if (isValidWidth && isValidHeight) {
           setImageFile(file)
           setImagePreviewUrl(event.target.result)
         } else {
-          alert(`La imagen debe tener dimensiones entre 900x900 y 1600x1600 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
+          alert(`La imagen debe tener dimensiones entre 500x500 y 1800x1800 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
           e.target.value = '' // Limpiar el input
         }
       }
@@ -609,7 +609,7 @@ export default function BathroomsAdmin() {
               <input hidden accept="image/png, image/jpeg" type="file" onChange={handleImageChange} />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              Dimensiones requeridas: 900-1600 píxeles (ancho y alto)
+              Dimensiones requeridas: 500-1800 píxeles (ancho y alto)
             </Typography>
             {imagePreviewUrl && (
               <Box component="img" src={imagePreviewUrl} alt="Preview" sx={{ width: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider' }} />

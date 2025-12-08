@@ -32,9 +32,9 @@ async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight)
   // Validar dimensiones con sharp
   const metadata = await sharp(buffer).metadata()
   
-  // Validar que las dimensiones estén en un rango razonable (entre 900 y 1600 píxeles)
-  const minDimension = 900
-  const maxDimension = 1600
+  // Validar que las dimensiones estén en un rango razonable (entre 500 y 1800 píxeles)
+  const minDimension = 500
+  const maxDimension = 1800
   const isValidWidth = metadata.width >= minDimension && metadata.width <= maxDimension
   const isValidHeight = metadata.height >= minDimension && metadata.height <= maxDimension
   
