@@ -38,8 +38,14 @@ const upload = multer({
 async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight) {
   const metadata = await sharp(buffer).metadata()
   
-  if (metadata.width !== expectedWidth || metadata.height !== expectedHeight) {
-    throw new Error(`La imagen debe tener exactamente ${expectedWidth}x${expectedHeight} píxeles. Imagen recibida: ${metadata.width}x${metadata.height} píxeles`)
+  // Validar que las dimensiones estén en un rango razonable (entre 900 y 1600 píxeles)
+  const minDimension = 900
+  const maxDimension = 1600
+  const isValidWidth = metadata.width >= minDimension && metadata.width <= maxDimension
+  const isValidHeight = metadata.height >= minDimension && metadata.height <= maxDimension
+  
+  if (!isValidWidth || !isValidHeight) {
+    throw new Error(`La imagen debe tener dimensiones entre ${minDimension}x${minDimension} y ${maxDimension}x${maxDimension} píxeles. Imagen recibida: ${metadata.width}x${metadata.height} píxeles`)
   }
   
   return new Promise((resolve, reject) => {
