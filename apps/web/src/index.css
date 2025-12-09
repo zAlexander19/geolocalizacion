@@ -290,3 +290,61 @@ input[type="search"] {
   color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
+
+/* Estilos para popup de baños en el mapa */
+.custom-popup-bathroom .leaflet-popup-content-wrapper {
+  background-color: #1a1a1a !important;
+  color: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+}
+
+.custom-popup-bathroom .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.custom-popup-bathroom .leaflet-popup-tip {
+  background-color: #1a1a1a !important;
+}
+
+.custom-popup-bathroom .leaflet-popup-close-button {
+  color: white !important;
+  font-size: 24px !important;
+  font-weight: bold !important;
+  padding: 4px 8px !important;
+}
+
+.custom-popup-bathroom .leaflet-popup-close-button:hover {
+  color: #42a5f5 !important;
+}
+
+/* Estilos para popup de edificios en el mapa */
+.custom-popup-building .leaflet-popup-content-wrapper {
+  background-color: #1a1a1a !important;
+  color: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+}
+
+.custom-popup-building .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+.custom-popup-building .leaflet-popup-tip {
+  background-color: #1a1a1a !important;
+}
+
+.custom-popup-building .leaflet-popup-close-button {
+  color: white !important;
+  font-size: 24px !important;
+  font-weight: bold !important;
+  padding: 4px 8px !important;
+}
+
+.custom-popup-building .leaflet-popup-close-button:hover {
+  color: #ff9800 !important;
+}

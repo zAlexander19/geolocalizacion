@@ -935,6 +935,251 @@ export default function HomePage() {
           </Box>
         </Box>
 
+        {/* Mapa de Edificios - Visible solo cuando el tipo es 'todo' o 'edificio' y no hay búsqueda activa */}
+        {!searchQuery && (searchType === 'todo' || searchType === 'edificio') && (
+          buildings && buildings.length > 0 ? (
+          <Box sx={{ 
+            mb: 6,
+            animation: 'fadeIn 0.8s ease-out',
+            '@keyframes fadeIn': {
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
+            },
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold', 
+                mb: 3, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1, 
+                color: 'white', 
+                textShadow: '0 2px 10px rgba(0,0,0,0.3)' 
+              }}
+            >
+              <BuildingIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+              Mapa de Edificios del Campus
+            </Typography>
+
+            {/* Leyenda del mapa - ARRIBA */}
+            <Box sx={{ 
+              mb: 2, 
+              p: 2, 
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
+                Explora todos los edificios de la UNAP
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                Haz clic en los marcadores para ver información detallada de cada edificio
+              </Typography>
+            </Box>
+
+            <Paper 
+              elevation={6} 
+              sx={{ 
+                height: isMobile ? 400 : 600, 
+                overflow: 'hidden',
+                borderRadius: 3,
+                background: 'rgba(0, 0, 0, 0.7)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <MapContainer
+                center={buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141]}
+                zoom={17}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                
+                {/* Marcador de ubicación del usuario */}
+                {userLocation && (
+                  <Marker 
+                    position={[userLocation.latitude, userLocation.longitude]}
+                    icon={L.icon({
+                      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                      iconSize: [25, 41],
+                      iconAnchor: [12, 41],
+                      popupAnchor: [1, -34],
+                      shadowSize: [41, 41]
+                    })}
+                  >
+                    <Popup>
+                      <strong>Tu ubicación</strong>
+                    </Popup>
+                  </Marker>
+                )}
+
+                {/* Marcadores para cada edificio */}
+                {buildings.map((building) => {
+                  if (!building.cord_latitud || !building.cord_longitud) return null
+                  
+                  return (
+                    <Marker
+                      key={building.id_edificio}
+                      position={[building.cord_latitud, building.cord_longitud]}
+                      icon={L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                      })}
+                    >
+                      <Popup 
+                        maxWidth={300} 
+                        minWidth={240}
+                        className="custom-popup-building"
+                      >
+                        <Box 
+                          sx={{ 
+                            minWidth: 240,
+                            bgcolor: '#1a1a1a',
+                            color: 'white',
+                            p: 2,
+                            borderRadius: 2,
+                            margin: '-15px',
+                          }}
+                        >
+                          {/* Nombre del edificio - DESTACADO */}
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              mb: 1.5, 
+                              color: 'white',
+                              textAlign: 'center',
+                              pb: 1,
+                              borderBottom: '2px solid rgba(255,255,255,0.2)'
+                            }}
+                          >
+                            {building.nombre_edificio}
+                          </Typography>
+
+                          {/* Imagen del edificio */}
+                          {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
+                            <Box sx={{ position: 'relative' }}>
+                              <Box
+                                component="img"
+                                src={getFullImageUrl(building.imagen)}
+                                alt={building.nombre_edificio}
+                                sx={{
+                                  width: '100%',
+                                  height: 150,
+                                  objectFit: 'cover',
+                                  borderRadius: 1,
+                                  mb: 1.5
+                                }}
+                              />
+                              {building.disponibilidad === 'En mantenimiento' && (
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 10,
+                                    left: 0,
+                                    right: 0,
+                                    bgcolor: 'error.main',
+                                    color: 'white',
+                                    py: 0.5,
+                                    px: 1,
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    transform: 'rotate(-5deg)',
+                                    boxShadow: 3,
+                                    zIndex: 1,
+                                    fontSize: '0.75rem'
+                                  }}
+                                >
+                                  ⚠️ EN MANTENIMIENTO
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            <Box
+                              sx={{
+                                width: '100%',
+                                height: 150,
+                                bgcolor: 'grey.700',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 1,
+                                mb: 1.5
+                              }}
+                            >
+                              <BuildingIcon sx={{ fontSize: 60, color: 'grey.500' }} />
+                            </Box>
+                          )}
+
+                          {/* Etiquetas (Chips) */}
+                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+                            {building.acronimo && (
+                              <Chip 
+                                label={building.acronimo}
+                                size="small"
+                                sx={{ 
+                                  bgcolor: 'rgba(255, 152, 0, 0.2)',
+                                  color: '#ffb74d',
+                                  borderColor: '#ffb74d'
+                                }}
+                                variant="outlined"
+                              />
+                            )}
+                            <Chip
+                              label={building.disponibilidad || 'Disponible'}
+                              size="small"
+                              sx={{
+                                bgcolor: building.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
+                                color: building.disponibilidad === 'Disponible' ? '#81c784' : '#e57373',
+                                borderColor: building.disponibilidad === 'Disponible' ? '#81c784' : '#e57373'
+                              }}
+                            />
+                          </Box>
+                          
+                          {/* Botón Ver más */}
+                          <Button
+                            size="small"
+                            variant="contained"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedBuilding(building)
+                              setBuildingDetailOpen(true)
+                            }}
+                          >
+                            Ver más
+                          </Button>
+                        </Box>
+                      </Popup>
+                    </Marker>
+                  )
+                })}
+              </MapContainer>
+            </Paper>
+          </Box>
+          ) : (
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 4,
+              color: 'white'
+            }}>
+              <CircularProgress sx={{ color: 'white' }} />
+              <Typography variant="body1" sx={{ mt: 2, color: 'rgba(255,255,255,0.8)' }}>
+                Cargando mapa de edificios...
+              </Typography>
+            </Box>
+          )
+        )}
+
         {/* Search Results Section - Con efectos glassmorphism */}
         {searchTriggered && (
           <Box sx={{ 
@@ -1540,6 +1785,268 @@ export default function HomePage() {
                         Baños
                       </Typography>
                     )}
+
+                    {/* Mapa con todos los baños cuando el filtro es 'bano' - PRIMERO */}
+                    {searchType === 'bano' && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography 
+                          variant="h5" 
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            mb: 3, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            color: 'white', 
+                            textShadow: '0 2px 10px rgba(0,0,0,0.3)' 
+                          }}
+                        >
+                          <LocationIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                          Mapa de Baños
+                        </Typography>
+
+                        {/* Leyenda del mapa - ARRIBA */}
+                        <Box sx={{ 
+                          mb: 2, 
+                          p: 2, 
+                          background: 'rgba(0, 0, 0, 0.7)',
+                          backdropFilter: 'blur(20px)',
+                          borderRadius: 2,
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                        }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
+                            Leyenda:
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 12, height: 12, bgcolor: 'green', borderRadius: '50%' }} />
+                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Hombres</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 12, height: 12, bgcolor: '#ee82ee', borderRadius: '50%' }} />
+                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Mujeres</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 12, height: 12, bgcolor: 'red', borderRadius: '50%' }} />
+                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Mixto</Typography>
+                            </Box>
+                            {userLocation && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ width: 12, height: 12, bgcolor: '#2196f3', borderRadius: '50%' }} />
+                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Tu ubicación</Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+
+                        <Paper 
+                          elevation={6} 
+                          sx={{ 
+                            height: isMobile ? 400 : 600, 
+                            overflow: 'hidden',
+                            borderRadius: 3,
+                            background: 'rgba(0, 0, 0, 0.7)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                          }}
+                        >
+                          <MapContainer
+                            center={(() => {
+                              const bathrooms = searchResults.filter(r => r.resultType === 'bano');
+                              if (bathrooms.length > 0 && bathrooms[0].cord_latitud && bathrooms[0].cord_longitud) {
+                                return [bathrooms[0].cord_latitud, bathrooms[0].cord_longitud];
+                              }
+                              return userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141];
+                            })()}
+                            zoom={17}
+                            style={{ height: '100%', width: '100%' }}
+                          >
+                            <TileLayer
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            
+                            {/* Marcador de ubicación del usuario */}
+                            {userLocation && (
+                              <Marker 
+                                position={[userLocation.latitude, userLocation.longitude]}
+                                icon={L.icon({
+                                  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                                  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                                  iconSize: [25, 41],
+                                  iconAnchor: [12, 41],
+                                  popupAnchor: [1, -34],
+                                  shadowSize: [41, 41]
+                                })}
+                              >
+                                <Popup>
+                                  <strong>Tu ubicación</strong>
+                                </Popup>
+                              </Marker>
+                            )}
+
+                            {/* Marcadores para cada baño */}
+                            {searchResults.filter(r => r.resultType === 'bano').map((bathroom) => {
+                              if (!bathroom.cord_latitud || !bathroom.cord_longitud) return null
+                              
+                              // Color del marcador según el tipo de baño
+                              let markerColor = 'red' // mixto
+                              if (bathroom.tipo === 'h') markerColor = 'green'
+                              if (bathroom.tipo === 'm') markerColor = 'violet'
+                              
+                              return (
+                                <Marker
+                                  key={bathroom.id_bano}
+                                  position={[bathroom.cord_latitud, bathroom.cord_longitud]}
+                                  icon={L.icon({
+                                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                  })}
+                                >
+                                  <Popup 
+                                    maxWidth={280} 
+                                    minWidth={220}
+                                    className="custom-popup-bathroom"
+                                  >
+                                    <Box 
+                                      sx={{ 
+                                        minWidth: 220,
+                                        bgcolor: '#1a1a1a',
+                                        color: 'white',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        margin: '-15px',
+                                      }}
+                                    >
+                                      {/* Nombre del baño - DESTACADO */}
+                                      <Typography 
+                                        variant="h6" 
+                                        sx={{ 
+                                          fontWeight: 'bold', 
+                                          mb: 1.5, 
+                                          color: 'white',
+                                          textAlign: 'center',
+                                          pb: 1,
+                                          borderBottom: '2px solid rgba(255,255,255,0.2)'
+                                        }}
+                                      >
+                                        {bathroom.nombre || 'Baño sin nombre'}
+                                      </Typography>
+
+                                      {/* Imagen del baño */}
+                                      {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
+                                        <Box
+                                          component="img"
+                                          src={getFullImageUrl(bathroom.imagen)}
+                                          alt={bathroom.nombre || 'Baño'}
+                                          sx={{
+                                            width: '100%',
+                                            height: 140,
+                                            objectFit: 'cover',
+                                            borderRadius: 1,
+                                            mb: 1.5
+                                          }}
+                                        />
+                                      ) : (
+                                        <Box
+                                          sx={{
+                                            width: '100%',
+                                            height: 140,
+                                            bgcolor: 'grey.200',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: 1,
+                                            mb: 1.5
+                                          }}
+                                        >
+                                          <BathroomIcon sx={{ fontSize: 50, color: 'grey.400' }} />
+                                        </Box>
+                                      )}
+
+                                      {/* Etiquetas (Chips) */}
+                                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+                                        <Chip 
+                                          label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                                          size="small"
+                                          color="primary"
+                                          sx={{ 
+                                            bgcolor: 'rgba(33, 150, 243, 0.2)',
+                                            color: '#42a5f5',
+                                            borderColor: '#42a5f5'
+                                          }}
+                                          variant="outlined"
+                                        />
+                                        <Chip
+                                          label={bathroom.disponibilidad || 'Disponible'}
+                                          size="small"
+                                          sx={{
+                                            bgcolor: bathroom.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
+                                            color: bathroom.disponibilidad === 'Disponible' ? '#81c784' : '#bdbdbd',
+                                            borderColor: bathroom.disponibilidad === 'Disponible' ? '#81c784' : '#bdbdbd'
+                                          }}
+                                        />
+                                        {bathroom.acceso_discapacidad && (
+                                          <Chip 
+                                            label="♿"
+                                            size="small"
+                                            sx={{
+                                              bgcolor: 'rgba(76, 175, 80, 0.2)',
+                                              color: '#81c784',
+                                              borderColor: '#81c784'
+                                            }}
+                                            variant="outlined"
+                                            title="Acceso para discapacidad"
+                                          />
+                                        )}
+                                      </Box>
+
+                                      {/* Información adicional */}
+                                      {bathroom.building && (
+                                        <Typography variant="body2" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
+                                          <BuildingIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
+                                          {bathroom.building.nombre_edificio}
+                                        </Typography>
+                                      )}
+                                      {bathroom.floor && (
+                                        <Typography variant="body2" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
+                                          <RoomIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
+                                          {bathroom.floor.nombre_piso}
+                                        </Typography>
+                                      )}
+                                      {bathroom.capacidad > 0 && (
+                                        <Typography variant="body2" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
+                                          <PeopleIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
+                                          {bathroom.capacidad} cubículos
+                                        </Typography>
+                                      )}
+                                      
+                                      {/* Botón Ver más */}
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        fullWidth
+                                        onClick={() => {
+                                          setSelectedBathroom(bathroom)
+                                          setBathroomDetailOpen(true)
+                                        }}
+                                      >
+                                        Ver más
+                                      </Button>
+                                    </Box>
+                                  </Popup>
+                                </Marker>
+                              )
+                            })}
+                          </MapContainer>
+                        </Paper>
+                      </Box>
+                    )}
+
                     <Grid container spacing={3}>
                       {/* Resultados para BAÑOS */}
                       {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
