@@ -2297,7 +2297,10 @@ export default function HomePage() {
       {/* Modal de Detalles de la Sala */}
       <Dialog
         open={roomDetailOpen}
-        onClose={() => setRoomDetailOpen(false)}
+        onClose={() => {
+          setRoomDetailOpen(false)
+          setSelectedRoom(null)
+        }}
         maxWidth={isMobile ? "xs" : "md"}
         fullWidth
         PaperProps={{
@@ -2980,7 +2983,13 @@ export default function HomePage() {
           setBuildingDetailOpen(false)
         }}
         onRoomClick={(room) => {
-          setSelectedRoom(room)
+          // Agregar información del edificio y piso a la sala
+          const roomWithDetails = {
+            ...room,
+            building: selectedBuilding,
+            floor: allFloors?.find(f => f.id_piso === room.id_piso)
+          }
+          setSelectedRoom(roomWithDetails)
           setRoomDetailOpen(true)
           setBuildingDetailOpen(false)
         }}
