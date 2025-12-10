@@ -2447,50 +2447,82 @@ export default function HomePage() {
               </Grid>
 
               {/* Sección de imágenes del Piso y Edificio */}
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Piso y Edificio
-                </Typography>
-                <Grid container spacing={2}>
-                  {/* Piso */}
-                  {selectedRoom.floor && (
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Piso</Typography>
-                      {selectedRoom.floor.imagen && !/via\.placeholder\.com/.test(selectedRoom.floor.imagen) ? (
-                        <Box
-                          component="img"
-                          src={getFullImageUrl(selectedRoom.floor.imagen)}
-                          alt={selectedRoom.floor.nombre_piso}
-                          sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
-                        />
-                      ) : (
-                        <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
-                          <LocationIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                        </Box>
-                      )}
-                    </Grid>
-                  )}
+              {selectedRoom.building && (() => {
+                // Obtener cantidad de pisos del edificio
+                const buildingFloors = allFloors?.filter(f => f.id_edificio === selectedRoom.building.id_edificio) || []
+                const hasOnlyOneFloor = buildingFloors.length === 1
 
-                  {/* Edificio */}
-                  {selectedRoom.building && (
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Edificio</Typography>
-                      {selectedRoom.building.imagen && !/via\.placeholder\.com/.test(selectedRoom.building.imagen) ? (
-                        <Box
-                          component="img"
-                          src={getFullImageUrl(selectedRoom.building.imagen)}
-                          alt={selectedRoom.building.nombre_edificio}
-                          sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
-                        />
-                      ) : (
-                        <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
-                          <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                        </Box>
+                // Si solo tiene 1 piso, mostrar solo el edificio
+                if (hasOnlyOneFloor) {
+                  return (
+                    <Box sx={{ mt: 4 }}>
+                      <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        Edificio
+                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        {selectedRoom.building.imagen && !/via\.placeholder\.com/.test(selectedRoom.building.imagen) ? (
+                          <Box
+                            component="img"
+                            src={getFullImageUrl(selectedRoom.building.imagen)}
+                            alt={selectedRoom.building.nombre_edificio}
+                            sx={{ width: '100%', maxWidth: 500, height: 'auto', maxHeight: 300, objectFit: 'cover', borderRadius: 2, boxShadow: 2 }}
+                          />
+                        ) : (
+                          <Box sx={{ width: '100%', maxWidth: 500, height: 250, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
+                            <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  )
+                }
+
+                // Si tiene más de 1 piso, mostrar piso y edificio
+                return (
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Piso y Edificio
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {/* Piso */}
+                      {selectedRoom.floor && (
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Piso</Typography>
+                          {selectedRoom.floor.imagen && !/via\.placeholder\.com/.test(selectedRoom.floor.imagen) ? (
+                            <Box
+                              component="img"
+                              src={getFullImageUrl(selectedRoom.floor.imagen)}
+                              alt={selectedRoom.floor.nombre_piso}
+                              sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
+                            />
+                          ) : (
+                            <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
+                              <LocationIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                            </Box>
+                          )}
+                        </Grid>
                       )}
+
+                      {/* Edificio */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Edificio</Typography>
+                        {selectedRoom.building.imagen && !/via\.placeholder\.com/.test(selectedRoom.building.imagen) ? (
+                          <Box
+                            component="img"
+                            src={getFullImageUrl(selectedRoom.building.imagen)}
+                            alt={selectedRoom.building.nombre_edificio}
+                            sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
+                          />
+                        ) : (
+                          <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
+                            <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                          </Box>
+                        )}
+                      </Grid>
                     </Grid>
-                  )}
-                </Grid>
-              </Box>
+                  </Box>
+                )
+              })()}
             </DialogContent>
             <DialogActions sx={{ p: isMobile ? 1 : 2, gap: 1, flexDirection: isMobile ? 'column' : 'row' }}>
               <Button
