@@ -29,7 +29,9 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
   const [distance, setDistance] = useState(0)
   const [error, setError] = useState(null)
   const [permission, setPermission] = useState('prompt')
+  const [hasArrived, setHasArrived] = useState(false)
   const animationRef = useRef(null)
+  const watchIdRef = useRef(null)
 
   // Calcular el ángulo hacia el destino
   const calculateBearing = (lat1, lon1, lat2, lon2) => {
@@ -75,6 +77,69 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
     }
   }
 
+  // Efecto para rastrear ubicación en tiempo real
+  useEffect(() => {
+    if (!open || !destination) return
+
+    // Distancia umbral para considerar que has llegado (10 metros)
+    const ARRIVAL_THRESHOLD = 10
+
+    // Función para actualizar posición
+    const updatePosition = (position) => {
+      const currentLat = position.coords.latitude
+      const currentLng = position.coords.longitude
+
+      // Calcular bearing
+      const newBearing = calculateBearing(
+        currentLat,
+        currentLng,
+        destination.lat,
+        destination.lng
+      )
+      setBearing(newBearing)
+
+      // Calcular distancia
+      const dist = calculateDistance(
+        currentLat,
+        currentLng,
+        destination.lat,
+        destination.lng
+      )
+      setDistance(dist)
+
+      // Verificar si ha llegado al destino
+      if (dist <= ARRIVAL_THRESHOLD && !hasArrived) {
+        setHasArrived(true)
+      } else if (dist > ARRIVAL_THRESHOLD && hasArrived) {
+        setHasArrived(false)
+      }
+    }
+
+    const handleError = (error) => {
+      console.error('Error al obtener ubicación:', error)
+      setError('No se pudo obtener tu ubicación en tiempo real')
+    }
+
+    // Iniciar seguimiento de ubicación
+    if (navigator.geolocation) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        updatePosition,
+        handleError,
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      )
+    }
+
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+      }
+    }
+  }, [open, destination, hasArrived])
+
   useEffect(() => {
     if (!open || !userLocation || !destination) return
 
@@ -87,7 +152,7 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
     )
     setBearing(initialBearing)
 
-    // Calcular distancia
+    // Calcular distancia inicial
     const dist = calculateDistance(
       userLocation.latitude,
       userLocation.longitude,
@@ -147,6 +212,10 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
   const handleClose = () => {
     setError(null)
     setPermission('prompt')
+    setHasArrived(false)
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current)
+    }
     onClose()
   }
 
@@ -217,6 +286,22 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
 
         {permission === 'granted' && (
           <>
+            {/* Alerta de llegada al destino */}
+            {hasArrived && (
+              <Alert 
+                severity="success" 
+                sx={{ 
+                  width: '100%', 
+                  fontSize: isMobile ? '0.9rem' : '1rem',
+                  '& .MuiAlert-icon': {
+                    fontSize: isMobile ? '1.5rem' : '2rem'
+                  }
+                }}
+              >
+                🎉 ¡Has llegado a tu destino!
+              </Alert>
+            )}
+
             {/* Imagen del destino */}
             {destinationImage && !/via\.placeholder\.com/.test(destinationImage) ? (
               <Card sx={{ width: '100%', maxWidth: 300, mb: 2 }}>
@@ -262,11 +347,18 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
 
             {/* Distancia */}
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h2" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
+              <Typography 
+                variant="h2" 
+                sx={{ 
+                  color: hasArrived ? '#FFD700' : '#4CAF50', 
+                  fontWeight: 'bold',
+                  transition: 'color 0.3s ease'
+                }}
+              >
                 {distance < 1000 ? `${distance}m` : `${(distance / 1000).toFixed(2)}km`}
               </Typography>
               <Typography variant="body2" sx={{ color: '#aaa' }}>
-                Distancia aproximada
+                {hasArrived ? '¡Destino alcanzado!' : 'Distancia aproximada'}
               </Typography>
             </Box>
 
