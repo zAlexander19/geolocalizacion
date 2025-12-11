@@ -102,12 +102,136 @@ export function createApp() {
   // ==================== STATISTICS ====================
   app.use('/statistics', statisticsRoutes)
 
+  // ==================== DELETED ITEMS ====================
+  app.get('/deleted', async (req, res) => {
+    try {
+      const { type, search } = req.query
+      let result = []
+
+      if (!type || type === 'buildings') {
+        const buildings = await buildingsRepo.findAll()
+        const deleted = buildings.filter(b => !b.estado).map(b => ({
+          ...b,
+          entity_type: 'building',
+          entity_name: 'Edificio'
+        }))
+        result = [...result, ...deleted]
+      }
+
+      if (!type || type === 'floors') {
+        const floors = await floorsRepo.findAll()
+        const deleted = floors.filter(f => !f.estado).map(f => ({
+          ...f,
+          entity_type: 'floor',
+          entity_name: 'Piso'
+        }))
+        result = [...result, ...deleted]
+      }
+
+      if (!type || type === 'rooms') {
+        const rooms = await roomsRepo.findAll()
+        const deleted = rooms.filter(r => !r.estado).map(r => ({
+          ...r,
+          entity_type: 'room',
+          entity_name: 'Sala'
+        }))
+        result = [...result, ...deleted]
+      }
+
+      if (!type || type === 'bathrooms') {
+        const bathrooms = await bathroomsRepo.findAll()
+        const deleted = bathrooms.filter(b => !b.estado).map(b => ({
+          ...b,
+          entity_type: 'bathroom',
+          entity_name: 'Baño'
+        }))
+        result = [...result, ...deleted]
+      }
+
+      // Aplicar búsqueda si existe
+      if (search) {
+        const searchLower = search.toLowerCase()
+        result = result.filter(item => {
+          const nombre = item.nombre_edificio || item.nombre_piso || item.nombre_sala || item.nombre_bano || ''
+          return nombre.toLowerCase().includes(searchLower)
+        })
+      }
+
+      res.json({ data: result })
+    } catch (error) {
+      console.error('Error fetching deleted items:', error)
+      res.status(500).json({ message: 'Error al obtener elementos eliminados' })
+    }
+  })
+
+  // Restaurar elemento eliminado
+  app.patch('/deleted/:type/:id/restore', async (req, res) => {
+    try {
+      const { type, id } = req.params
+      const numId = Number(id)
+
+      switch (type) {
+        case 'building':
+          await buildingsRepo.update(numId, { estado: true })
+          break
+        case 'floor':
+          await floorsRepo.update(numId, { estado: true })
+          break
+        case 'room':
+          await roomsRepo.update(numId, { estado: true })
+          break
+        case 'bathroom':
+          await bathroomsRepo.update(numId, { estado: true })
+          break
+        default:
+          return res.status(400).json({ message: 'Tipo de entidad no válido' })
+      }
+
+      res.json({ ok: true, message: 'Elemento restaurado correctamente' })
+    } catch (error) {
+      console.error('Error restoring item:', error)
+      res.status(500).json({ message: 'Error al restaurar elemento' })
+    }
+  })
+
+  // Eliminar permanentemente
+  app.delete('/deleted/:type/:id/permanent', async (req, res) => {
+    try {
+      const { type, id } = req.params
+      const numId = Number(id)
+
+      switch (type) {
+        case 'building':
+          await buildingsRepo.delete(numId)
+          break
+        case 'floor':
+          await floorsRepo.delete(numId)
+          break
+        case 'room':
+          await roomsRepo.delete(numId)
+          break
+        case 'bathroom':
+          await bathroomsRepo.delete(numId)
+          break
+        default:
+          return res.status(400).json({ message: 'Tipo de entidad no válido' })
+      }
+
+      res.json({ ok: true, message: 'Elemento eliminado permanentemente' })
+    } catch (error) {
+      console.error('Error permanently deleting item:', error)
+      res.status(500).json({ message: 'Error al eliminar elemento permanentemente' })
+    }
+  })
+
   // ==================== BUILDINGS ====================
   
   app.get('/buildings', async (req, res) => {
     try {
       const buildings = await buildingsRepo.findAll()
-      res.json({ data: buildings })
+      // Filtrar solo edificios activos
+      const activeBuildings = buildings.filter(b => b.estado !== false)
+      res.json({ data: activeBuildings })
     } catch (error) {
       console.error('Error fetching buildings:', error)
       res.status(500).json({ message: 'Error al obtener edificios' })
@@ -176,37 +300,38 @@ export function createApp() {
     try {
       const id = Number(req.params.id)
       
-      // Verificar si existen pisos asociados al edificio
+      // Verificar si existen pisos activos asociados al edificio
       const floors = await floorsRepo.findByBuilding(id)
+      const activeFloors = floors.filter(f => f.estado)
       
-      if (floors && floors.length > 0) {
-        // Verificar si existen salas asociadas a los pisos
-        const roomsPromises = floors.map(floor => roomsRepo.findByFloor(floor.id_piso))
+      if (activeFloors && activeFloors.length > 0) {
+        // Verificar si existen salas activas asociadas a los pisos activos
+        const roomsPromises = activeFloors.map(floor => roomsRepo.findByFloor(floor.id_piso))
         const roomsResults = await Promise.all(roomsPromises)
-        const allRooms = roomsResults.flat()
+        const allActiveRooms = roomsResults.flat().filter(r => r.estado)
         
-        // Si hay pisos o salas, retornar error con los detalles
+        // Si hay pisos o salas activas, retornar error con los detalles
         return res.status(400).json({
           error: 'DEPENDENCIAS_ENCONTRADAS',
-          message: 'No se puede eliminar el edificio porque tiene pisos y/o salas asociadas',
+          message: 'No se puede eliminar el edificio porque tiene pisos y/o salas activas asociadas',
           dependencias: {
-            pisos: floors.map(f => ({
+            pisos: activeFloors.map(f => ({
               id: f.id_piso,
               nombre: f.nombre_piso,
               numero: f.numero_piso
             })),
-            salas: allRooms.map(r => ({
+            salas: allActiveRooms.map(r => ({
               id: r.id_sala,
               nombre: r.nombre_sala,
-              piso: floors.find(f => f.id_piso === r.id_piso)?.nombre_piso
+              piso: activeFloors.find(f => f.id_piso === r.id_piso)?.nombre_piso
             }))
           }
         })
       }
       
-      // Si no hay dependencias, eliminar el edificio
-      await buildingsRepo.delete(id)
-      res.json({ ok: true })
+      // Si no hay dependencias activas, marcar como eliminado (soft delete)
+      await buildingsRepo.update(id, { estado: false })
+      res.json({ ok: true, message: 'Edificio marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting building:', error)
       res.status(500).json({ message: 'Error al eliminar edificio' })
@@ -285,8 +410,27 @@ export function createApp() {
   app.delete('/floors/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
-      await floorsRepo.delete(id)
-      res.json({ ok: true })
+      
+      // Verificar si existen salas activas asociadas al piso
+      const rooms = await roomsRepo.findByFloor(id)
+      const activeRooms = rooms.filter(r => r.estado)
+      
+      if (activeRooms && activeRooms.length > 0) {
+        return res.status(400).json({
+          error: 'DEPENDENCIAS_ENCONTRADAS',
+          message: 'No se puede eliminar el piso porque tiene salas activas asociadas',
+          dependencias: {
+            salas: activeRooms.map(r => ({
+              id: r.id_sala,
+              nombre: r.nombre_sala
+            }))
+          }
+        })
+      }
+      
+      // Marcar como eliminado (soft delete)
+      await floorsRepo.update(id, { estado: false })
+      res.json({ ok: true, message: 'Piso marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting floor:', error)
       res.status(500).json({ message: 'Error al eliminar piso' })
@@ -383,8 +527,9 @@ export function createApp() {
   app.delete('/rooms/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
-      await roomsRepo.delete(id)
-      res.json({ ok: true })
+      // Marcar como eliminado (soft delete)
+      await roomsRepo.update(id, { estado: false })
+      res.json({ ok: true, message: 'Sala marcada como eliminada' })
     } catch (error) {
       console.error('Error deleting room:', error)
       res.status(500).json({ message: 'Error al eliminar sala' })
@@ -485,8 +630,9 @@ export function createApp() {
   app.delete('/bathrooms/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
-      await bathroomsRepo.delete(id)
-      res.json({ ok: true })
+      // Marcar como eliminado (soft delete)
+      await bathroomsRepo.update(id, { estado: false })
+      res.json({ ok: true, message: 'Baño marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting bathroom:', error)
       res.status(500).json({ message: 'Error al eliminar baño' })

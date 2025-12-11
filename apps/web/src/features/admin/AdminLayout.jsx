@@ -22,6 +22,7 @@ import {
   CloudUpload as UploadIcon,
   People as PeopleIcon,
   Assessment as AssessmentIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -55,6 +56,7 @@ export default function AdminLayout() {
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
+    { label: 'Borrados', icon: <DeleteIcon />, path: '/admin/borrados' },
     { label: 'Importar OSM', icon: <UploadIcon />, path: '/admin/osm-import' },
     ...(isSuperAdmin ? [{ label: 'Usuarios', icon: <PeopleIcon />, path: '/admin/usuarios' }] : []),
   ]

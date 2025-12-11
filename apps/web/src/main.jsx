@@ -16,15 +16,16 @@ import OSMImportPage from './features/admin/osm/OSMImportPage.jsx'
 import MapViewPage from './features/admin/map/MapViewPage.jsx'
 import UsersPage from './features/admin/users/UsersPage.jsx'
 import StatisticsPage from './features/admin/statistics/StatisticsPage.jsx'
+import DeletedPage from './features/admin/deleted/DeletedPage.jsx'
 import './index.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos - datos considerados frescos
-      cacheTime: 10 * 60 * 1000, // 10 minutos - mantener en caché
-      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
-      refetchOnMount: false, // No refetch al montar si hay datos en caché
+      staleTime: 0, // Los datos se consideran obsoletos inmediatamente
+      cacheTime: 5 * 60 * 1000, // 5 minutos - mantener en caché
+      refetchOnWindowFocus: true, // Refetch al cambiar de pestaña
+      refetchOnMount: true, // Siempre refetch al montar
       retry: 1, // Solo 1 reintento en caso de error
     },
   },
@@ -53,6 +54,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="mapa" element={<MapViewPage />} />
               <Route path="osm-import" element={<OSMImportPage />} />
               <Route path="usuarios" element={<UsersPage />} />
+              <Route path="borrados" element={<DeletedPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

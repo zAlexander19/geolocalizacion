@@ -71,7 +71,6 @@ export default function BuildingsPage() {
       imagen: '',
       cord_latitud: 0,
       cord_longitud: 0,
-      estado: true,
       disponibilidad: 'Disponible',
     }
   })
@@ -92,7 +91,8 @@ export default function BuildingsPage() {
       return res
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['buildings'])
+      queryClient.invalidateQueries({ queryKey: ['buildings'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['buildings'] })
       setOpen(false)
       reset()
       setImageFile(null)
@@ -108,7 +108,8 @@ export default function BuildingsPage() {
       return res
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['buildings'])
+      queryClient.invalidateQueries({ queryKey: ['buildings'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['buildings'] })
       setOpen(false)
       reset()
       setEditId(null)
@@ -120,7 +121,10 @@ export default function BuildingsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/buildings/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['buildings'])
+      queryClient.invalidateQueries({ queryKey: ['buildings'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['buildings'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
       setConfirmDeleteOpen(false)
       setBuildingToDelete(null)
     },
@@ -152,7 +156,6 @@ export default function BuildingsPage() {
           setValue('cord_latitud', b.cord_latitud)
           setValue('cord_longitud', b.cord_longitud)
           setMapCoordinates({ latitude: b.cord_latitud, longitude: b.cord_longitud })
-          setValue('estado', b.estado)
           setValue('disponibilidad', b.disponibilidad)
           setImagePreviewUrl(b.imagen ? getFullImageUrl(b.imagen) : null)
         }
@@ -203,8 +206,9 @@ export default function BuildingsPage() {
     }
     formData.append('cord_latitud', data.cord_latitud)
     formData.append('cord_longitud', data.cord_longitud)
-    formData.append('estado', data.estado)
     formData.append('disponibilidad', data.disponibilidad)
+    // Siempre enviar estado como true para nuevos registros y al editar
+    formData.append('estado', true)
     
     if (imageFile) {
       formData.append('imagen', imageFile)
@@ -505,19 +509,6 @@ export default function BuildingsPage() {
               onChange={handleMapCoordinatesChange}
             />
             
-            <Controller
-              name="estado"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Estado</InputLabel>
-                  <Select {...field} label="Estado">
-                    <MenuItem value={true}>Activo</MenuItem>
-                    <MenuItem value={false}>Inactivo</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-            />
             <Controller
               name="disponibilidad"
               control={control}
