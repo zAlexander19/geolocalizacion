@@ -13,6 +13,7 @@ import {
   bathroomsRepo, 
   facultiesRepo 
 } from './db/repositories.js'
+import statisticsRoutes from './routes/statistics.routes.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -97,6 +98,9 @@ export function createApp() {
 
   // Health
   app.get('/health', (req, res) => res.json({ ok: true }))
+
+  // ==================== STATISTICS ====================
+  app.use('/statistics', statisticsRoutes)
 
   // ==================== BUILDINGS ====================
   

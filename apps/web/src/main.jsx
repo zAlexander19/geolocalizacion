@@ -15,6 +15,7 @@ import FacultiesPage from './features/admin/faculties/FacultiesPage.jsx'
 import OSMImportPage from './features/admin/osm/OSMImportPage.jsx'
 import MapViewPage from './features/admin/map/MapViewPage.jsx'
 import UsersPage from './features/admin/users/UsersPage.jsx'
+import StatisticsPage from './features/admin/statistics/StatisticsPage.jsx'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -43,7 +44,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <AdminLayout />
               </ProtectedRoute>
             }>
-              <Route index element={<Navigate to="/admin/edificios" replace />} />
+              <Route index element={<Navigate to="/admin/estadisticas" replace />} />
+              <Route path="estadisticas" element={<StatisticsPage />} />
               <Route path="edificios" element={<BuildingsPage />} />
               <Route path="pisos" element={<FloorsPage />} />
               <Route path="salas" element={<RoomsPage />} />

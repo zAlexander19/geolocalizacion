@@ -21,6 +21,7 @@ import {
   ExitToApp as LogoutIcon,
   CloudUpload as UploadIcon,
   People as PeopleIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -48,6 +49,7 @@ export default function AdminLayout() {
     logout()
   }
   const menuItems = [
+    { label: 'Estadísticas', icon: <AssessmentIcon />, path: '/admin/estadisticas' },
     { label: 'Edificios', icon: <BuildingIcon />, path: '/admin/edificios' },
     { label: 'Pisos', icon: <LayersIcon />, path: '/admin/pisos' },
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },

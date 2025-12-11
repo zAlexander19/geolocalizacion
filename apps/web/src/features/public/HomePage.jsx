@@ -573,6 +573,26 @@ export default function HomePage() {
     return `https://www.google.com/maps/embed/v1/directions?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&origin=${origin}&destination=${destination}&mode=walking`
   }
 
+  // Función para registrar búsquedas en estadísticas
+  const logSearch = async (resultType, resultId, resultName) => {
+    try {
+      await api.post('/statistics/log', {
+        searchType: searchType,
+        searchQuery: searchQuery,
+        resultType: resultType,
+        resultId: resultId,
+        resultName: resultName,
+        userLocation: userLocation ? {
+          lat: userLocation.latitude,
+          lng: userLocation.longitude
+        } : null
+      })
+    } catch (error) {
+      console.error('Error al registrar búsqueda:', error)
+      // No mostrar error al usuario, es transparente
+    }
+  }
+
   const handleSearch = (searchData) => {
     setSearchType(searchData.type)
     setSearchQuery(searchData.query)
@@ -1152,6 +1172,7 @@ export default function HomePage() {
                             variant="contained"
                             fullWidth
                             onClick={() => {
+                              logSearch('edificio', building.id_edificio, building.nombre_edificio)
                               setSelectedBuilding(building)
                               setBuildingDetailOpen(true)
                             }}
@@ -1376,6 +1397,7 @@ export default function HomePage() {
                             fullWidth
                             variant="contained"
                             onClick={() => {
+                              logSearch('edificio', building.id_edificio, building.nombre_edificio)
                               setSelectedBuilding(building)
                               setBuildingDetailOpen(true)
                               setFloorRoomCarousels({})
@@ -1615,6 +1637,7 @@ export default function HomePage() {
                             fullWidth
                             variant="contained"
                             onClick={() => {
+                              logSearch('sala', room.id_sala, room.nombre_sala)
                               setSelectedRoom(room)
                               setRoomDetailOpen(true)
                             }}
@@ -2031,6 +2054,7 @@ export default function HomePage() {
                                         variant="contained"
                                         fullWidth
                                         onClick={() => {
+                                          logSearch('bano', bathroom.id_bano, bathroom.nombre)
                                           setSelectedBathroom(bathroom)
                                           setBathroomDetailOpen(true)
                                         }}
@@ -2256,6 +2280,7 @@ export default function HomePage() {
                             fullWidth
                             variant="contained"
                             onClick={() => {
+                              logSearch('bano', bathroom.id_bano, bathroom.nombre)
                               setSelectedBathroom(bathroom)
                               setBathroomDetailOpen(true)
                             }}
@@ -3021,6 +3046,7 @@ export default function HomePage() {
             building: selectedBuilding,
             floor: allFloors?.find(f => f.id_piso === room.id_piso)
           }
+          logSearch('sala', room.id_sala, room.nombre_sala)
           setSelectedRoom(roomWithDetails)
           setRoomDetailOpen(true)
           setBuildingDetailOpen(false)
