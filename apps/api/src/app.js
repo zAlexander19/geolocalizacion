@@ -175,6 +175,36 @@ export function createApp() {
   app.delete('/buildings/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
+      
+      // Verificar si existen pisos asociados al edificio
+      const floors = await floorsRepo.findByBuilding(id)
+      
+      if (floors && floors.length > 0) {
+        // Verificar si existen salas asociadas a los pisos
+        const roomsPromises = floors.map(floor => roomsRepo.findByFloor(floor.id_piso))
+        const roomsResults = await Promise.all(roomsPromises)
+        const allRooms = roomsResults.flat()
+        
+        // Si hay pisos o salas, retornar error con los detalles
+        return res.status(400).json({
+          error: 'DEPENDENCIAS_ENCONTRADAS',
+          message: 'No se puede eliminar el edificio porque tiene pisos y/o salas asociadas',
+          dependencias: {
+            pisos: floors.map(f => ({
+              id: f.id_piso,
+              nombre: f.nombre_piso,
+              numero: f.numero_piso
+            })),
+            salas: allRooms.map(r => ({
+              id: r.id_sala,
+              nombre: r.nombre_sala,
+              piso: floors.find(f => f.id_piso === r.id_piso)?.nombre_piso
+            }))
+          }
+        })
+      }
+      
+      // Si no hay dependencias, eliminar el edificio
       await buildingsRepo.delete(id)
       res.json({ ok: true })
     } catch (error) {

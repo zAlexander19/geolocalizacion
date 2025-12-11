@@ -58,6 +58,10 @@ export default function BuildingsPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
+  const [dependenciasModalOpen, setDependenciasModalOpen] = useState(false)
+  const [dependenciasData, setDependenciasData] = useState(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [buildingToDelete, setBuildingToDelete] = useState(null)
 
   const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
@@ -117,7 +121,18 @@ export default function BuildingsPage() {
     mutationFn: (id) => api.delete(`/buildings/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['buildings'])
+      setConfirmDeleteOpen(false)
+      setBuildingToDelete(null)
     },
+    onError: (error) => {
+      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
+        setConfirmDeleteOpen(false)
+        setDependenciasData(error.response.data.dependencias)
+        setDependenciasModalOpen(true)
+      } else {
+        alert('Error al eliminar: ' + (error.response?.data?.message || error.message))
+      }
+    }
   })
 
   const handleViewDetails = (building) => {
@@ -208,8 +223,14 @@ export default function BuildingsPage() {
   }
 
   const handleDelete = (id) => {
-    if (confirm('¿Eliminar edificio?')) {
-      deleteMutation.mutate(id)
+    const building = buildings?.find(b => b.id_edificio === id)
+    setBuildingToDelete(building)
+    setConfirmDeleteOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (buildingToDelete) {
+      deleteMutation.mutate(buildingToDelete.id_edificio)
     }
   }
 
@@ -544,6 +565,157 @@ export default function BuildingsPage() {
           setSelectedBuilding(null)
         }}
       />
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog 
+        open={confirmDeleteOpen} 
+        onClose={() => {
+          setConfirmDeleteOpen(false)
+          setBuildingToDelete(null)
+        }} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: 'warning.main', color: 'white', fontWeight: 'bold' }}>
+          Confirmar eliminación
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <DeleteIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+              ¿Estás seguro de eliminar este edificio?
+            </Typography>
+            {buildingToDelete && (
+              <Paper sx={{ p: 2, bgcolor: 'grey.50', mb: 2 }}>
+                <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  {buildingToDelete.nombre_edificio}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Acrónimo: {buildingToDelete.acronimo}
+                </Typography>
+              </Paper>
+            )}
+            <Paper sx={{ p: 2, bgcolor: 'error.light', mt: 2 }}>
+              <Typography variant="body2" sx={{ color: 'error.dark', fontWeight: 'medium' }}>
+                ⚠️ Esta acción no se puede deshacer
+              </Typography>
+            </Paper>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button 
+            onClick={() => {
+              setConfirmDeleteOpen(false)
+              setBuildingToDelete(null)
+            }}
+            variant="outlined"
+            fullWidth={isMobile}
+            sx={{ flex: 1 }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={confirmDelete}
+            variant="contained"
+            color="error"
+            disabled={deleteMutation.isPending}
+            fullWidth={isMobile}
+            sx={{ flex: 1 }}
+          >
+            {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de dependencias - No se puede eliminar */}
+      <Dialog 
+        open={dependenciasModalOpen} 
+        onClose={() => setDependenciasModalOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: 'error.main', color: 'white', fontWeight: 'bold' }}>
+          No se puede eliminar el edificio
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            El edificio no puede ser eliminado porque tiene las siguientes dependencias:
+          </Typography>
+          
+          {dependenciasData?.pisos && dependenciasData.pisos.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
+                Pisos asociados ({dependenciasData.pisos.length}):
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                {dependenciasData.pisos.map((piso, index) => (
+                  <Box key={piso.id} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    py: 1,
+                    borderBottom: index < dependenciasData.pisos.length - 1 ? '1px solid' : 'none',
+                    borderColor: 'grey.300'
+                  }}>
+                    <Chip 
+                      label={`Piso ${piso.numero || 'N/A'}`} 
+                      size="small" 
+                      sx={{ mr: 2, minWidth: 80 }}
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Typography variant="body2">{piso.nombre}</Typography>
+                  </Box>
+                ))}
+              </Paper>
+            </Box>
+          )}
+
+          {dependenciasData?.salas && dependenciasData.salas.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold', color: 'secondary.main' }}>
+                Salas asociadas ({dependenciasData.salas.length}):
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50', maxHeight: 300, overflowY: 'auto' }}>
+                {dependenciasData.salas.map((sala, index) => (
+                  <Box key={sala.id} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    py: 1,
+                    borderBottom: index < dependenciasData.salas.length - 1 ? '1px solid' : 'none',
+                    borderColor: 'grey.300'
+                  }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                      {sala.nombre}
+                    </Typography>
+                    <Chip 
+                      label={sala.piso} 
+                      size="small" 
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  </Box>
+                ))}
+              </Paper>
+            </Box>
+          )}
+
+          <Paper sx={{ p: 2, bgcolor: 'warning.light', mt: 3 }}>
+            <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 'medium' }}>
+              💡 Para eliminar este edificio, primero debes eliminar todos los pisos y salas asociados.
+            </Typography>
+          </Paper>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setDependenciasModalOpen(false)} 
+            variant="contained"
+            fullWidth={isMobile}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
