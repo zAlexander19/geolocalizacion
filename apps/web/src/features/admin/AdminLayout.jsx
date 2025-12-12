@@ -23,6 +23,7 @@ import {
   People as PeopleIcon,
   Assessment as AssessmentIcon,
   Delete as DeleteIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -57,6 +58,7 @@ export default function AdminLayout() {
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
     { label: 'Borrados', icon: <DeleteIcon />, path: '/admin/borrados' },
+    { label: 'Historial de Cambios', icon: <HistoryIcon />, path: '/admin/historial' },
     { label: 'Importar OSM', icon: <UploadIcon />, path: '/admin/osm-import' },
     ...(isSuperAdmin ? [{ label: 'Usuarios', icon: <PeopleIcon />, path: '/admin/usuarios' }] : []),
   ]

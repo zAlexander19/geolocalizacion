@@ -2,6 +2,7 @@
 -- PostgreSQL
 
 -- Drop tables if exist (para desarrollo)
+DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS bathrooms CASCADE;
 DROP TABLE IF EXISTS rooms CASCADE;
 DROP TABLE IF EXISTS floors CASCADE;
@@ -130,3 +131,22 @@ CREATE TRIGGER update_bathrooms_updated_at BEFORE UPDATE ON bathrooms
 
 CREATE TRIGGER update_faculties_updated_at BEFORE UPDATE ON faculties
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Table: audit_logs (historial de cambios)
+CREATE TABLE audit_logs (
+    id_audit SERIAL PRIMARY KEY,
+    user_email VARCHAR(255) NOT NULL,
+    action VARCHAR(50) NOT NULL CHECK (action IN ('crear', 'modificar', 'eliminar', 'restaurar', 'eliminar_permanente')),
+    entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('edificio', 'piso', 'sala', 'baño', 'facultad')),
+    entity_id VARCHAR(50) NOT NULL,
+    entity_name VARCHAR(255),
+    changes JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for better performance on audit logs
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_email);
+CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
+

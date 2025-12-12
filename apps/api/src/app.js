@@ -15,6 +15,9 @@ import {
   facultiesRepo 
 } from './db/repositories.js'
 import statisticsRoutes from './routes/statistics.routes.js'
+import auditRoutes from './routes/audit.routes.js'
+import { logAudit } from './services/audit.service.js'
+import { getUserEmailFromRequest } from './utils/auth-helper.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -102,6 +105,9 @@ export function createApp() {
 
   // ==================== STATISTICS ====================
   app.use('/statistics', statisticsRoutes)
+
+  // ==================== AUDIT LOGS ====================
+  app.use('/audit-logs', auditRoutes)
 
   // DEBUG endpoint
   app.get('/debug/floor/:id', async (req, res) => {
@@ -202,30 +208,55 @@ export function createApp() {
       console.log(`🔄 Restaurando ${type} con ID: ${numId}`)
 
       let result
+      let entityType
+      let entityName
+      
       switch (type) {
         case 'building':
           result = await buildingsRepo.update(numId, { estado: true })
+          entityType = 'edificio'
+          entityName = result.nombre_edificio
           console.log('✅ Edificio restaurado:', result)
           break
         case 'floor':
+          const floor = await floorsRepo.findById(numId)
           result = await floorsRepo.updateEstado(numId, true)
+          entityType = 'piso'
+          entityName = floor.nombre_piso
           console.log('✅ Piso restaurado:', result)
           break
         case 'room':
           result = await roomsRepo.update(numId, { estado: true })
+          entityType = 'sala'
+          entityName = result.nombre_sala
           console.log('✅ Sala restaurada:', result)
           break
         case 'bathroom':
           result = await bathroomsRepo.update(numId, { estado: true })
+          entityType = 'baño'
+          entityName = result.nombre || result.identificador
           console.log('✅ Baño restaurado:', result)
           break
         case 'faculty':
+          const faculty = await facultiesRepo.findById(id)
           result = await facultiesRepo.updateEstado(id, true)
+          entityType = 'facultad'
+          entityName = faculty.nombre_facultad
           console.log('✅ Facultad restaurada:', result)
           break
         default:
           return res.status(400).json({ message: 'Tipo de entidad no válido' })
       }
+
+      // Registrar auditoría de restauración
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'restaurar',
+        entityType: entityType,
+        entityId: String(numId || id),
+        entityName: entityName,
+        changes: { restaurado: result }
+      })
 
       res.json({ ok: true, message: 'Elemento restaurado correctamente' })
     } catch (error) {
@@ -240,24 +271,56 @@ export function createApp() {
       const { type, id } = req.params
       const numId = Number(id)
 
+      let entityData
+      let entityType
+      let entityName
+      
+      // Obtener datos antes de eliminar
       switch (type) {
         case 'building':
+          entityData = await buildingsRepo.findById(numId)
+          entityType = 'edificio'
+          entityName = entityData?.nombre_edificio
           await buildingsRepo.delete(numId)
           break
         case 'floor':
+          entityData = await floorsRepo.findById(numId)
+          entityType = 'piso'
+          entityName = entityData?.nombre_piso
           await floorsRepo.delete(numId)
           break
         case 'room':
+          entityData = await roomsRepo.findById(numId)
+          entityType = 'sala'
+          entityName = entityData?.nombre_sala
           await roomsRepo.delete(numId)
           break
         case 'bathroom':
+          entityData = await bathroomsRepo.findById(numId)
+          entityType = 'baño'
+          entityName = entityData?.nombre || entityData?.identificador
           await bathroomsRepo.delete(numId)
           break
         case 'faculty':
+          entityData = await facultiesRepo.findById(id)
+          entityType = 'facultad'
+          entityName = entityData?.nombre_facultad
           await facultiesRepo.delete(id)
           break
         default:
           return res.status(400).json({ message: 'Tipo de entidad no válido' })
+      }
+
+      // Registrar auditoría de eliminación permanente
+      if (entityData) {
+        await logAudit({
+          userEmail: getUserEmailFromRequest(req),
+          action: 'eliminar',
+          entityType: entityType,
+          entityId: String(numId || id),
+          entityName: entityName || 'Desconocido',
+          changes: { eliminado_permanentemente: entityData }
+        })
       }
 
       res.json({ ok: true, message: 'Elemento eliminado permanentemente' })
@@ -317,6 +380,16 @@ export function createApp() {
         disponibilidad: b.disponibilidad || 'Disponible'
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'crear',
+        entityType: 'edificio',
+        entityId: building.id_edificio,
+        entityName: building.nombre_edificio,
+        changes: { nuevo: building }
+      })
+      
       res.status(201).json({ data: building })
     } catch (error) {
       console.error('Error creating building:', error)
@@ -365,6 +438,16 @@ export function createApp() {
         disponibilidad: b.disponibilidad || prev.disponibilidad,
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'modificar',
+        entityType: 'edificio',
+        entityId: id,
+        entityName: building.nombre_edificio,
+        changes: { anterior: prev, nuevo: building }
+      })
+      
       res.json({ data: building })
     } catch (error) {
       console.error('Error updating building:', error)
@@ -406,7 +489,19 @@ export function createApp() {
       }
       
       // Si no hay dependencias activas, marcar como eliminado (soft delete)
+      const building = await buildingsRepo.findById(id)
       await buildingsRepo.update(id, { estado: false })
+      
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'eliminar',
+        entityType: 'edificio',
+        entityId: id,
+        entityName: building.nombre_edificio,
+        changes: { eliminado: building }
+      })
+      
       res.json({ ok: true, message: 'Edificio marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting building:', error)
@@ -461,6 +556,16 @@ export function createApp() {
         disponibilidad: f.disponibilidad || 'Disponible',
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'crear',
+        entityType: 'piso',
+        entityId: floor.id_piso,
+        entityName: floor.nombre_piso,
+        changes: { nuevo: floor }
+      })
+      
       res.status(201).json({ data: floor })
     } catch (error) {
       console.error('Error creating floor:', error)
@@ -506,6 +611,16 @@ export function createApp() {
         disponibilidad: f.disponibilidad || prev.disponibilidad,
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'modificar',
+        entityType: 'piso',
+        entityId: id,
+        entityName: floor.nombre_piso,
+        changes: { anterior: prev, nuevo: floor }
+      })
+      
       res.json({ data: floor })
     } catch (error) {
       console.error('Error updating floor:', error)
@@ -535,7 +650,19 @@ export function createApp() {
       }
       
       // Marcar como eliminado (soft delete)
+      const floor = await floorsRepo.findById(id)
       await floorsRepo.updateEstado(id, false)
+      
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'eliminar',
+        entityType: 'piso',
+        entityId: id,
+        entityName: floor.nombre_piso,
+        changes: { eliminado: floor }
+      })
+      
       res.json({ ok: true, message: 'Piso marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting floor:', error)
@@ -605,6 +732,16 @@ export function createApp() {
         disponibilidad: r.disponibilidad || 'Disponible'
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'crear',
+        entityType: 'sala',
+        entityId: room.id_sala,
+        entityName: room.nombre_sala,
+        changes: { nuevo: room }
+      })
+      
       res.status(201).json({ data: room })
     } catch (error) {
       console.error('Error creating room:', error)
@@ -656,6 +793,16 @@ export function createApp() {
         disponibilidad: r.disponibilidad || prev.disponibilidad,
       })
       
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'modificar',
+        entityType: 'sala',
+        entityId: id,
+        entityName: room.nombre_sala,
+        changes: { anterior: prev, nuevo: room }
+      })
+      
       res.json({ data: room })
     } catch (error) {
       console.error('Error updating room:', error)
@@ -668,8 +815,20 @@ export function createApp() {
       const id = Number(req.params.id)
       console.log('DELETE /rooms/:id - soft delete sala:', id)
       // Marcar como eliminado (soft delete)
+      const room = await roomsRepo.findById(id)
       await roomsRepo.updateEstado(id, false)
       console.log('Sala marcada como eliminada:', id)
+      
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'eliminar',
+        entityType: 'sala',
+        entityId: id,
+        entityName: room.nombre_sala,
+        changes: { eliminado: room }
+      })
+      
       res.json({ ok: true, message: 'Sala marcada como eliminada' })
     } catch (error) {
       console.error('Error deleting room:', error)
@@ -894,6 +1053,16 @@ export function createApp() {
         console.log('✅ Edificios asociados correctamente')
       }
 
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'crear',
+        entityType: 'facultad',
+        entityId: faculty.codigo_facultad,
+        entityName: faculty.nombre_facultad,
+        changes: { nuevo: faculty }
+      })
+      
       console.log('✅ POST /faculties - Éxito')
       res.status(201).json({ data: faculty })
     } catch (error) {
@@ -960,6 +1129,16 @@ export function createApp() {
         }
       }
 
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'modificar',
+        entityType: 'facultad',
+        entityId: id,
+        entityName: updated.nombre_facultad,
+        changes: { anterior: prev, nuevo: updated }
+      })
+      
       res.json({ data: updated })
     } catch (error) {
       console.error('Error updating faculty:', error)
@@ -1041,6 +1220,17 @@ export function createApp() {
       console.log('✅ Procediendo con soft delete de facultad:', id)
       // Marcar como eliminado (soft delete)
       await facultiesRepo.updateEstado(id, false)
+      
+      // Registrar auditoría
+      await logAudit({
+        userEmail: getUserEmailFromRequest(req),
+        action: 'eliminar',
+        entityType: 'facultad',
+        entityId: id,
+        entityName: faculty.nombre_facultad,
+        changes: { eliminado: faculty }
+      })
+      
       console.log('✅ Facultad marcada como eliminada:', id)
       res.json({ ok: true, message: 'Facultad marcada como eliminada' })
     } catch (error) {
