@@ -210,7 +210,7 @@ export default function FloorsPage() {
     const formData = new FormData()
     formData.append('nombre_piso', data.nombre_piso)
     formData.append('numero_piso', data.numero_piso)
-    formData.append('estado', data.estado)
+    formData.append('estado', true)
     formData.append('disponibilidad', data.disponibilidad)
     
     if (imageFile) {
@@ -511,19 +511,6 @@ export default function FloorsPage() {
                 />
               )}
             </Box>
-            <Controller
-              name="estado"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Estado</InputLabel>
-                  <Select {...field} label="Estado">
-                    <MenuItem value={true}>Activo</MenuItem>
-                    <MenuItem value={false}>Inactivo</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-            />
             <Controller
               name="disponibilidad"
               control={control}

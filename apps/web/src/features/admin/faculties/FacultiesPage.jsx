@@ -44,6 +44,9 @@ export default function FacultiesPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterBuilding, setFilterBuilding] = useState('')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [facultyToDelete, setFacultyToDelete] = useState(null)
+  const [deleteDependencies, setDeleteDependencies] = useState(null)
 
   const { control, handleSubmit, reset, setValue, getValues } = useForm({
     defaultValues: {
@@ -112,7 +115,22 @@ export default function FacultiesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/faculties/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['faculties'])
+      queryClient.invalidateQueries({ queryKey: ['faculties'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['faculties'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
+      setDeleteConfirmOpen(false)
+      setFacultyToDelete(null)
+      setDeleteDependencies(null)
+    },
+    onError: (error) => {
+      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
+        setDeleteDependencies(error.response.data.dependencias)
+      } else {
+        alert(error.response?.data?.message || 'Error al eliminar facultad')
+        setDeleteConfirmOpen(false)
+        setFacultyToDelete(null)
+      }
     },
   })
 
@@ -250,8 +268,39 @@ export default function FacultiesPage() {
     }
   }
 
-  const handleDelete = (id) => {
-    if (confirm('¿Eliminar facultad?')) deleteMutation.mutate(id)
+  const handleDelete = async (id) => {
+    setFacultyToDelete(id)
+    setDeleteDependencies(null)
+    
+    // Verificar dependencias antes de mostrar el modal
+    try {
+      await api.delete(`/faculties/${id}`)
+      // Si no hay error, la eliminación fue exitosa
+      queryClient.invalidateQueries({ queryKey: ['faculties'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['faculties'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
+    } catch (error) {
+      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
+        // Hay dependencias, mostrar modal con la información
+        setDeleteDependencies(error.response.data.dependencias)
+        setDeleteConfirmOpen(true)
+      } else {
+        // Otro tipo de error
+        alert(error.response?.data?.message || 'Error al eliminar facultad')
+      }
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    // Ya no es necesario porque la eliminación se hace en handleDelete
+    handleCancelDelete()
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setFacultyToDelete(null)
+    setDeleteDependencies(null)
   }
 
   const handleEdit = (id) => {
@@ -498,6 +547,61 @@ export default function FacultiesPage() {
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit(onSubmit)}>{editId ? 'Guardar' : 'Crear'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={handleCancelDelete}
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'error.dark',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+          No se puede eliminar la facultad
+        </DialogTitle>
+        <DialogContent>
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              No se puede eliminar la facultad porque tiene los siguientes edificios asociados:
+            </Typography>
+            
+            {deleteDependencies?.edificios && deleteDependencies.edificios.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Edificios asociados ({deleteDependencies.edificios.length}):
+                </Typography>
+                <Box component="ul" sx={{ pl: 2 }}>
+                  {deleteDependencies.edificios.map(edificio => (
+                    <Box component="li" key={edificio.id} sx={{ mb: 0.5 }}>
+                      <Typography variant="body2">
+                        {edificio.nombre}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+            
+            <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+              Para eliminar esta facultad, primero debe eliminar o reasignar todos los edificios asociados.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCancelDelete}
+            sx={{ color: 'white' }}
+          >
+            Entendido
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

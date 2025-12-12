@@ -36,6 +36,7 @@ import {
   Layers as LayersIcon,
   MeetingRoom as RoomIcon,
   Wc as BathroomIcon,
+  School as SchoolIcon,
   Restore as RestoreIcon,
   DeleteForever as DeleteForeverIcon,
 } from '@mui/icons-material'
@@ -69,6 +70,7 @@ export default function DeletedPage() {
       case 'floor': return <LayersIcon />
       case 'room': return <RoomIcon />
       case 'bathroom': return <BathroomIcon />
+      case 'faculty': return <SchoolIcon />
       default: return null
     }
   }
@@ -78,13 +80,14 @@ export default function DeletedPage() {
       case 'building': return 'primary'
       case 'floor': return 'secondary'
       case 'room': return 'success'
+      case 'faculty': return 'info'
       case 'bathroom': return 'warning'
       default: return 'default'
     }
   }
 
   const getItemName = (item) => {
-    return item.nombre_edificio || item.nombre_piso || item.nombre_sala || item.nombre_bano || 'Sin nombre'
+    return item.nombre_edificio || item.nombre_piso || item.nombre_sala || item.nombre_bano || item.nombre_facultad || 'Sin nombre'
   }
 
   const getItemId = (item) => {
@@ -97,6 +100,8 @@ export default function DeletedPage() {
         return item.id_sala
       case 'bathroom':
         return item.id_bano
+      case 'faculty':
+        return item.codigo_facultad
       default:
         return null
     }
@@ -109,6 +114,7 @@ export default function DeletedPage() {
       await queryClient.invalidateQueries({ queryKey: ['deleted'] })
       await queryClient.invalidateQueries({ queryKey: ['buildings'] })
       await queryClient.invalidateQueries({ queryKey: ['all-floors'] })
+      await queryClient.invalidateQueries({ queryKey: ['faculties'] })
       await queryClient.refetchQueries({ queryKey: ['deleted'] })
       setConfirmRestoreOpen(false)
       setSelectedItem(null)
@@ -295,6 +301,7 @@ export default function DeletedPage() {
                   <TableRow sx={{ bgcolor: 'grey.100' }}>
                     <TableCell>ID</TableCell>
                     <TableCell>Tipo</TableCell>
+                    <TableCell>Nombre</TableCell>
                     <TableCell>Acrónimo</TableCell>
                     <TableCell>Imagen</TableCell>
                     <TableCell align="center">Acciones</TableCell>
@@ -313,6 +320,7 @@ export default function DeletedPage() {
                           variant="outlined"
                         />
                       </TableCell>
+                      <TableCell>{getItemName(item)}</TableCell>
                       <TableCell>{item.acronimo || '-'}</TableCell>
                       <TableCell>
                         {item.imagen && !/via\.placeholder\.com/.test(item.imagen) ? (

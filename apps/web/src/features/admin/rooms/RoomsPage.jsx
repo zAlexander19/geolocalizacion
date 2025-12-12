@@ -223,7 +223,7 @@ export default function RoomsPage() {
     formData.append('tipo_sala', data.tipo_sala)
     formData.append('cord_latitud', data.cord_latitud)
     formData.append('cord_longitud', data.cord_longitud)
-    formData.append('estado', data.estado)
+    formData.append('estado', true)
     formData.append('disponibilidad', data.disponibilidad)
     
     if (imageFile) {
@@ -619,19 +619,6 @@ export default function RoomsPage() {
               onChange={handleMapCoordinatesChange}
             />
             
-            <Controller
-              name="estado"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Estado</InputLabel>
-                  <Select {...field} label="Estado">
-                    <MenuItem value={true}>Activa</MenuItem>
-                    <MenuItem value={false}>Inactiva</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-            />
             <Controller
               name="disponibilidad"
               control={control}

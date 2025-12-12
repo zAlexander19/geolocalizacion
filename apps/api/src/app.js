@@ -164,6 +164,19 @@ export function createApp() {
         result = [...result, ...mapped]
       }
 
+      if (!type || type === 'faculties') {
+        const faculties = await facultiesRepo.findAllIncludingDeleted()
+        console.log('🔍 Todas las facultades:', faculties.map(f => ({ codigo: f.codigo_facultad, nombre: f.nombre_facultad, estado: f.estado })))
+        const deleted = faculties.filter(f => !f.estado)
+        console.log('🗑️ Facultades eliminadas (estado=false):', deleted.map(f => ({ codigo: f.codigo_facultad, nombre: f.nombre_facultad, estado: f.estado })))
+        const mapped = deleted.map(f => ({
+          ...f,
+          entity_type: 'faculty',
+          entity_name: 'Facultad'
+        }))
+        result = [...result, ...mapped]
+      }
+
       // Aplicar búsqueda si existe
       if (search) {
         const searchLower = search.toLowerCase()
@@ -205,6 +218,10 @@ export function createApp() {
           result = await bathroomsRepo.update(numId, { estado: true })
           console.log('✅ Baño restaurado:', result)
           break
+        case 'faculty':
+          result = await facultiesRepo.updateEstado(id, true)
+          console.log('✅ Facultad restaurada:', result)
+          break
         default:
           return res.status(400).json({ message: 'Tipo de entidad no válido' })
       }
@@ -234,6 +251,9 @@ export function createApp() {
           break
         case 'bathroom':
           await bathroomsRepo.delete(numId)
+          break
+        case 'faculty':
+          await facultiesRepo.delete(id)
           break
         default:
           return res.status(400).json({ message: 'Tipo de entidad no válido' })
@@ -864,10 +884,54 @@ export function createApp() {
   app.delete('/faculties/:id', async (req, res) => {
     try {
       const id = req.params.id
-      await facultiesRepo.delete(id)
-      res.json({ ok: true })
+      console.log('\n🔍 DELETE /faculties/:id - ID recibido:', id)
+      
+      // Obtener la facultad
+      const faculty = await facultiesRepo.findById(id)
+      console.log('📋 Facultad encontrada:', JSON.stringify(faculty, null, 2))
+      
+      if (!faculty) {
+        console.log('❌ Facultad no encontrada')
+        return res.status(404).json({ message: 'Facultad no encontrada' })
+      }
+      
+      console.log('🔎 Verificando id_edificio:', faculty.id_edificio)
+      console.log('🔎 Tipo de id_edificio:', typeof faculty.id_edificio)
+      
+      // Verificar si la facultad está asignada a un edificio activo
+      if (faculty.id_edificio) {
+        console.log('🏢 La facultad tiene id_edificio, buscando edificio...')
+        const building = await buildingsRepo.findById(faculty.id_edificio)
+        console.log('🏢 Edificio encontrado:', building ? JSON.stringify({ id: building.id_edificio, nombre: building.nombre_edificio, estado: building.estado }, null, 2) : 'NULL')
+        
+        if (building && building.estado) {
+          console.log('❌ No se puede eliminar - facultad asignada a edificio activo:', building.nombre_edificio)
+          return res.status(400).json({
+            error: 'DEPENDENCIAS_ENCONTRADAS',
+            message: 'No se puede eliminar la facultad porque está asignada a un edificio',
+            dependencias: {
+              edificios: [{
+                id: building.id_edificio,
+                nombre: building.nombre_edificio
+              }]
+            }
+          })
+        } else if (building && !building.estado) {
+          console.log('⚠️ Edificio existe pero está inactivo, permitiendo eliminación')
+        } else {
+          console.log('⚠️ Edificio no encontrado, permitiendo eliminación')
+        }
+      } else {
+        console.log('✅ La facultad NO tiene id_edificio asignado')
+      }
+      
+      console.log('✅ Procediendo con soft delete de facultad:', id)
+      // Marcar como eliminado (soft delete)
+      await facultiesRepo.updateEstado(id, false)
+      console.log('✅ Facultad marcada como eliminada:', id)
+      res.json({ ok: true, message: 'Facultad marcada como eliminada' })
     } catch (error) {
-      console.error('Error deleting faculty:', error)
+      console.error('❌ Error deleting faculty:', error)
       res.status(500).json({ message: 'Error al eliminar facultad' })
     }
   })

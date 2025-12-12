@@ -327,7 +327,7 @@ export const bathroomsRepo = {
 // Faculties Repository
 export const facultiesRepo = {
   async findAll() {
-    const result = await pool.query('SELECT * FROM faculties ORDER BY nombre_facultad')
+    const result = await pool.query('SELECT * FROM faculties WHERE estado = true ORDER BY nombre_facultad')
     return result.rows
   },
 
@@ -380,5 +380,20 @@ export const facultiesRepo = {
 
   async delete(codigo) {
     await pool.query('DELETE FROM faculties WHERE codigo_facultad = $1', [codigo])
+  },
+
+  async updateEstado(codigo, estado) {
+    console.log('facultiesRepo.updateEstado - actualizando facultad:', { codigo, estado })
+    const result = await pool.query(
+      'UPDATE faculties SET estado = $1 WHERE codigo_facultad = $2 RETURNING *',
+      [estado, codigo]
+    )
+    console.log('facultiesRepo.updateEstado - resultado:', result.rows[0])
+    return result.rows[0]
+  },
+
+  async findAllIncludingDeleted() {
+    const result = await pool.query('SELECT * FROM faculties ORDER BY nombre_facultad')
+    return result.rows
   }
 }
