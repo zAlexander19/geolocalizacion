@@ -42,6 +42,7 @@ export default function OSMImportPage() {
     mergeMode: 'add',
     updateExisting: false,
     skipDuplicates: true,
+    importType: 'buildings', // 'buildings' | 'routes' | 'both'
   })
   const [importResult, setImportResult] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
@@ -59,18 +60,23 @@ export default function OSMImportPage() {
   // Mutation para importar datos OSM
   const importMutation = useMutation({
     mutationFn: async ({ file, options }) => {
-      const formData = new FormData()
+      // Si es upload de archivo, usar FormData
       if (file) {
+        const formData = new FormData()
         formData.append('osmFile', file)
+        formData.append('options', JSON.stringify(options))
+        
+        const res = await api.post('/import/osm', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+        return res.data
+      } else {
+        // Si no hay archivo, enviar opciones como JSON
+        const res = await api.post('/import/osm', options)
+        return res.data
       }
-      formData.append('options', JSON.stringify(options))
-      
-      const res = await api.post('/import/osm', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-      return res.data
     },
     onSuccess: (data) => {
       setImportResult(data)
@@ -167,6 +173,32 @@ export default function OSMImportPage() {
             Opciones de Importación
           </Typography>
 
+          <FormControl component="fieldset" sx={{ mb: 3 }}>
+            <FormLabel component="legend">Tipo de importación</FormLabel>
+            <RadioGroup
+              value={importOptions.importType}
+              onChange={(e) =>
+                setImportOptions({ ...importOptions, importType: e.target.value })
+              }
+            >
+              <FormControlLabel
+                value="buildings"
+                control={<Radio />}
+                label="Solo edificios - Importar únicamente edificios y estructuras"
+              />
+              <FormControlLabel
+                value="routes"
+                control={<Radio />}
+                label="Solo rutas - Importar únicamente caminos, senderos y rutas"
+              />
+              <FormControlLabel
+                value="both"
+                control={<Radio />}
+                label="Ambos - Importar edificios y rutas"
+              />
+            </RadioGroup>
+          </FormControl>
+
           <FormControl component="fieldset" sx={{ mb: 2 }}>
             <FormLabel component="legend">Modo de fusión</FormLabel>
             <RadioGroup
@@ -178,17 +210,17 @@ export default function OSMImportPage() {
               <FormControlLabel
                 value="add"
                 control={<Radio />}
-                label="Agregar - Solo añadir edificios nuevos (recomendado)"
+                label="Agregar - Solo añadir elementos nuevos (recomendado)"
               />
               <FormControlLabel
                 value="merge"
                 control={<Radio />}
-                label="Fusionar - Agregar y actualizar edificios existentes"
+                label="Fusionar - Agregar y actualizar elementos existentes"
               />
               <FormControlLabel
                 value="replace"
                 control={<Radio />}
-                label="Reemplazar - Eliminar todos los edificios actuales e importar nuevos ⚠️"
+                label="Reemplazar - Eliminar todos los elementos actuales e importar nuevos ⚠️"
               />
             </RadioGroup>
           </FormControl>
@@ -206,7 +238,7 @@ export default function OSMImportPage() {
                   }
                 />
               }
-              label="Actualizar edificios existentes con datos de OSM"
+              label="Actualizar elementos existentes con datos de OSM"
             />
             <FormControlLabel
               control={
@@ -220,7 +252,7 @@ export default function OSMImportPage() {
                   }
                 />
               }
-              label="Saltar duplicados (si ya existe un edificio con el mismo nombre)"
+              label="Saltar duplicados (si ya existe un elemento con el mismo identificador)"
             />
           </Box>
         </CardContent>
@@ -250,21 +282,47 @@ export default function OSMImportPage() {
           </Typography>
           {importResult.stats && (
             <Box sx={{ mt: 1 }}>
-              <Typography variant="body2">
-                Edificios originales: {importResult.stats.originalCount}
-              </Typography>
-              <Typography variant="body2">
-                Añadidos: {importResult.stats.added}
-              </Typography>
-              <Typography variant="body2">
-                Actualizados: {importResult.stats.updated}
-              </Typography>
-              <Typography variant="body2">
-                Omitidos: {importResult.stats.skipped}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                Total final: {importResult.stats.finalCount}
-              </Typography>
+              {(importOptions.importType === 'buildings' || importOptions.importType === 'both') && (
+                <>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                    Edificios:
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Originales: {importResult.stats.originalCount}
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Añadidos: {importResult.stats.added}
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Actualizados: {importResult.stats.updated}
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Omitidos: {importResult.stats.skipped}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 2 }}>
+                    Total final: {importResult.stats.finalCount}
+                  </Typography>
+                </>
+              )}
+              {(importOptions.importType === 'routes' || importOptions.importType === 'both') && (
+                <>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                    Rutas:
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Añadidas: {importResult.stats.routesAdded || 0}
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Actualizadas: {importResult.stats.routesUpdated || 0}
+                  </Typography>
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Omitidas: {importResult.stats.routesSkipped || 0}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 2 }}>
+                    Total final: {importResult.stats.routesFinalCount || 0}
+                  </Typography>
+                </>
+              )}
             </Box>
           )}
         </Alert>
@@ -282,30 +340,41 @@ export default function OSMImportPage() {
             Los archivos OSM contienen mapas exportados desde OpenStreetMap.
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>Datos que se importan:</strong>
+            <strong>Datos que se pueden importar:</strong>
           </Typography>
           <ul>
             <li>
               <Typography variant="body2">
-                Edificios con sus coordenadas y nombres
+                <strong>Edificios:</strong> Estructuras con sus coordenadas, nombres y tipos
               </Typography>
             </li>
             <li>
               <Typography variant="body2">
-                Puntos de interés (cafeterías, farmacias, etc.)
+                <strong>Rutas:</strong> Caminos, senderos, pasillos y vías peatonales con sus trazados
               </Typography>
             </li>
             <li>
               <Typography variant="body2">
-                Coordenadas geográficas precisas (latitud/longitud)
+                <strong>Puntos de interés:</strong> Cafeterías, farmacias, servicios, etc.
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>Coordenadas:</strong> Latitudes y longitudes precisas para navegación
               </Typography>
             </li>
           </ul>
-          <Alert severity="warning" sx={{ mt: 2 }}>
+          <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
             <Typography variant="body2">
-              <strong>Importante:</strong> El modo "Reemplazar" eliminará todos los
-              edificios existentes. Usa esta opción solo si deseas reiniciar
-              completamente la base de datos de edificios.
+              <strong>💡 Sugerencia:</strong> Si solo necesitas actualizar las rutas de navegación 
+              sin modificar los edificios existentes, selecciona "Solo rutas" en el tipo de importación.
+            </Typography>
+          </Alert>
+          <Alert severity="warning">
+            <Typography variant="body2">
+              <strong>⚠️ Importante:</strong> El modo "Reemplazar" eliminará todos los
+              elementos existentes del tipo seleccionado. Usa esta opción solo si deseas 
+              reiniciar completamente los datos.
             </Typography>
           </Alert>
         </CardContent>

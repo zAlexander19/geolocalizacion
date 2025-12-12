@@ -1253,13 +1253,22 @@ export function createApp() {
       const options = {
         mergeMode: req.body.mergeMode || 'add',
         updateExisting: req.body.updateExisting || false,
-        skipDuplicates: req.body.skipDuplicates !== undefined ? req.body.skipDuplicates : true
+        skipDuplicates: req.body.skipDuplicates !== undefined ? req.body.skipDuplicates : true,
+        importType: req.body.importType || 'buildings' // 'buildings' | 'routes' | 'both'
       }
 
       const results = importOSMData(osmFilePath, options)
+      
+      let message = 'OSM data imported successfully'
+      if (options.importType === 'routes') {
+        message = 'OSM routes imported successfully'
+      } else if (options.importType === 'both') {
+        message = 'OSM buildings and routes imported successfully'
+      }
+      
       res.json({ 
         success: true, 
-        message: 'OSM data imported successfully', 
+        message, 
         ...results 
       })
     } catch (error) {

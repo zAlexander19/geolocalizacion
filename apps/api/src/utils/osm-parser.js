@@ -202,27 +202,73 @@ export function extractPOIs(osmData) {
 }
 
 /**
+ * Extract routes/paths from parsed OSM data
+ */
+export function extractRoutes(osmData) {
+  const routes = []
+
+  osmData.ways.forEach(way => {
+    // Extraer caminos: carreteras, senderos, pasillos, etc.
+    if (way.tags.highway || way.tags.footway || way.tags.path || way.tags.corridor) {
+      const name = way.tags.name || 
+                  way.tags.ref || 
+                  `${way.tags.highway || way.tags.footway || way.tags.path || 'Ruta'} ${way.id}`
+      
+      const routeType = way.tags.highway || 
+                       way.tags.footway || 
+                       way.tags.path || 
+                       way.tags.corridor || 
+                       'path'
+
+      routes.push({
+        osm_id: way.id,
+        nombre: name,
+        tipo: routeType,
+        coordinates: way.coordinates,
+        surface: way.tags.surface || 'unknown',
+        width: way.tags.width || null,
+        access: way.tags.access || 'yes',
+        indoor: way.tags.indoor === 'yes',
+        level: way.tags.level || null,
+        tags: way.tags
+      })
+    }
+  })
+
+  return routes
+}
+
+/**
  * Main function to parse OSM and extract usable data
  */
-export function parseOSMForImport(osmFilePath) {
+export function parseOSMForImport(osmFilePath, options = {}) {
   console.log('Parsing OSM file:', osmFilePath)
   
   const osmData = parseOSMFile(osmFilePath)
-  const buildings = extractBuildings(osmData)
+  
+  // Determinar qué extraer basado en las opciones
+  const shouldExtractBuildings = options.extractBuildings !== false
+  const shouldExtractRoutes = options.extractRoutes === true
+  
+  const buildings = shouldExtractBuildings ? extractBuildings(osmData) : []
   const pois = extractPOIs(osmData)
+  const routes = shouldExtractRoutes ? extractRoutes(osmData) : []
 
   console.log(`Found ${buildings.length} buildings`)
   console.log(`Found ${pois.length} POIs`)
+  console.log(`Found ${routes.length} routes/paths`)
 
   return {
     buildings,
     pois,
+    routes,
     bounds: osmData.bounds,
     stats: {
       totalNodes: osmData.nodes.length,
       totalWays: osmData.ways.length,
       buildingsCount: buildings.length,
-      poisCount: pois.length
+      poisCount: pois.length,
+      routesCount: routes.length
     }
   }
 }

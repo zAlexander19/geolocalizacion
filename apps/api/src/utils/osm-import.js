@@ -66,14 +66,20 @@ export function importOSMData(osmFilePath, options = {}) {
   const {
     mergeMode = 'add', // 'add' | 'replace' | 'merge'
     updateExisting = false,
-    skipDuplicates = true
+    skipDuplicates = true,
+    importType = 'buildings' // 'buildings' | 'routes' | 'both'
   } = options
 
   console.log(`\n🗺️  Starting OSM import from: ${osmFilePath}`)
-  console.log(`Mode: ${mergeMode}, Update existing: ${updateExisting}, Skip duplicates: ${skipDuplicates}\n`)
+  console.log(`Mode: ${mergeMode}, Update existing: ${updateExisting}, Skip duplicates: ${skipDuplicates}`)
+  console.log(`Import type: ${importType}\n`)
 
-  // Parse OSM file
-  const osmData = parseOSMForImport(osmFilePath)
+  // Parse OSM file con opciones basadas en importType
+  const parseOptions = {
+    extractBuildings: importType === 'buildings' || importType === 'both',
+    extractRoutes: importType === 'routes' || importType === 'both'
+  }
+  const osmData = parseOSMForImport(osmFilePath, parseOptions)
   
   // Load current database
   const db = loadDB()
@@ -96,46 +102,89 @@ export function importOSMData(osmFilePath, options = {}) {
     console.log('⚠️  Clearing existing buildings (replace mode)')
   }
 
-  // Import buildings
-  osmData.buildings.forEach(osmBuilding => {
-    // Check if building already exists (by OSM ID or name)
-    const existingIndex = db.buildings.findIndex(b => 
-      (b.osm_id && b.osm_id === osmBuilding.osm_id) ||
-      (b.nombre_edificio && b.nombre_edificio.toLowerCase() === osmBuilding.nombre_edificio.toLowerCase())
-    )
+  // Import buildings (si se solicitó)
+  if (importType === 'buildings' || importType === 'both') {
+    osmData.buildings.forEach(osmBuilding => {
+      // Check if building already exists (by OSM ID or name)
+      const existingIndex = db.buildings.findIndex(b => 
+        (b.osm_id && b.osm_id === osmBuilding.osm_id) ||
+        (b.nombre_edificio && b.nombre_edificio.toLowerCase() === osmBuilding.nombre_edificio.toLowerCase())
+      )
 
-    if (existingIndex !== -1) {
-      if (updateExisting) {
-        // Update existing building
-        const existing = db.buildings[existingIndex]
-        db.buildings[existingIndex] = {
-          ...existing,
-          ...osmBuilding,
-          id_edificio: existing.id_edificio, // Keep original ID
-          imagen: existing.imagen || osmBuilding.imagen, // Keep existing image
-          // Preserve coordinates if they exist and are valid
-          cord_latitud: osmBuilding.cord_latitud || existing.cord_latitud,
-          cord_longitud: osmBuilding.cord_longitud || existing.cord_longitud
+      if (existingIndex !== -1) {
+        if (updateExisting) {
+          // Update existing building
+          const existing = db.buildings[existingIndex]
+          db.buildings[existingIndex] = {
+            ...existing,
+            ...osmBuilding,
+            id_edificio: existing.id_edificio, // Keep original ID
+            imagen: existing.imagen || osmBuilding.imagen, // Keep existing image
+            // Preserve coordinates if they exist and are valid
+            cord_latitud: osmBuilding.cord_latitud || existing.cord_latitud,
+            cord_longitud: osmBuilding.cord_longitud || existing.cord_longitud
+          }
+          updated++
+          console.log(`✏️  Updated: ${osmBuilding.nombre_edificio}`)
+        } else if (skipDuplicates) {
+          skipped++
+          console.log(`⏭️  Skipped (duplicate): ${osmBuilding.nombre_edificio}`)
         }
-        updated++
-        console.log(`✏️  Updated: ${osmBuilding.nombre_edificio}`)
-      } else if (skipDuplicates) {
-        skipped++
-        console.log(`⏭️  Skipped (duplicate): ${osmBuilding.nombre_edificio}`)
+      } else {
+        // Add new building
+        const newId = nextId(db.buildings, 'id_edificio')
+        db.buildings.push({
+          id_edificio: newId,
+          ...osmBuilding,
+          created_from_osm: true,
+          imported_at: new Date().toISOString()
+        })
+        added++
+        console.log(`✅ Added: ${osmBuilding.nombre_edificio} (ID: ${newId})`)
       }
-    } else {
-      // Add new building
-      const newId = nextId(db.buildings, 'id_edificio')
-      db.buildings.push({
-        id_edificio: newId,
-        ...osmBuilding,
-        created_from_osm: true,
-        imported_at: new Date().toISOString()
-      })
-      added++
-      console.log(`✅ Added: ${osmBuilding.nombre_edificio} (ID: ${newId})`)
-    }
-  })
+    })
+  }
+
+  // Import routes (si se solicitó)
+  let routesAdded = 0
+  let routesUpdated = 0
+  let routesSkipped = 0
+  
+  if (importType === 'routes' || importType === 'both') {
+    if (!db.routes) db.routes = []
+    
+    osmData.routes.forEach(osmRoute => {
+      const existingIndex = db.routes.findIndex(r => 
+        (r.osm_id && r.osm_id === osmRoute.osm_id)
+      )
+
+      if (existingIndex !== -1) {
+        if (updateExisting) {
+          const existing = db.routes[existingIndex]
+          db.routes[existingIndex] = {
+            ...existing,
+            ...osmRoute,
+            id_ruta: existing.id_ruta
+          }
+          routesUpdated++
+          console.log(`✏️  Updated route: ${osmRoute.nombre}`)
+        } else if (skipDuplicates) {
+          routesSkipped++
+          console.log(`⏭️  Skipped route (duplicate): ${osmRoute.nombre}`)
+        }
+      } else {
+        const newId = nextId(db.routes, 'id_ruta')
+        db.routes.push({
+          id_ruta: newId,
+          ...osmRoute,
+          created_from_osm: true,
+          imported_at: new Date().toISOString()
+        })
+        routesAdded++
+        console.log(`✅ Added route: ${osmRoute.nombre} (ID: ${newId})`)
+      }
+    })
+  }
 
   // Save updated database
   saveDB(db)
@@ -148,17 +197,30 @@ export function importOSMData(osmFilePath, options = {}) {
       added,
       updated,
       skipped,
+      routesAdded,
+      routesUpdated,
+      routesSkipped,
+      routesFinalCount: db.routes?.length || 0,
       osmStats: osmData.stats
     },
-    buildings: db.buildings
+    buildings: db.buildings,
+    routes: db.routes || []
   }
 
   console.log(`\n📊 Import Summary:`)
-  console.log(`   Original buildings: ${originalBuildingsCount}`)
-  console.log(`   Added: ${added}`)
-  console.log(`   Updated: ${updated}`)
-  console.log(`   Skipped: ${skipped}`)
-  console.log(`   Final count: ${db.buildings.length}`)
+  if (importType === 'buildings' || importType === 'both') {
+    console.log(`   Original buildings: ${originalBuildingsCount}`)
+    console.log(`   Added: ${added}`)
+    console.log(`   Updated: ${updated}`)
+    console.log(`   Skipped: ${skipped}`)
+    console.log(`   Final count: ${db.buildings.length}`)
+  }
+  if (importType === 'routes' || importType === 'both') {
+    console.log(`   Routes added: ${routesAdded}`)
+    console.log(`   Routes updated: ${routesUpdated}`)
+    console.log(`   Routes skipped: ${routesSkipped}`)
+    console.log(`   Routes final count: ${db.routes?.length || 0}`)
+  }
   console.log(`\n✅ Import completed successfully!\n`)
 
   return results
