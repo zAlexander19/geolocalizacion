@@ -82,11 +82,18 @@ CREATE TABLE faculties (
     nombre_facultad VARCHAR(255) NOT NULL UNIQUE,
     descripcion TEXT,
     logo TEXT,
-    id_edificio INTEGER REFERENCES buildings(id_edificio) ON DELETE SET NULL,
     estado BOOLEAN DEFAULT TRUE,
     disponibilidad VARCHAR(50) DEFAULT 'Disponible',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: faculty_buildings (relación muchos a muchos)
+CREATE TABLE faculty_buildings (
+    codigo_facultad VARCHAR(50) REFERENCES faculties(codigo_facultad) ON DELETE CASCADE,
+    id_edificio INTEGER REFERENCES buildings(id_edificio) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (codigo_facultad, id_edificio)
 );
 
 -- Create indexes for better performance
@@ -94,7 +101,8 @@ CREATE INDEX idx_floors_edificio ON floors(id_edificio);
 CREATE INDEX idx_rooms_piso ON rooms(id_piso);
 CREATE INDEX idx_bathrooms_edificio ON bathrooms(id_edificio);
 CREATE INDEX idx_bathrooms_piso ON bathrooms(id_piso);
-CREATE INDEX idx_faculties_edificio ON faculties(id_edificio);
+CREATE INDEX idx_faculty_buildings_facultad ON faculty_buildings(codigo_facultad);
+CREATE INDEX idx_faculty_buildings_edificio ON faculty_buildings(id_edificio);
 CREATE INDEX idx_buildings_coords ON buildings(cord_latitud, cord_longitud);
 CREATE INDEX idx_rooms_coords ON rooms(cord_latitud, cord_longitud);
 

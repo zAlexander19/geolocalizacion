@@ -47,6 +47,7 @@ export default function FacultiesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [facultyToDelete, setFacultyToDelete] = useState(null)
   const [deleteDependencies, setDeleteDependencies] = useState(null)
+  const [selectedBuildings, setSelectedBuildings] = useState([])
 
   const { control, handleSubmit, reset, setValue, getValues } = useForm({
     defaultValues: {
@@ -142,7 +143,8 @@ export default function FacultiesPage() {
           setValue('nombre_facultad', f.nombre_facultad)
           setValue('codigo_facultad', f.codigo_facultad || '')
           setValue('descripcion', f.descripcion || '')
-          setValue('id_edificio', f.id_edificio || '')
+          // Cargar edificios asociados
+          setSelectedBuildings(f.edificios ? f.edificios.map(e => e.id_edificio) : [])
           // set preview if logo exists
           setImagePreviewUrl(f.logo ? getFullImageUrl(f.logo) : null)
         }
@@ -150,6 +152,7 @@ export default function FacultiesPage() {
         reset()
         setImageFile(null)
         setImagePreviewUrl(null)
+        setSelectedBuildings([])
       }
     }
   }, [open, editId, faculties, reset, setValue])
@@ -184,9 +187,6 @@ export default function FacultiesPage() {
   if (nameExists) return alert('Ya existe una facultad con ese nombre')
   if (codeExists) return alert('Ya existe una facultad con ese código')
 
-    // Prepare id_edificio if selected
-    const idEd = getValues('id_edificio') || null
-
     // If editing existing faculty
     if (editId) {
       if (imageFile) {
@@ -196,7 +196,7 @@ export default function FacultiesPage() {
         formData.append('descripcion', descripcion || '')
         formData.append('estado', 'true')
         formData.append('disponibilidad', 'Disponible')
-        if (idEd) formData.append('id_edificio', idEd)
+        formData.append('edificios_ids', JSON.stringify(selectedBuildings))
         formData.append('logo', imageFile)
         updateMutation.mutate({ id: editId, payload: formData })
       } else {
@@ -206,7 +206,7 @@ export default function FacultiesPage() {
           descripcion: descripcion || '',
           estado: true,
           disponibilidad: 'Disponible',
-          id_edificio: idEd,
+          edificios_ids: JSON.stringify(selectedBuildings),
         }
         updateMutation.mutate({ id: editId, payload })
       }
@@ -221,7 +221,7 @@ export default function FacultiesPage() {
       formData.append('descripcion', descripcion || '')
       formData.append('estado', 'true')
       formData.append('disponibilidad', 'Disponible')
-      if (idEd) formData.append('id_edificio', idEd)
+      formData.append('edificios_ids', JSON.stringify(selectedBuildings))
       formData.append('logo', imageFile)
       createMutation.mutate(formData)
     } else {
@@ -231,7 +231,7 @@ export default function FacultiesPage() {
         descripcion: descripcion || '',
         estado: true,
         disponibilidad: 'Disponible',
-        id_edificio: idEd,
+        edificios_ids: JSON.stringify(selectedBuildings),
       }
       createMutation.mutate(payload)
     }
@@ -274,27 +274,26 @@ export default function FacultiesPage() {
     
     // Verificar dependencias antes de mostrar el modal
     try {
-      await api.delete(`/faculties/${id}`)
-      // Si no hay error, la eliminación fue exitosa
-      queryClient.invalidateQueries({ queryKey: ['faculties'], refetchType: 'active' })
-      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
-      queryClient.refetchQueries({ queryKey: ['faculties'] })
-      queryClient.refetchQueries({ queryKey: ['deleted'] })
-    } catch (error) {
-      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
-        // Hay dependencias, mostrar modal con la información
-        setDeleteDependencies(error.response.data.dependencias)
+      const response = await api.get(`/faculties/${id}/check-dependencies`)
+      
+      // Si hay dependencias, mostrar modal de error
+      if (response.data.hasDependencies) {
+        setDeleteDependencies(response.data.dependencias)
         setDeleteConfirmOpen(true)
       } else {
-        // Otro tipo de error
-        alert(error.response?.data?.message || 'Error al eliminar facultad')
+        // No hay dependencias, mostrar modal de confirmación normal
+        setDeleteConfirmOpen(true)
       }
+    } catch (error) {
+      // Si el endpoint no existe, mostrar modal de confirmación normal
+      setDeleteConfirmOpen(true)
     }
   }
 
   const handleConfirmDelete = () => {
-    // Ya no es necesario porque la eliminación se hace en handleDelete
-    handleCancelDelete()
+    if (facultyToDelete) {
+      deleteMutation.mutate(facultyToDelete)
+    }
   }
 
   const handleCancelDelete = () => {
@@ -312,7 +311,7 @@ export default function FacultiesPage() {
     const matchesSearch = searchQuery.trim() === '' || 
       f.nombre_facultad.toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(f.codigo_facultad || '').toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = filterBuilding === '' || Number(f.id_edificio) === Number(filterBuilding)
+    const matchesFilter = filterBuilding === '' || (f.edificios && f.edificios.some(e => Number(e.id_edificio) === Number(filterBuilding)))
     return matchesSearch && matchesFilter
   })
 
@@ -388,9 +387,31 @@ export default function FacultiesPage() {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       <strong>Código:</strong> {f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : '-'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      <strong>Edificio:</strong> {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || '-' : '-'}
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        <strong>Edificios:</strong>
+                      </Typography>
+                      {f.edificios && f.edificios.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          {f.edificios.map((e, idx) => (
+                            <Chip 
+                              key={idx} 
+                              label={e.nombre_edificio} 
+                              size="small"
+                              sx={{ 
+                                bgcolor: 'primary.main', 
+                                color: 'white',
+                                '& .MuiChip-label': {
+                                  color: 'white'
+                                }
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">Ninguno</Typography>
+                      )}
+                    </Box>
                     {f.descripcion && (
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         <strong>Descripción:</strong> {f.descripcion}
@@ -465,7 +486,26 @@ export default function FacultiesPage() {
                     <TableCell>{f.codigo_facultad || f.codigo || f.codigo_facultad === 0 ? f.codigo_facultad : ''}</TableCell>
                     <TableCell>{f.nombre_facultad}</TableCell>
                     <TableCell>
-                      {f.id_edificio ? (buildings || []).find(b => Number(b.id_edificio) === Number(f.id_edificio))?.nombre_edificio || f.id_edificio : ''}
+                      {f.edificios && f.edificios.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {f.edificios.map((e, idx) => (
+                            <Chip 
+                              key={idx} 
+                              label={e.nombre_edificio} 
+                              size="small"
+                              sx={{ 
+                                bgcolor: 'primary.main', 
+                                color: 'white',
+                                '& .MuiChip-label': {
+                                  color: 'white'
+                                }
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">Ninguno</Typography>
+                      )}
                     </TableCell>
                     <TableCell>{f.descripcion}</TableCell>
                     <TableCell>
@@ -499,21 +539,30 @@ export default function FacultiesPage() {
             <Controller name="codigo_facultad" control={control} render={({ field }) => <TextField {...field} label="Código (obligatorio)" fullWidth required />} />
             <Controller name="descripcion" control={control} render={({ field }) => <TextField {...field} label="Descripción (opcional)" fullWidth multiline rows={3} />} />
 
-            <Controller
-              name="id_edificio"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Asociar Edificio</InputLabel>
-                  <Select {...field} label="Asociar Edificio" displayEmpty>
-                    <MenuItem value="">-- Ninguno --</MenuItem>
-                    {(buildings || []).map(b => (
-                      <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            />
+            <FormControl fullWidth>
+              <InputLabel>Edificios Asociados</InputLabel>
+              <Select
+                multiple
+                value={selectedBuildings}
+                onChange={(e) => setSelectedBuildings(e.target.value)}
+                label="Edificios Asociados"
+                renderValue={(selected) => {
+                  if (selected.length === 0) return 'Ninguno'
+                  return selected.map(id => buildings?.find(b => b.id_edificio === id)?.nombre_edificio).filter(Boolean).join(', ')
+                }}
+              >
+                {(buildings || []).map(b => (
+                  <MenuItem key={b.id_edificio} value={b.id_edificio}>
+                    <Chip 
+                      label={b.nombre_edificio} 
+                      size="small"
+                      color={selectedBuildings.includes(b.id_edificio) ? 'primary' : 'default'}
+                      sx={{ mr: 1 }}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Box>
               <Button
@@ -558,50 +607,74 @@ export default function FacultiesPage() {
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: 'error.dark',
+            bgcolor: deleteDependencies ? 'error.dark' : 'warning.dark',
             color: 'white'
           }
         }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <span style={{ fontSize: '1.5rem' }}>⚠️</span>
-          No se puede eliminar la facultad
+          {deleteDependencies ? (
+            <>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              No se puede eliminar la facultad
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              Confirmar eliminación
+            </>
+          )}
         </DialogTitle>
         <DialogContent>
-          <Box>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              No se puede eliminar la facultad porque tiene los siguientes edificios asociados:
-            </Typography>
-            
-            {deleteDependencies?.edificios && deleteDependencies.edificios.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  Edificios asociados ({deleteDependencies.edificios.length}):
-                </Typography>
-                <Box component="ul" sx={{ pl: 2 }}>
-                  {deleteDependencies.edificios.map(edificio => (
-                    <Box component="li" key={edificio.id} sx={{ mb: 0.5 }}>
-                      <Typography variant="body2">
-                        {edificio.nombre}
-                      </Typography>
-                    </Box>
-                  ))}
+          {deleteDependencies ? (
+            <Box>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                No se puede eliminar la facultad porque tiene los siguientes edificios asociados:
+              </Typography>
+              
+              {deleteDependencies.edificios && deleteDependencies.edificios.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Edificios asociados ({deleteDependencies.edificios.length}):
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2 }}>
+                    {deleteDependencies.edificios.map(edificio => (
+                      <Box component="li" key={edificio.id} sx={{ mb: 0.5 }}>
+                        <Typography variant="body2">
+                          {edificio.nombre}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
-            )}
-            
-            <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
-              Para eliminar esta facultad, primero debe eliminar o reasignar todos los edificios asociados.
+              )}
+              
+              <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+                Para eliminar esta facultad, primero debe eliminar o reasignar todos los edificios asociados.
+              </Typography>
+            </Box>
+          ) : (
+            <Typography>
+              ¿Está seguro de que desea eliminar esta facultad? Esta acción establecerá el estado como inactivo pero no eliminará los datos permanentemente.
             </Typography>
-          </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button 
             onClick={handleCancelDelete}
             sx={{ color: 'white' }}
           >
-            Entendido
+            {deleteDependencies ? 'Entendido' : 'Cancelar'}
           </Button>
+          {!deleteDependencies && (
+            <Button 
+              onClick={handleConfirmDelete}
+              variant="contained"
+              color="error"
+            >
+              Eliminar
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

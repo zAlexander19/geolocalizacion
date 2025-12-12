@@ -26,4 +26,5 @@ pool.on('error', (err) => {
   // No cerrar el proceso, solo loguear
 })
 
+export { pool }
 export default pool

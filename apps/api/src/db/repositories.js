@@ -340,15 +340,14 @@ export const facultiesRepo = {
     const result = await pool.query(`
       INSERT INTO faculties (
         codigo_facultad, nombre_facultad, descripcion, logo,
-        id_edificio, estado, disponibilidad
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        estado, disponibilidad
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [
       faculty.codigo_facultad,
       faculty.nombre_facultad,
       faculty.descripcion || '',
       faculty.logo || '',
-      faculty.id_edificio || null,
       faculty.estado !== false,
       faculty.disponibilidad || 'Disponible'
     ])
@@ -361,16 +360,14 @@ export const facultiesRepo = {
         nombre_facultad = COALESCE($1, nombre_facultad),
         descripcion = COALESCE($2, descripcion),
         logo = COALESCE($3, logo),
-        id_edificio = COALESCE($4, id_edificio),
-        estado = COALESCE($5, estado),
-        disponibilidad = COALESCE($6, disponibilidad)
-      WHERE codigo_facultad = $7
+        estado = COALESCE($4, estado),
+        disponibilidad = COALESCE($5, disponibilidad)
+      WHERE codigo_facultad = $6
       RETURNING *
     `, [
       faculty.nombre_facultad,
       faculty.descripcion,
       faculty.logo,
-      faculty.id_edificio,
       faculty.estado,
       faculty.disponibilidad,
       codigo

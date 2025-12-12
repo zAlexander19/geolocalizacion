@@ -6,6 +6,7 @@ import multer from 'multer'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 import cloudinary from './config/cloudinary.js'
+import { pool } from './config/database.js'
 import { 
   buildingsRepo, 
   floorsRepo, 
@@ -801,27 +802,57 @@ export function createApp() {
   
   app.get('/faculties', async (req, res) => {
     try {
+      console.log('📋 GET /faculties - Obteniendo facultades...')
       const faculties = await facultiesRepo.findAll()
+      console.log(`✅ Encontradas ${faculties.length} facultades`)
+      
+      // Obtener edificios asociados para cada facultad
+      for (const faculty of faculties) {
+        console.log(`🔍 Buscando edificios para facultad: ${faculty.codigo_facultad}`)
+        const buildingsResult = await pool.query(`
+          SELECT b.id_edificio, b.nombre_edificio
+          FROM faculty_buildings fb
+          JOIN buildings b ON fb.id_edificio = b.id_edificio
+          WHERE fb.codigo_facultad = $1 AND b.estado = true
+          ORDER BY b.nombre_edificio
+        `, [faculty.codigo_facultad])
+        
+        console.log(`  📦 Edificios encontrados: ${buildingsResult.rows.length}`)
+        faculty.edificios = buildingsResult.rows
+      }
+      
+      console.log('✅ GET /faculties - Éxito')
       res.json({ data: faculties })
     } catch (error) {
-      console.error('Error fetching faculties:', error)
+      console.error('❌ Error fetching faculties:', error)
+      console.error('Stack:', error.stack)
       res.status(500).json({ message: 'Error al obtener facultades' })
     }
   })
 
   app.post('/faculties', upload.single('logo'), async (req, res) => {
     try {
+      console.log('📝 POST /faculties - Inicio')
       const f = req.body || {}
+      console.log('📦 Body recibido:', f)
       
       let logoUrl = f.logo || ''
       if (req.file) {
+        console.log('🖼️ Archivo recibido:', req.file.originalname)
         logoUrl = await uploadToCloudinary(req.file.buffer, 'faculties', 1600, 1200)
+        console.log('✅ Logo subido:', logoUrl)
       }
 
       const codigo_facultad = f.codigo_facultad !== undefined && String(f.codigo_facultad).trim() !== '' ? String(f.codigo_facultad).trim() : `FAC${Date.now()}`
       const nombre_facultad = String(f.nombre_facultad || '').trim()
       const descripcion = String(f.descripcion || '').trim()
-      const id_edificio = f.id_edificio ? Number(f.id_edificio) : null
+      
+      // Parse edificios_ids (puede venir como string JSON o array)
+      let edificiosIds = []
+      if (f.edificios_ids) {
+        edificiosIds = typeof f.edificios_ids === 'string' ? JSON.parse(f.edificios_ids) : f.edificios_ids
+        console.log('🏢 Edificios a asociar:', edificiosIds)
+      }
 
       // Validations
       if (!nombre_facultad) return res.status(400).json({ message: 'Nombre de facultad obligatorio' })
@@ -829,19 +860,51 @@ export function createApp() {
       const codeRe = /^[A-Za-z0-9_-]{2,50}$/
       if (!codeRe.test(String(codigo_facultad))) return res.status(400).json({ message: 'Formato de código inválido' })
 
+      console.log('🏗️ Creando facultad con datos:', {
+        codigo_facultad,
+        nombre_facultad,
+        descripcion,
+        logo: logoUrl,
+        estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : true,
+        disponibilidad: f.disponibilidad || 'Disponible'
+      })
+      
       const faculty = await facultiesRepo.create({
         codigo_facultad,
         nombre_facultad,
         descripcion,
         logo: logoUrl,
-        id_edificio: id_edificio || null,
         estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : true,
         disponibilidad: f.disponibilidad || 'Disponible'
       })
+      
+      console.log('✅ Facultad creada:', faculty)
+      
+      // Asociar edificios
+      if (edificiosIds.length > 0) {
+        console.log('🔗 Asociando edificios...')
+        for (const id_edificio of edificiosIds) {
+          console.log(`  - Asociando edificio ${id_edificio} con facultad ${codigo_facultad}`)
+          await pool.query(`
+            INSERT INTO faculty_buildings (codigo_facultad, id_edificio)
+            VALUES ($1, $2)
+            ON CONFLICT DO NOTHING
+          `, [codigo_facultad, Number(id_edificio)])
+        }
+        console.log('✅ Edificios asociados correctamente')
+      }
 
+      console.log('✅ POST /faculties - Éxito')
       res.status(201).json({ data: faculty })
     } catch (error) {
-      console.error('Error creating faculty:', error)
+      console.error('❌ Error creating faculty:', error)
+      console.error('Stack trace:', error.stack)
+      
+      // Manejar error de código duplicado
+      if (error.code === '23505' && error.constraint === 'faculties_pkey') {
+        return res.status(400).json({ message: 'El código de facultad ya existe. Por favor usa un código diferente.' })
+      }
+      
       res.status(400).json({ message: error.message || 'Error al crear facultad' })
     }
   })
@@ -861,7 +924,12 @@ export function createApp() {
 
       const nombre_facultad = String(fbody.nombre_facultad !== undefined ? fbody.nombre_facultad : prev.nombre_facultad).trim()
       const descripcion = String(fbody.descripcion !== undefined ? fbody.descripcion : prev.descripcion || '').trim()
-      const id_edificio = fbody.id_edificio !== undefined && fbody.id_edificio !== '' ? Number(fbody.id_edificio) : (prev.id_edificio || null)
+      
+      // Parse edificios_ids
+      let edificiosIds = []
+      if (fbody.edificios_ids !== undefined) {
+        edificiosIds = typeof fbody.edificios_ids === 'string' ? JSON.parse(fbody.edificios_ids) : fbody.edificios_ids
+      }
 
       if (!nombre_facultad) return res.status(400).json({ message: 'Nombre de facultad obligatorio' })
 
@@ -869,15 +937,68 @@ export function createApp() {
         nombre_facultad,
         descripcion,
         logo: logoUrl,
-        id_edificio: id_edificio || null,
         estado: fbody.estado !== undefined ? (fbody.estado === 'true' || fbody.estado === true) : prev.estado,
         disponibilidad: fbody.disponibilidad || prev.disponibilidad || 'Disponible'
       })
+      
+      // Actualizar edificios asociados si se proporcionaron
+      if (fbody.edificios_ids !== undefined) {
+        // Eliminar todas las asociaciones actuales
+        await pool.query(`
+          DELETE FROM faculty_buildings WHERE codigo_facultad = $1
+        `, [id])
+        
+        // Agregar las nuevas asociaciones
+        if (edificiosIds.length > 0) {
+          for (const id_edificio of edificiosIds) {
+            await pool.query(`
+              INSERT INTO faculty_buildings (codigo_facultad, id_edificio)
+              VALUES ($1, $2)
+              ON CONFLICT DO NOTHING
+            `, [id, Number(id_edificio)])
+          }
+        }
+      }
 
       res.json({ data: updated })
     } catch (error) {
       console.error('Error updating faculty:', error)
       res.status(400).json({ message: error.message || 'Error al actualizar facultad' })
+    }
+  })
+
+  // Endpoint para verificar dependencias sin eliminar
+  app.get('/faculties/:id/check-dependencies', async (req, res) => {
+    try {
+      const id = req.params.id
+      console.log('\n🔍 GET /faculties/:id/check-dependencies - ID recibido:', id)
+      
+      // Verificar edificios asociados
+      const buildingsResult = await pool.query(`
+        SELECT b.id_edificio, b.nombre_edificio
+        FROM faculty_buildings fb
+        JOIN buildings b ON fb.id_edificio = b.id_edificio
+        WHERE fb.codigo_facultad = $1 AND b.estado = true
+      `, [id])
+      
+      if (buildingsResult.rows.length > 0) {
+        console.log('⚠️ Facultad tiene edificios asociados:', buildingsResult.rows.length)
+        return res.json({
+          hasDependencies: true,
+          dependencias: {
+            edificios: buildingsResult.rows.map(b => ({
+              id: b.id_edificio,
+              nombre: b.nombre_edificio
+            }))
+          }
+        })
+      }
+      
+      console.log('✅ Facultad no tiene dependencias')
+      res.json({ hasDependencies: false })
+    } catch (error) {
+      console.error('❌ Error checking dependencies:', error)
+      res.status(500).json({ message: 'Error al verificar dependencias' })
     }
   })
 
@@ -895,34 +1016,26 @@ export function createApp() {
         return res.status(404).json({ message: 'Facultad no encontrada' })
       }
       
-      console.log('🔎 Verificando id_edificio:', faculty.id_edificio)
-      console.log('🔎 Tipo de id_edificio:', typeof faculty.id_edificio)
+      // Verificar edificios asociados
+      const buildingsResult = await pool.query(`
+        SELECT b.id_edificio, b.nombre_edificio
+        FROM faculty_buildings fb
+        JOIN buildings b ON fb.id_edificio = b.id_edificio
+        WHERE fb.codigo_facultad = $1 AND b.estado = true
+      `, [id])
       
-      // Verificar si la facultad está asignada a un edificio activo
-      if (faculty.id_edificio) {
-        console.log('🏢 La facultad tiene id_edificio, buscando edificio...')
-        const building = await buildingsRepo.findById(faculty.id_edificio)
-        console.log('🏢 Edificio encontrado:', building ? JSON.stringify({ id: building.id_edificio, nombre: building.nombre_edificio, estado: building.estado }, null, 2) : 'NULL')
-        
-        if (building && building.estado) {
-          console.log('❌ No se puede eliminar - facultad asignada a edificio activo:', building.nombre_edificio)
-          return res.status(400).json({
-            error: 'DEPENDENCIAS_ENCONTRADAS',
-            message: 'No se puede eliminar la facultad porque está asignada a un edificio',
-            dependencias: {
-              edificios: [{
-                id: building.id_edificio,
-                nombre: building.nombre_edificio
-              }]
-            }
-          })
-        } else if (building && !building.estado) {
-          console.log('⚠️ Edificio existe pero está inactivo, permitiendo eliminación')
-        } else {
-          console.log('⚠️ Edificio no encontrado, permitiendo eliminación')
-        }
-      } else {
-        console.log('✅ La facultad NO tiene id_edificio asignado')
+      if (buildingsResult.rows.length > 0) {
+        console.log('❌ No se puede eliminar - facultad tiene edificios asociados:', buildingsResult.rows.length)
+        return res.status(400).json({
+          error: 'DEPENDENCIAS_ENCONTRADAS',
+          message: 'No se puede eliminar la facultad porque tiene edificios asociados',
+          dependencias: {
+            edificios: buildingsResult.rows.map(b => ({
+              id: b.id_edificio,
+              nombre: b.nombre_edificio
+            }))
+          }
+        })
       }
       
       console.log('✅ Procediendo con soft delete de facultad:', id)
