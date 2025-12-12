@@ -238,6 +238,11 @@ export const roomsRepo = {
 // Bathrooms Repository
 export const bathroomsRepo = {
   async findAll() {
+    const result = await pool.query('SELECT * FROM bathrooms WHERE estado = true ORDER BY id_bano')
+    return result.rows
+  },
+
+  async findAllIncludingDeleted() {
     const result = await pool.query('SELECT * FROM bathrooms ORDER BY id_bano')
     return result.rows
   },
@@ -306,6 +311,16 @@ export const bathroomsRepo = {
 
   async delete(id) {
     await pool.query('DELETE FROM bathrooms WHERE id_bano = $1', [id])
+  },
+
+  async updateEstado(id, estado) {
+    console.log('bathroomsRepo.updateEstado - actualizando baño:', { id, estado })
+    const result = await pool.query(
+      'UPDATE bathrooms SET estado = $1 WHERE id_bano = $2 RETURNING *',
+      [estado, id]
+    )
+    console.log('bathroomsRepo.updateEstado - resultado:', result.rows[0])
+    return result.rows[0]
   }
 }
 

@@ -152,13 +152,16 @@ export function createApp() {
       }
 
       if (!type || type === 'bathrooms') {
-        const bathrooms = await bathroomsRepo.findAll()
-        const deleted = bathrooms.filter(b => !b.estado).map(b => ({
+        const bathrooms = await bathroomsRepo.findAllIncludingDeleted()
+        console.log('🔍 Todos los baños:', bathrooms.map(b => ({ id: b.id_bano, nombre: b.nombre, estado: b.estado })))
+        const deleted = bathrooms.filter(b => !b.estado)
+        console.log('🗑️ Baños eliminados (estado=false):', deleted.map(b => ({ id: b.id_bano, nombre: b.nombre, estado: b.estado })))
+        const mapped = deleted.map(b => ({
           ...b,
           entity_type: 'bathroom',
           entity_name: 'Baño'
         }))
-        result = [...result, ...deleted]
+        result = [...result, ...mapped]
       }
 
       // Aplicar búsqueda si existe
@@ -763,8 +766,10 @@ export function createApp() {
   app.delete('/bathrooms/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
+      console.log('DELETE /bathrooms/:id - soft delete baño:', id)
       // Marcar como eliminado (soft delete)
-      await bathroomsRepo.update(id, { estado: false })
+      await bathroomsRepo.updateEstado(id, false)
+      console.log('Baño marcado como eliminado:', id)
       res.json({ ok: true, message: 'Baño marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting bathroom:', error)

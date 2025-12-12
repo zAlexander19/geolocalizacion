@@ -51,6 +51,8 @@ export default function BathroomsAdmin() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [bathroomToDelete, setBathroomToDelete] = useState(null)
   const [form, setForm] = useState({
     id_edificio: '',
     id_piso: '',
@@ -167,12 +169,19 @@ export default function BathroomsAdmin() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/bathrooms/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['bathrooms'])
+      queryClient.invalidateQueries({ queryKey: ['bathrooms'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['bathrooms'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
+      setDeleteConfirmOpen(false)
+      setBathroomToDelete(null)
       setMessage({ type: 'success', text: 'Baño eliminado.' })
     },
     onError: (err) => {
       const text = err?.response?.data?.message || err.message || 'Error al eliminar baño'
       setMessage({ type: 'error', text })
+      setDeleteConfirmOpen(false)
+      setBathroomToDelete(null)
     }
   })
 
@@ -299,8 +308,19 @@ export default function BathroomsAdmin() {
   }
 
   function handleDelete(id) {
-    if (!confirm('¿Eliminar baño?')) return
-    deleteMutation.mutate(id)
+    setBathroomToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  function handleConfirmDelete() {
+    if (bathroomToDelete) {
+      deleteMutation.mutate(bathroomToDelete)
+    }
+  }
+
+  function handleCancelDelete() {
+    setDeleteConfirmOpen(false)
+    setBathroomToDelete(null)
   }
 
   useEffect(() => {
@@ -658,6 +678,48 @@ export default function BathroomsAdmin() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setImagePreview(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={handleCancelDelete}
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'warning.dark',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+          Confirmar eliminación
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Está seguro de que desea eliminar este baño?
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+            El baño será enviado a la sección de elementos eliminados donde podrá recuperarlo o eliminarlo permanentemente.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCancelDelete}
+            sx={{ color: 'white' }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+          >
+            Eliminar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
