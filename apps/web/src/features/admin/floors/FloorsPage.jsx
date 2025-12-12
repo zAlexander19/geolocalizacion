@@ -49,6 +49,9 @@ export default function FloorsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [floorToDelete, setFloorToDelete] = useState(null)
+  const [deleteDependencies, setDeleteDependencies] = useState(null)
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -120,7 +123,22 @@ export default function FloorsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/floors/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['all-floors'])
+      queryClient.invalidateQueries({ queryKey: ['all-floors'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['all-floors'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
+      setDeleteConfirmOpen(false)
+      setFloorToDelete(null)
+      setDeleteDependencies(null)
+    },
+    onError: (error) => {
+      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
+        setDeleteDependencies(error.response.data.dependencias)
+      } else {
+        alert(error.response?.data?.message || 'Error al eliminar piso')
+        setDeleteConfirmOpen(false)
+        setFloorToDelete(null)
+      }
     },
   })
 
@@ -212,9 +230,21 @@ export default function FloorsPage() {
   }
 
   const handleDelete = (id) => {
-    if (confirm('¿Eliminar piso?')) {
-      deleteMutation.mutate(id)
+    setFloorToDelete(id)
+    setDeleteDependencies(null)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (floorToDelete) {
+      deleteMutation.mutate(floorToDelete)
     }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setFloorToDelete(null)
+    setDeleteDependencies(null)
   }
 
   const getBuildingName = (id_edificio) => {
@@ -529,6 +559,85 @@ export default function FloorsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setImagePreview(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={handleCancelDelete}
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: deleteDependencies ? 'error.dark' : 'warning.dark',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {deleteDependencies ? (
+            <>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              No se puede eliminar el piso
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              Confirmar eliminación
+            </>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {deleteDependencies ? (
+            <Box>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                No se puede eliminar el piso porque tiene las siguientes salas asociadas:
+              </Typography>
+              
+              {deleteDependencies.salas && deleteDependencies.salas.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Salas asociadas ({deleteDependencies.salas.length}):
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2 }}>
+                    {deleteDependencies.salas.map(sala => (
+                      <Box component="li" key={sala.id} sx={{ mb: 0.5 }}>
+                        <Typography variant="body2">
+                          {sala.nombre}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+              
+              <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+                Para eliminar este piso, primero debe eliminar o reasignar todas las salas asociadas.
+              </Typography>
+            </Box>
+          ) : (
+            <Typography>
+              ¿Está seguro de que desea eliminar este piso?
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCancelDelete}
+            sx={{ color: 'white' }}
+          >
+            {deleteDependencies ? 'Entendido' : 'Cancelar'}
+          </Button>
+          {!deleteDependencies && (
+            <Button 
+              onClick={handleConfirmDelete}
+              variant="contained"
+              color="error"
+            >
+              Eliminar
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

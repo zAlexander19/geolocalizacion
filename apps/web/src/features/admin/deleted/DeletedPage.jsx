@@ -88,21 +88,28 @@ export default function DeletedPage() {
   }
 
   const getItemId = (item) => {
-    return item.id_edificio || item.id_piso || item.id_sala || item.id_bano
+    switch (item.entity_type) {
+      case 'building':
+        return item.id_edificio
+      case 'floor':
+        return item.id_piso
+      case 'room':
+        return item.id_sala
+      case 'bathroom':
+        return item.id_bano
+      default:
+        return null
+    }
   }
 
   const restoreMutation = useMutation({
     mutationFn: ({ type, id }) => api.patch(`/deleted/${type}/${id}/restore`),
-    onSuccess: () => {
-      // Invalidar y refetch de todas las listas que puedan estar afectadas
-      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
-      queryClient.invalidateQueries({ queryKey: ['buildings'], refetchType: 'active' })
-      queryClient.invalidateQueries({ queryKey: ['floors'], refetchType: 'active' })
-      queryClient.invalidateQueries({ queryKey: ['rooms'], refetchType: 'active' })
-      queryClient.refetchQueries({ queryKey: ['deleted'] })
-      queryClient.refetchQueries({ queryKey: ['buildings'] })
-      queryClient.refetchQueries({ queryKey: ['floors'] })
-      queryClient.refetchQueries({ queryKey: ['rooms'] })
+    onSuccess: async () => {
+      // Invalidar y esperar a que se refresquen todas las queries
+      await queryClient.invalidateQueries({ queryKey: ['deleted'] })
+      await queryClient.invalidateQueries({ queryKey: ['buildings'] })
+      await queryClient.invalidateQueries({ queryKey: ['all-floors'] })
+      await queryClient.refetchQueries({ queryKey: ['deleted'] })
       setConfirmRestoreOpen(false)
       setSelectedItem(null)
     },
@@ -136,9 +143,11 @@ export default function DeletedPage() {
 
   const confirmRestore = () => {
     if (selectedItem) {
+      const itemId = getItemId(selectedItem)
+      console.log('Restaurando:', { type: selectedItem.entity_type, id: itemId, selectedItem })
       restoreMutation.mutate({
         type: selectedItem.entity_type,
-        id: getItemId(selectedItem)
+        id: itemId
       })
     }
   }
@@ -358,7 +367,7 @@ export default function DeletedPage() {
         </>
       )}
 
-      {/* Modal de confirmación para restaurar */}
+      {/* Modal de confirmación de restauración */}
       <Dialog
         open={confirmRestoreOpen}
         onClose={() => {
@@ -367,12 +376,14 @@ export default function DeletedPage() {
         }}
         maxWidth="sm"
         fullWidth
+        aria-labelledby="restore-dialog-title"
+        aria-describedby="restore-dialog-description"
       >
-        <DialogTitle sx={{ bgcolor: 'success.main', color: 'white', fontWeight: 'bold' }}>
+        <DialogTitle id="restore-dialog-title" sx={{ bgcolor: 'success.main', color: 'white', fontWeight: 'bold' }}>
           Confirmar restauración
         </DialogTitle>
         <DialogContent sx={{ mt: 3 }}>
-          <Box sx={{ textAlign: 'center', mb: 2 }}>
+          <Box id="restore-dialog-description" sx={{ textAlign: 'center', mb: 2 }}>
             <RestoreIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
               ¿Deseas restaurar este elemento?
@@ -434,12 +445,14 @@ export default function DeletedPage() {
         }}
         maxWidth="sm"
         fullWidth
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
       >
-        <DialogTitle sx={{ bgcolor: 'error.main', color: 'white', fontWeight: 'bold' }}>
+        <DialogTitle id="delete-dialog-title" sx={{ bgcolor: 'error.main', color: 'white', fontWeight: 'bold' }}>
           Eliminar permanentemente
         </DialogTitle>
         <DialogContent sx={{ mt: 3 }}>
-          <Box sx={{ textAlign: 'center', mb: 2 }}>
+          <Box id="delete-dialog-description" sx={{ textAlign: 'center', mb: 2 }}>
             <DeleteForeverIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
               ¿Estás seguro de eliminar permanentemente?

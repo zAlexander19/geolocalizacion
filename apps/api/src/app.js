@@ -102,6 +102,13 @@ export function createApp() {
   // ==================== STATISTICS ====================
   app.use('/statistics', statisticsRoutes)
 
+  // DEBUG endpoint
+  app.get('/debug/floor/:id', async (req, res) => {
+    const id = Number(req.params.id)
+    const floor = await floorsRepo.findById(id)
+    res.json({ floor })
+  })
+
   // ==================== DELETED ITEMS ====================
   app.get('/deleted', async (req, res) => {
     try {
@@ -120,12 +127,15 @@ export function createApp() {
 
       if (!type || type === 'floors') {
         const floors = await floorsRepo.findAll()
-        const deleted = floors.filter(f => !f.estado).map(f => ({
+        console.log('🔍 Todos los pisos:', floors.map(f => ({ id: f.id_piso, nombre: f.nombre_piso, estado: f.estado })))
+        const deleted = floors.filter(f => !f.estado)
+        console.log('🗑️ Pisos eliminados (estado=false):', deleted.map(f => ({ id: f.id_piso, nombre: f.nombre_piso, estado: f.estado })))
+        const mapped = deleted.map(f => ({
           ...f,
           entity_type: 'floor',
           entity_name: 'Piso'
         }))
-        result = [...result, ...deleted]
+        result = [...result, ...mapped]
       }
 
       if (!type || type === 'rooms') {
@@ -169,19 +179,25 @@ export function createApp() {
     try {
       const { type, id } = req.params
       const numId = Number(id)
+      console.log(`🔄 Restaurando ${type} con ID: ${numId}`)
 
+      let result
       switch (type) {
         case 'building':
-          await buildingsRepo.update(numId, { estado: true })
+          result = await buildingsRepo.update(numId, { estado: true })
+          console.log('✅ Edificio restaurado:', result)
           break
         case 'floor':
-          await floorsRepo.update(numId, { estado: true })
+          result = await floorsRepo.updateEstado(numId, true)
+          console.log('✅ Piso restaurado:', result)
           break
         case 'room':
-          await roomsRepo.update(numId, { estado: true })
+          result = await roomsRepo.update(numId, { estado: true })
+          console.log('✅ Sala restaurada:', result)
           break
         case 'bathroom':
-          await bathroomsRepo.update(numId, { estado: true })
+          result = await bathroomsRepo.update(numId, { estado: true })
+          console.log('✅ Baño restaurado:', result)
           break
         default:
           return res.status(400).json({ message: 'Tipo de entidad no válido' })
@@ -189,7 +205,7 @@ export function createApp() {
 
       res.json({ ok: true, message: 'Elemento restaurado correctamente' })
     } catch (error) {
-      console.error('Error restoring item:', error)
+      console.error('❌ Error restoring item:', error)
       res.status(500).json({ message: 'Error al restaurar elemento' })
     }
   })
@@ -492,7 +508,7 @@ export function createApp() {
       }
       
       // Marcar como eliminado (soft delete)
-      await floorsRepo.update(id, { estado: false })
+      await floorsRepo.updateEstado(id, false)
       res.json({ ok: true, message: 'Piso marcado como eliminado' })
     } catch (error) {
       console.error('Error deleting floor:', error)

@@ -78,7 +78,7 @@ export const floorsRepo = {
 
   async findByBuilding(buildingId) {
     const result = await pool.query(
-      'SELECT * FROM floors WHERE id_edificio = $1 ORDER BY numero_piso, nombre_piso',
+      'SELECT * FROM floors WHERE id_edificio = $1 AND estado = true ORDER BY numero_piso, nombre_piso',
       [buildingId]
     )
     return result.rows
@@ -105,11 +105,11 @@ export const floorsRepo = {
   async update(id, floor) {
     const result = await pool.query(`
       UPDATE floors SET
-        nombre_piso = COALESCE($1, nombre_piso),
-        numero_piso = COALESCE($2, numero_piso),
-        imagen = COALESCE($3, imagen),
-        estado = COALESCE($4, estado),
-        disponibilidad = COALESCE($5, disponibilidad)
+        nombre_piso = $1,
+        numero_piso = $2,
+        imagen = $3,
+        estado = $4,
+        disponibilidad = $5
       WHERE id_piso = $6
       RETURNING *
     `, [
@@ -125,6 +125,17 @@ export const floorsRepo = {
 
   async delete(id) {
     await pool.query('DELETE FROM floors WHERE id_piso = $1', [id])
+  },
+
+  async updateEstado(id, estado) {
+    console.log(`📝 updateEstado - ID: ${id}, Estado: ${estado}`)
+    const result = await pool.query(`
+      UPDATE floors SET estado = $1
+      WHERE id_piso = $2
+      RETURNING *
+    `, [estado, id])
+    console.log(`📝 Resultado update:`, result.rows[0])
+    return result.rows[0]
   }
 }
 
