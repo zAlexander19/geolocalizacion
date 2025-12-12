@@ -56,7 +56,6 @@ export default function FloorsPage() {
       nombre_piso: '',
       numero_piso: 0,
       imagen: '',
-      codigo_qr: '',
       estado: true,
       disponibilidad: 'Disponible',
     }
@@ -126,26 +125,38 @@ export default function FloorsPage() {
   })
 
   useEffect(() => {
-    if (open) {
+    if (open && buildings) {
       if (editId) {
         const f = allFloorsData?.find(x => x.id_piso === editId)
         if (f) {
-          setValue('id_edificio', f.id_edificio)
-          setValue('nombre_piso', f.nombre_piso)
-          setValue('numero_piso', f.numero_piso ?? 0)
-          setValue('imagen', f.imagen || '')
-          setValue('codigo_qr', f.codigo_qr || '')
-          setValue('estado', f.estado)
-          setValue('disponibilidad', f.disponibilidad)
+          // Asegurar que el id_edificio se establece correctamente
+          const idEdificio = Number(f.id_edificio)
+          console.log('Cargando piso para editar:', { id: editId, id_edificio: idEdificio, floor: f })
+          
+          reset({
+            id_edificio: idEdificio,
+            nombre_piso: f.nombre_piso,
+            numero_piso: f.numero_piso ?? 0,
+            imagen: f.imagen || '',
+            estado: f.estado,
+            disponibilidad: f.disponibilidad
+          })
           setImagePreviewUrl(f.imagen ? getFullImageUrl(f.imagen) : null)
         }
       } else {
-        reset()
+        reset({
+          id_edificio: '',
+          nombre_piso: '',
+          numero_piso: 0,
+          imagen: '',
+          estado: true,
+          disponibilidad: 'Disponible',
+        })
         setImageFile(null)
         setImagePreviewUrl(null)
       }
     }
-  }, [open, editId, allFloorsData, reset, setValue])
+  }, [open, editId, allFloorsData, buildings, reset])
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
@@ -181,7 +192,6 @@ export default function FloorsPage() {
     const formData = new FormData()
     formData.append('nombre_piso', data.nombre_piso)
     formData.append('numero_piso', data.numero_piso)
-    formData.append('codigo_qr', data.codigo_qr)
     formData.append('estado', data.estado)
     formData.append('disponibilidad', data.disponibilidad)
     
@@ -396,20 +406,44 @@ export default function FloorsPage() {
         <DialogTitle>{editId ? 'Editar Piso' : 'Nuevo Piso'}</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <Controller
-              name="id_edificio"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth required>
-                  <InputLabel>Edificio</InputLabel>
-                  <Select {...field} label="Edificio">
-                    {buildings?.map(b => (
-                      <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            />
+            {editId ? (
+              <TextField
+                label="Edificio"
+                value={getBuildingName(watch('id_edificio')) || ''}
+                disabled
+                fullWidth
+                required
+                helperText="No se puede cambiar el edificio al editar"
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'white',
+                    color: 'white'
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  }
+                }}
+              />
+            ) : (
+              <Controller
+                name="id_edificio"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth required>
+                    <InputLabel>Edificio</InputLabel>
+                    <Select 
+                      {...field} 
+                      label="Edificio"
+                      value={field.value || ''}
+                    >
+                      {buildings?.map(b => (
+                        <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            )}
             <Controller
               name="nombre_piso"
               control={control}
@@ -447,11 +481,6 @@ export default function FloorsPage() {
                 />
               )}
             </Box>
-            <Controller
-              name="codigo_qr"
-              control={control}
-              render={({ field }) => <TextField {...field} label="Código QR" fullWidth />}
-            />
             <Controller
               name="estado"
               control={control}

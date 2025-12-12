@@ -88,15 +88,14 @@ export const floorsRepo = {
     const result = await pool.query(`
       INSERT INTO floors (
         id_edificio, nombre_piso, numero_piso, imagen,
-        codigo_qr, estado, disponibilidad
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        estado, disponibilidad
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [
       floor.id_edificio,
       floor.nombre_piso,
       floor.numero_piso || null,
       floor.imagen || '',
-      floor.codigo_qr || '',
       floor.estado !== false,
       floor.disponibilidad || 'Disponible'
     ])
@@ -109,16 +108,14 @@ export const floorsRepo = {
         nombre_piso = COALESCE($1, nombre_piso),
         numero_piso = COALESCE($2, numero_piso),
         imagen = COALESCE($3, imagen),
-        codigo_qr = COALESCE($4, codigo_qr),
-        estado = COALESCE($5, estado),
-        disponibilidad = COALESCE($6, disponibilidad)
-      WHERE id_piso = $7
+        estado = COALESCE($4, estado),
+        disponibilidad = COALESCE($5, disponibilidad)
+      WHERE id_piso = $6
       RETURNING *
     `, [
       floor.nombre_piso,
       floor.numero_piso,
       floor.imagen,
-      floor.codigo_qr,
       floor.estado,
       floor.disponibilidad,
       id

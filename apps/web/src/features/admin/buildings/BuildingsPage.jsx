@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
@@ -63,7 +65,21 @@ export default function BuildingsPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [buildingToDelete, setBuildingToDelete] = useState(null)
 
-  const { control, handleSubmit, reset, setValue } = useForm({
+  const buildingSchema = z.object({
+    nombre_edificio: z.string().min(1, 'El nombre del edificio es requerido').max(100, 'Máximo 100 caracteres'),
+    acronimo: z.string().min(1, 'El acrónimo es requerido').max(50, 'Máximo 50 caracteres'),
+    descripcion: z.string().max(500, 'Máximo 500 caracteres').optional(),
+    cord_latitud: z.number({ invalid_type_error: 'La latitud debe ser un número' })
+      .min(-90, 'Latitud mínima: -90')
+      .max(90, 'Latitud máxima: 90'),
+    cord_longitud: z.number({ invalid_type_error: 'La longitud debe ser un número' })
+      .min(-180, 'Longitud mínima: -180')
+      .max(180, 'Longitud máxima: 180'),
+    disponibilidad: z.string().min(1, 'La disponibilidad es requerida'),
+  })
+
+  const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+    resolver: zodResolver(buildingSchema),
     defaultValues: {
       nombre_edificio: '',
       acronimo: '',
@@ -98,6 +114,10 @@ export default function BuildingsPage() {
       setImageFile(null)
       setImagePreviewUrl(null)
     },
+    onError: (error) => {
+      const message = error.response?.data?.message || error.message || 'Error al crear edificio'
+      alert(message)
+    }
   })
 
   const updateMutation = useMutation({
@@ -116,6 +136,10 @@ export default function BuildingsPage() {
       setImageFile(null)
       setImagePreviewUrl(null)
     },
+    onError: (error) => {
+      const message = error.response?.data?.message || error.message || 'Error al actualizar edificio'
+      alert(message)
+    }
   })
 
   const deleteMutation = useMutation({
@@ -454,12 +478,30 @@ export default function BuildingsPage() {
             <Controller
               name="nombre_edificio"
               control={control}
-              render={({ field }) => <TextField {...field} label="Nombre Edificio" fullWidth required />}
+              render={({ field }) => (
+                <TextField 
+                  {...field} 
+                  label="Nombre Edificio" 
+                  fullWidth 
+                  required 
+                  error={!!errors.nombre_edificio}
+                  helperText={errors.nombre_edificio?.message}
+                />
+              )}
             />
             <Controller
               name="acronimo"
               control={control}
-              render={({ field }) => <TextField {...field} label="Acrónimo" fullWidth />}
+              render={({ field }) => (
+                <TextField 
+                  {...field} 
+                  label="Acrónimo" 
+                  fullWidth 
+                  required
+                  error={!!errors.acronimo}
+                  helperText={errors.acronimo?.message}
+                />
+              )}
             />
             <Controller
               name="descripcion"
@@ -472,6 +514,8 @@ export default function BuildingsPage() {
                   multiline
                   rows={3}
                   placeholder="Describe el edificio..."
+                  error={!!errors.descripcion}
+                  helperText={errors.descripcion?.message}
                 />
               )}
             />
@@ -513,12 +557,17 @@ export default function BuildingsPage() {
               name="disponibilidad"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth>
+                <FormControl fullWidth error={!!errors.disponibilidad}>
                   <InputLabel>Disponibilidad</InputLabel>
                   <Select {...field} label="Disponibilidad">
                     <MenuItem value="Disponible">Disponible</MenuItem>
                     <MenuItem value="En mantenimiento">En mantenimiento</MenuItem>
                   </Select>
+                  {errors.disponibilidad && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                      {errors.disponibilidad.message}
+                    </Typography>
+                  )}
                 </FormControl>
               )}
             />

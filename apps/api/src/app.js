@@ -242,6 +242,22 @@ export function createApp() {
     try {
       const b = req.body || {}
       
+      // Validar que no exista otro edificio activo en la misma ubicación
+      const lat = Number(b.cord_latitud) || 0
+      const lng = Number(b.cord_longitud) || 0
+      const allBuildings = await buildingsRepo.findAll()
+      const existingLocation = allBuildings.find(existing => 
+        existing.estado && 
+        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.0001
+      )
+      
+      if (existingLocation) {
+        return res.status(400).json({ 
+          message: `Ya existe un edificio en esta ubicación: ${existingLocation.nombre_edificio}` 
+        })
+      }
+      
       let imagenUrl = b.imagen || ''
       if (req.file) {
         imagenUrl = await uploadToCloudinary(req.file.buffer, 'buildings', 1600, 1200)
@@ -272,6 +288,23 @@ export function createApp() {
       if (!prev) return res.status(404).json({ message: 'Not found' })
       
       const b = req.body || {}
+      
+      // Validar que no exista otro edificio activo en la misma ubicación (excluyendo este edificio)
+      const lat = b.cord_latitud !== undefined ? Number(b.cord_latitud) : prev.cord_latitud
+      const lng = b.cord_longitud !== undefined ? Number(b.cord_longitud) : prev.cord_longitud
+      const allBuildings = await buildingsRepo.findAll()
+      const existingLocation = allBuildings.find(existing => 
+        existing.id_edificio !== id &&
+        existing.estado && 
+        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.0001
+      )
+      
+      if (existingLocation) {
+        return res.status(400).json({ 
+          message: `Ya existe un edificio en esta ubicación: ${existingLocation.nombre_edificio}` 
+        })
+      }
       
       let imagenUrl = b.imagen !== undefined ? b.imagen : prev.imagen
       if (req.file) {
@@ -356,6 +389,21 @@ export function createApp() {
       const id_edificio = Number(req.params.id)
       const f = req.body || {}
       
+      // Validar que el número de piso sea único en el edificio
+      if (f.numero_piso != null) {
+        const allFloors = await floorsRepo.findAll()
+        const duplicateFloor = allFloors.find(floor => 
+          floor.id_edificio === id_edificio && 
+          floor.numero_piso === Number(f.numero_piso) &&
+          floor.estado
+        )
+        if (duplicateFloor) {
+          return res.status(400).json({ 
+            message: `Ya existe el piso número ${f.numero_piso} en este edificio` 
+          })
+        }
+      }
+      
       let imagenUrl = f.imagen || ''
       if (req.file) {
         imagenUrl = await uploadToCloudinary(req.file.buffer, 'floors', 1600, 1200)
@@ -366,7 +414,6 @@ export function createApp() {
         nombre_piso: String(f.nombre_piso || '').trim(),
         numero_piso: f.numero_piso != null ? Number(f.numero_piso) : null,
         imagen: imagenUrl,
-        codigo_qr: f.codigo_qr || '',
         estado: f.estado === 'true' || f.estado === true,
         disponibilidad: f.disponibilidad || 'Disponible',
       })
@@ -386,6 +433,23 @@ export function createApp() {
       
       const f = req.body || {}
       
+      // Validar que el número de piso sea único en el edificio (excluyendo el piso actual)
+      const numero_piso = f.numero_piso !== undefined ? Number(f.numero_piso) : prev.numero_piso
+      if (numero_piso != null) {
+        const allFloors = await floorsRepo.findAll()
+        const duplicateFloor = allFloors.find(floor => 
+          floor.id_piso !== id &&
+          floor.id_edificio === prev.id_edificio && 
+          floor.numero_piso === numero_piso &&
+          floor.estado
+        )
+        if (duplicateFloor) {
+          return res.status(400).json({ 
+            message: `Ya existe el piso número ${numero_piso} en este edificio` 
+          })
+        }
+      }
+      
       let imagenUrl = f.imagen !== undefined ? f.imagen : prev.imagen
       if (req.file) {
         imagenUrl = await uploadToCloudinary(req.file.buffer, 'floors', 1600, 1200)
@@ -393,9 +457,8 @@ export function createApp() {
       
       const floor = await floorsRepo.update(id, {
         nombre_piso: f.nombre_piso || prev.nombre_piso,
-        numero_piso: f.numero_piso !== undefined ? Number(f.numero_piso) : prev.numero_piso,
+        numero_piso: numero_piso,
         imagen: imagenUrl,
-        codigo_qr: f.codigo_qr !== undefined ? f.codigo_qr : prev.codigo_qr,
         estado: f.estado !== undefined ? (f.estado === 'true' || f.estado === true) : prev.estado,
         disponibilidad: f.disponibilidad || prev.disponibilidad,
       })
@@ -464,6 +527,22 @@ export function createApp() {
     try {
       const r = req.body || {}
       
+      // Validar que no exista otra sala activa en la misma ubicación
+      const lat = Number(r.cord_latitud) || 0
+      const lng = Number(r.cord_longitud) || 0
+      const allRooms = await roomsRepo.findAll()
+      const existingLocation = allRooms.find(existing => 
+        existing.estado && 
+        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.0001
+      )
+      
+      if (existingLocation) {
+        return res.status(400).json({ 
+          message: `Ya existe una sala en esta ubicación: ${existingLocation.nombre_sala}` 
+        })
+      }
+      
       let imagenUrl = r.imagen || ''
       if (req.file) {
         imagenUrl = await uploadToCloudinary(req.file.buffer, 'rooms', 1200, 1600)
@@ -497,6 +576,23 @@ export function createApp() {
       if (!prev) return res.status(404).json({ message: 'Not found' })
       
       const r = req.body || {}
+      
+      // Validar que no exista otra sala activa en la misma ubicación (excluyendo esta sala)
+      const lat = r.cord_latitud !== undefined ? Number(r.cord_latitud) : prev.cord_latitud
+      const lng = r.cord_longitud !== undefined ? Number(r.cord_longitud) : prev.cord_longitud
+      const allRooms = await roomsRepo.findAll()
+      const existingLocation = allRooms.find(existing => 
+        existing.id_sala !== id &&
+        existing.estado && 
+        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.0001
+      )
+      
+      if (existingLocation) {
+        return res.status(400).json({ 
+          message: `Ya existe una sala en esta ubicación: ${existingLocation.nombre_sala}` 
+        })
+      }
       
       let imagenUrl = r.imagen !== undefined ? r.imagen : prev.imagen
       if (req.file) {
@@ -551,6 +647,22 @@ export function createApp() {
   app.post('/bathrooms', upload.single('imagen'), async (req, res) => {
     try {
       const b = req.body || {}
+      
+      // Validar que no exista otro baño activo en la misma ubicación
+      const lat = Number(b.cord_latitud) || 0
+      const lng = Number(b.cord_longitud) || 0
+      const allBathrooms = await bathroomsRepo.findAll()
+      const existingLocation = allBathrooms.find(existing => 
+        existing.estado && 
+        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.0001
+      )
+      
+      if (existingLocation) {
+        return res.status(400).json({ 
+          message: `Ya existe un baño en esta ubicación: ${existingLocation.nombre_bano || existingLocation.identificador}` 
+        })
+      }
       
       let imagenUrl = b.imagen || ''
       if (req.file) {
