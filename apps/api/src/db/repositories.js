@@ -142,6 +142,11 @@ export const floorsRepo = {
 // Rooms Repository
 export const roomsRepo = {
   async findAll() {
+    const result = await pool.query('SELECT * FROM rooms WHERE estado = true ORDER BY id_sala')
+    return result.rows
+  },
+
+  async findAllIncludingDeleted() {
     const result = await pool.query('SELECT * FROM rooms ORDER BY id_sala')
     return result.rows
   },
@@ -217,6 +222,16 @@ export const roomsRepo = {
 
   async delete(id) {
     await pool.query('DELETE FROM rooms WHERE id_sala = $1', [id])
+  },
+
+  async updateEstado(id, estado) {
+    console.log('roomsRepo.updateEstado - actualizando sala:', { id, estado })
+    const result = await pool.query(
+      'UPDATE rooms SET estado = $1 WHERE id_sala = $2 RETURNING *',
+      [estado, id]
+    )
+    console.log('roomsRepo.updateEstado - resultado:', result.rows[0])
+    return result.rows[0]
   }
 }
 

@@ -55,6 +55,8 @@ export default function RoomsPage() {
   const [selectedBuilding, setSelectedBuilding] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [roomToDelete, setRoomToDelete] = useState(null)
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -137,7 +139,12 @@ export default function RoomsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/rooms/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['rooms'])
+      queryClient.invalidateQueries({ queryKey: ['rooms'], refetchType: 'active' })
+      queryClient.invalidateQueries({ queryKey: ['deleted'], refetchType: 'active' })
+      queryClient.refetchQueries({ queryKey: ['rooms'] })
+      queryClient.refetchQueries({ queryKey: ['deleted'] })
+      setDeleteConfirmOpen(false)
+      setRoomToDelete(null)
     },
   })
 
@@ -236,9 +243,19 @@ export default function RoomsPage() {
   }
 
   const handleDelete = (id) => {
-    if (confirm('¿Eliminar sala?')) {
-      deleteMutation.mutate(id)
+    setRoomToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (roomToDelete) {
+      deleteMutation.mutate(roomToDelete)
     }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setRoomToDelete(null)
   }
 
   const getFloorName = (id_piso) => {
@@ -650,6 +667,48 @@ export default function RoomsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setImagePreview(null)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={handleCancelDelete}
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'warning.dark',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+          Confirmar eliminación
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Está seguro de que desea eliminar esta sala?
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+            La sala será enviada a la sección de elementos eliminados donde podrá recuperarla o eliminarla permanentemente.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCancelDelete}
+            sx={{ color: 'white' }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+          >
+            Eliminar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

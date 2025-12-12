@@ -139,13 +139,16 @@ export function createApp() {
       }
 
       if (!type || type === 'rooms') {
-        const rooms = await roomsRepo.findAll()
-        const deleted = rooms.filter(r => !r.estado).map(r => ({
+        const rooms = await roomsRepo.findAllIncludingDeleted()
+        console.log('🔍 Todas las salas:', rooms.map(r => ({ id: r.id_sala, nombre: r.nombre_sala, estado: r.estado })))
+        const deleted = rooms.filter(r => !r.estado)
+        console.log('🗑️ Salas eliminadas (estado=false):', deleted.map(r => ({ id: r.id_sala, nombre: r.nombre_sala, estado: r.estado })))
+        const mapped = deleted.map(r => ({
           ...r,
           entity_type: 'room',
           entity_name: 'Sala'
         }))
-        result = [...result, ...deleted]
+        result = [...result, ...mapped]
       }
 
       if (!type || type === 'bathrooms') {
@@ -639,8 +642,10 @@ export function createApp() {
   app.delete('/rooms/:id', async (req, res) => {
     try {
       const id = Number(req.params.id)
+      console.log('DELETE /rooms/:id - soft delete sala:', id)
       // Marcar como eliminado (soft delete)
-      await roomsRepo.update(id, { estado: false })
+      await roomsRepo.updateEstado(id, false)
+      console.log('Sala marcada como eliminada:', id)
       res.json({ ok: true, message: 'Sala marcada como eliminada' })
     } catch (error) {
       console.error('Error deleting room:', error)
