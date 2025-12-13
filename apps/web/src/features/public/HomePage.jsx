@@ -3226,140 +3226,151 @@ export default function HomePage() {
       >
         {selectedFaculty && (
           <>
-            <DialogTitle sx={{ pb: 1 }}>
+            <DialogTitle sx={{ pb: 2, borderBottom: 1, borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <SchoolIcon color="info" sx={{ fontSize: 32 }} />
+                  <SchoolIcon color="primary" sx={{ fontSize: 36 }} />
                   <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
                     {selectedFaculty.nombre_facultad}
                   </Typography>
                 </Box>
-                <IconButton onClick={() => setFacultyDetailOpen(false)}>
+                <IconButton onClick={() => setFacultyDetailOpen(false)} size="large">
                   <CloseIcon />
                 </IconButton>
               </Box>
             </DialogTitle>
-            <DialogContent dividers>
-              <Grid container spacing={3}>
-                {/* Logo de la facultad */}
-                <Grid item xs={12} md={4}>
-                  {selectedFaculty.logo && !/via\.placeholder\.com/.test(selectedFaculty.logo) ? (
-                    <Box
-                      component="img"
-                      src={getFullImageUrl(selectedFaculty.logo)}
-                      alt={selectedFaculty.nombre_facultad}
-                      sx={{
-                        width: '100%',
-                        maxHeight: 300,
-                        objectFit: 'contain',
-                        borderRadius: 2,
-                        bgcolor: 'grey.50',
-                        p: 2
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 200,
-                        bgcolor: 'grey.200',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 2
-                      }}
-                    >
-                      <SchoolIcon sx={{ fontSize: 80, color: 'grey.400' }} />
-                    </Box>
-                  )}
-                </Grid>
-
-                {/* Información de la facultad */}
-                <Grid item xs={12} md={8}>
-                  <Typography variant="overline" color="text.secondary">Información</Typography>
-                  
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" color="text.secondary">Código</Typography>
-                    <Chip 
-                      label={selectedFaculty.codigo_facultad}
-                      size="small"
-                      color="info"
-                      variant="outlined"
-                      sx={{ mt: 0.5 }}
-                    />
+            <DialogContent sx={{ pt: 3, px: 3 }}>
+              {/* Logo de la facultad - Centrado */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                {selectedFaculty.logo && !/via\.placeholder\.com/.test(selectedFaculty.logo) ? (
+                  <Box
+                    component="img"
+                    src={getFullImageUrl(selectedFaculty.logo)}
+                    alt={selectedFaculty.nombre_facultad}
+                    sx={{
+                      width: '100%',
+                      maxWidth: 400,
+                      height: 250,
+                      objectFit: 'contain',
+                      borderRadius: 2,
+                      bgcolor: 'white',
+                      border: 1,
+                      borderColor: 'divider',
+                      p: 3
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      maxWidth: 400,
+                      height: 250,
+                      bgcolor: 'grey.100',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 2,
+                      border: 1,
+                      borderColor: 'divider'
+                    }}
+                  >
+                    <SchoolIcon sx={{ fontSize: 100, color: 'grey.400' }} />
                   </Box>
+                )}
+              </Box>
 
-                  {selectedFaculty.descripcion && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Descripción
-                      </Typography>
-                      <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
-                        {selectedFaculty.descripcion}
-                      </Typography>
-                    </Box>
-                  )}
+              {/* Información de la facultad */}
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', mb: 2 }}>
+                  INFORMACIÓN
+                </Typography>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                    Código
+                  </Typography>
+                  <Chip 
+                    label={selectedFaculty.codigo_facultad}
+                    size="medium"
+                    color="primary"
+                    variant="outlined"
+                  />
+                </Box>
 
-                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                    <Chip
-                      label={selectedFaculty.estado !== false ? 'Activa' : 'Inactiva'}
-                      size="small"
-                      color={selectedFaculty.estado !== false ? 'success' : 'error'}
-                    />
-                    <Chip
-                      label={selectedFaculty.disponibilidad || 'Disponible'}
-                      size="small"
-                      color={selectedFaculty.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                    />
+                {selectedFaculty.descripcion && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                      Descripción
+                    </Typography>
+                    <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.primary' }}>
+                      {selectedFaculty.descripcion}
+                    </Typography>
                   </Box>
-                </Grid>
-              </Grid>
+                )}
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Chip
+                    label={selectedFaculty.estado !== false ? 'Activa' : 'Inactiva'}
+                    size="small"
+                    color={selectedFaculty.estado !== false ? 'success' : 'error'}
+                    icon={<SchoolIcon />}
+                  />
+                  <Chip
+                    label={selectedFaculty.disponibilidad || 'Disponible'}
+                    size="small"
+                    color={selectedFaculty.disponibilidad === 'Disponible' ? 'success' : 'warning'}
+                  />
+                </Box>
+              </Box>
 
               {/* Edificios asociados */}
               {selectedFaculty.id_edificio && (
                 <Box sx={{ mt: 4 }}>
                   <Divider sx={{ mb: 3 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <BuildingIcon color="primary" />
                     Edificio Asociado
                   </Typography>
                   {(() => {
                     const associatedBuilding = buildings?.find(b => Number(b.id_edificio) === Number(selectedFaculty.id_edificio))
                     
                     if (!associatedBuilding) return (
-                      <Typography variant="body2" color="text.secondary">
-                        No se encontró información del edificio
-                      </Typography>
+                      <Alert severity="info">
+                        No se encontró información del edificio asociado
+                      </Alert>
                     )
 
                     return (
-                      <Card variant="outlined">
+                      <Card variant="outlined" sx={{ overflow: 'hidden', boxShadow: 1 }}>
                         <Grid container>
-                          <Grid item xs={12} sm={4}>
-                            {associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen) ? (
+                          {associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen) ? (
+                            <Grid item xs={12} sm={5}>
                               <CardMedia
                                 component="img"
-                                height="200"
+                                height="220"
                                 image={getFullImageUrl(associatedBuilding.imagen)}
                                 alt={associatedBuilding.nombre_edificio}
-                                sx={{ objectFit: 'cover' }}
+                                sx={{ objectFit: 'cover', height: '100%', minHeight: 220 }}
                               />
-                            ) : (
+                            </Grid>
+                          ) : (
+                            <Grid item xs={12} sm={5}>
                               <Box
                                 sx={{
-                                  height: 200,
-                                  bgcolor: 'grey.200',
+                                  height: 220,
+                                  bgcolor: 'grey.100',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center'
                                 }}
                               >
-                                <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
+                                <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
                               </Box>
-                            )}
-                          </Grid>
-                          <Grid item xs={12} sm={8}>
-                            <CardContent>
-                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            </Grid>
+                          )}
+                          <Grid item xs={12} sm={7}>
+                            <CardContent sx={{ p: 3 }}>
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 1.5 }}>
                                 {associatedBuilding.nombre_edificio}
                               </Typography>
                               
@@ -3373,18 +3384,11 @@ export default function HomePage() {
                                 />
                               )}
 
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <LocationIcon color="action" fontSize="small" />
-                                <Typography variant="body2" color="text.secondary">
-                                  Lat: {associatedBuilding.cord_latitud}, Lon: {associatedBuilding.cord_longitud}
-                                </Typography>
-                              </Box>
-
-                              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
                                 <Chip
                                   label={associatedBuilding.disponibilidad}
                                   size="small"
-                                  color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                                  color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'warning'}
                                 />
                                 <Chip
                                   label={associatedBuilding.estado ? 'Activo' : 'Inactivo'}
@@ -3394,26 +3398,26 @@ export default function HomePage() {
                               </Box>
 
                               {associatedBuilding.distance !== undefined && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, p: 1.5, bgcolor: 'primary.50', borderRadius: 1 }}>
                                   <WalkIcon color="primary" fontSize="small" />
-                                  <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                                  <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
                                     A {associatedBuilding.distance < 1000 
-                                      ? `${associatedBuilding.distance} metros` 
-                                      : `${(associatedBuilding.distance / 1000).toFixed(2)} km`} de ti
+                                      ? `${associatedBuilding.distance.toFixed(0)} metros` 
+                                      : `${(associatedBuilding.distance / 1000).toFixed(2)} km`} de tu ubicación
                                   </Typography>
                                 </Box>
                               )}
 
                               <Button
-                                variant="outlined"
+                                variant="contained"
                                 startIcon={<BuildingIcon />}
-                                size="small"
+                                size="medium"
                                 onClick={() => {
                                   setSelectedBuilding(associatedBuilding)
                                   setBuildingDetailOpen(true)
                                   setFacultyDetailOpen(false)
                                 }}
-                                sx={{ mt: 2 }}
+                                fullWidth
                               >
                                 Ver detalles del edificio
                               </Button>
@@ -3426,10 +3430,11 @@ export default function HomePage() {
                 </Box>
               )}
             </DialogContent>
-            <DialogActions sx={{ p: 2, gap: 1 }}>
+            <DialogActions sx={{ p: 2.5, gap: 1, borderTop: 1, borderColor: 'divider' }}>
               <Button
                 variant="outlined"
                 onClick={() => setFacultyDetailOpen(false)}
+                size="large"
               >
                 Cerrar
               </Button>

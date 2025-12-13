@@ -450,7 +450,7 @@ export default function FloorsPage() {
                     color: 'white'
                   },
                   '& .MuiFormHelperText-root': {
-                    color: 'rgba(255, 255, 255, 0.7)'
+                    color: 'white !important'
                   }
                 }}
               />

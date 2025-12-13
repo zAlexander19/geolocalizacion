@@ -576,36 +576,41 @@ export default function BathroomsAdmin() {
 
           {editId && (
             <>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="dialog-edificio-label">Edificio</InputLabel>
-                <Select
-                  labelId="dialog-edificio-label"
-                  id="dialog-edificio"
-                  label="Edificio"
-                  name="id_edificio"
-                  value={form.id_edificio}
-                  onChange={onFormChange}
-                >
-                  <MenuItem value="">-- seleccionar --</MenuItem>
-                  {buildings?.map(b => <MenuItem key={b.id_edificio} value={b.id_edificio}>{b.nombre_edificio || b.acronimo || b.id_edificio}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Edificio"
+                value={getBuildingName(form.id_edificio)}
+                disabled
+                sx={{ 
+                  mb: 2,
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'white',
+                    color: 'white'
+                  }
+                }}
+                helperText="No se puede cambiar el edificio al editar"
+                FormHelperTextProps={{
+                  sx: { color: 'white !important' }
+                }}
+              />
 
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="dialog-piso-label">Piso</InputLabel>
-                <Select
-                  labelId="dialog-piso-label"
-                  id="dialog-piso"
-                  label="Piso"
-                  name="id_piso"
-                  value={form.id_piso}
-                  onChange={onFormChange}
-                  disabled={!form.id_edificio}
-                >
-                  <MenuItem value="">-- seleccionar --</MenuItem>
-                  {(form.id_edificio ? (floors || []) : []).map(f => <MenuItem key={f.id_piso} value={f.id_piso}>{f.nombre_piso || f.numero_piso || f.id_piso}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Piso"
+                value={getFloorName(form.id_piso)}
+                disabled
+                sx={{ 
+                  mb: 2,
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: 'white',
+                    color: 'white'
+                  }
+                }}
+                helperText="No se puede cambiar el piso al editar"
+                FormHelperTextProps={{
+                  sx: { color: 'white !important' }
+                }}
+              />
             </>
           )}
 
