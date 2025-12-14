@@ -122,21 +122,44 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             {/* Imagen del edificio a la izquierda y descripción a la derecha */}
             <Box sx={{ px: 3, pt: 2, pb: 2, display: 'flex', gap: 3, alignItems: 'flex-start' }}>
               {/* Imagen */}
-              <Box sx={{ flex: '0 0 45%', minWidth: 0 }}>
+              <Box sx={{ flex: '0 0 45%', minWidth: 0, position: 'relative' }}>
                 {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
-                  <Box
-                    component="img"
-                    src={getFullImageUrl(building.imagen)}
-                    alt={building.nombre_edificio}
-                    sx={{
-                      width: '100%',
-                      height: 'auto',
-                      maxHeight: 350,
-                      objectFit: 'cover',
-                      borderRadius: 2,
-                      boxShadow: 2,
-                    }}
-                  />
+                  <>
+                    <Box
+                      component="img"
+                      src={getFullImageUrl(building.imagen)}
+                      alt={building.nombre_edificio}
+                      sx={{
+                        width: '100%',
+                        height: 'auto',
+                        maxHeight: 350,
+                        objectFit: 'cover',
+                        borderRadius: 2,
+                        boxShadow: 2,
+                      }}
+                    />
+                    {building.disponibilidad === 'En mantenimiento' && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 15,
+                          left: 0,
+                          right: 0,
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          py: 1,
+                          px: 2,
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          transform: 'rotate(-5deg)',
+                          boxShadow: 3,
+                          zIndex: 1
+                        }}
+                      >
+                        ⚠️ EN MANTENIMIENTO
+                      </Box>
+                    )}
+                  </>
                 ) : (
                   <Box
                     sx={{

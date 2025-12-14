@@ -3,22 +3,24 @@ import pool from '../config/database.js'
 /**
  * Registra una acción en el historial de auditoría
  * @param {Object} params
- * @param {string} params.userEmail - Email del usuario que realizó la acción
+ * @param {number} params.userId - ID del usuario que realizó la acción
+ * @param {string} params.userEmail - Email del usuario (legacy, opcional)
  * @param {string} params.action - Tipo de acción: 'crear', 'modificar', 'eliminar'
  * @param {string} params.entityType - Tipo de entidad: 'edificio', 'piso', 'sala', 'baño', 'facultad'
  * @param {string|number} params.entityId - ID de la entidad
  * @param {string} params.entityName - Nombre de la entidad
  * @param {Object} params.changes - Objeto con los cambios realizados
  */
-export async function logAudit({ userEmail, action, entityType, entityId, entityName, changes = null }) {
+export async function logAudit({ userId, userEmail = null, action, entityType, entityId, entityName, changes = null }) {
   try {
     const query = `
-      INSERT INTO audit_logs (user_email, action, entity_type, entity_id, entity_name, changes)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO audit_logs (id_usuario, user_email, action, entity_type, entity_id, entity_name, changes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `
     const values = [
-      userEmail,
+      userId || null,
+      userEmail || null,
       action,
       entityType,
       String(entityId),

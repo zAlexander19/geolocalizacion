@@ -16,8 +16,9 @@ import {
 } from './db/repositories.js'
 import statisticsRoutes from './routes/statistics.routes.js'
 import auditRoutes from './routes/audit.routes.js'
+import authRoutes from './routes/auth.routes.js'
 import { logAudit } from './services/audit.service.js'
-import { getUserEmailFromRequest } from './utils/auth-helper.js'
+import { getUserFromRequest } from './utils/auth-helper.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -102,6 +103,9 @@ export function createApp() {
 
   // Health
   app.get('/health', (req, res) => res.json({ ok: true }))
+
+  // ==================== AUTH ====================
+  app.use('/auth', authRoutes)
 
   // ==================== STATISTICS ====================
   app.use('/statistics', statisticsRoutes)
@@ -249,8 +253,10 @@ export function createApp() {
       }
 
       // Registrar auditoría de restauración
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'restaurar',
         entityType: entityType,
         entityId: String(numId || id),
@@ -313,8 +319,10 @@ export function createApp() {
 
       // Registrar auditoría de eliminación permanente
       if (entityData) {
+        const user = getUserFromRequest(req)
         await logAudit({
-          userEmail: getUserEmailFromRequest(req),
+          userId: user.userId,
+          userEmail: user.email,
           action: 'eliminar',
           entityType: entityType,
           entityId: String(numId || id),
@@ -381,8 +389,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'crear',
         entityType: 'edificio',
         entityId: building.id_edificio,
@@ -439,8 +449,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'modificar',
         entityType: 'edificio',
         entityId: id,
@@ -493,8 +505,10 @@ export function createApp() {
       await buildingsRepo.update(id, { estado: false })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'eliminar',
         entityType: 'edificio',
         entityId: id,
@@ -557,8 +571,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'crear',
         entityType: 'piso',
         entityId: floor.id_piso,
@@ -612,8 +628,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'modificar',
         entityType: 'piso',
         entityId: id,
@@ -654,8 +672,10 @@ export function createApp() {
       await floorsRepo.updateEstado(id, false)
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'eliminar',
         entityType: 'piso',
         entityId: id,
@@ -733,8 +753,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'crear',
         entityType: 'sala',
         entityId: room.id_sala,
@@ -794,8 +816,10 @@ export function createApp() {
       })
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'modificar',
         entityType: 'sala',
         entityId: id,
@@ -820,8 +844,10 @@ export function createApp() {
       console.log('Sala marcada como eliminada:', id)
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'eliminar',
         entityType: 'sala',
         entityId: id,
@@ -1054,8 +1080,10 @@ export function createApp() {
       }
 
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'crear',
         entityType: 'facultad',
         entityId: faculty.codigo_facultad,
@@ -1130,8 +1158,10 @@ export function createApp() {
       }
 
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'modificar',
         entityType: 'facultad',
         entityId: id,
@@ -1222,8 +1252,10 @@ export function createApp() {
       await facultiesRepo.updateEstado(id, false)
       
       // Registrar auditoría
+      const user = getUserFromRequest(req)
       await logAudit({
-        userEmail: getUserEmailFromRequest(req),
+        userId: user.userId,
+        userEmail: user.email,
         action: 'eliminar',
         entityType: 'facultad',
         entityId: id,

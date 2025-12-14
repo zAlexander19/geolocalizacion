@@ -69,44 +69,31 @@ export const authService = {
     this.removeUser()
   },
 
-  // Login (simulado - reemplazar con llamada real al backend)
+  // Login con API real
   async login(email, password) {
-    // TODO: Reemplazar con llamada real al backend
-    // const response = await api.post('/auth/login', { email, password })
-    
-    // Super Admin
-    if (email === 'admin@example.com' && password === 'admin123') {
-      const mockUser = {
-        id: '1',
-        email,
-        name: 'Administrador Principal',
-        role: 'super-admin'
-      }
-      const mockToken = this.generateMockToken(mockUser)
+    try {
+      // Importar dinámicamente para evitar dependencias circulares
+      const { default: api } = await import('./api.js')
       
-      this.setToken(mockToken)
-      this.setUser(mockUser)
-
-      return { token: mockToken, user: mockUser }
-    }
-    
-    // Admin Regular (ejemplo)
-    if (email === 'staff@example.com' && password === 'staff123') {
-      const mockUser = {
-        id: '2',
-        email,
-        name: 'Administrador Secundario',
-        role: 'admin'
-      }
-      const mockToken = this.generateMockToken(mockUser)
+      const response = await api.post('/auth/login', { email, password })
+      const { token, usuario } = response.data.data
       
-      this.setToken(mockToken)
-      this.setUser(mockUser)
+      // Mapear rol del backend al formato del frontend
+      const user = {
+        id: usuario.id.toString(),
+        email: usuario.email,
+        name: usuario.nombre,
+        role: usuario.rol === 'admin_primario' ? 'super-admin' : 'admin'
+      }
+      
+      this.setToken(token)
+      this.setUser(user)
 
-      return { token: mockToken, user: mockUser }
+      return { token, user }
+    } catch (error) {
+      console.error('Error en login:', error)
+      throw new Error(error.response?.data?.message || 'Credenciales inválidas')
     }
-
-    throw new Error('Credenciales inválidas')
   },
 
   // Generar token mock (solo para desarrollo)

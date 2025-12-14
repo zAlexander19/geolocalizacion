@@ -741,16 +741,19 @@ export default function HomePage() {
           minHeight: isMobile ? 'auto' : 70,
           px: isMobile ? 2 : 4,
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <LocationIcon 
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Geo-Campus Logo"
               sx={{ 
-                fontSize: isMobile ? 28 : 36,
-                color: 'white',
+                height: isMobile ? 40 : 50,
+                width: 'auto',
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-              }} 
+              }}
             />
             <Typography 
-              variant={isMobile ? 'body1' : 'h6'} 
+              variant={isMobile ? 'h6' : 'h5'} 
               component="h1" 
               sx={{ 
                 fontWeight: 800, 
@@ -759,7 +762,7 @@ export default function HomePage() {
                 letterSpacing: '-0.5px',
               }}
             >
-              {isMobile ? 'Campus UNAP' : 'Geolocalización Campus UNAP'}
+              Geo-Campus
             </Typography>
           </Box>
 
@@ -1304,59 +1307,56 @@ export default function HomePage() {
                         </Box>
                       )}
 
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
-                        {searchType === 'todo' && (
-                          <Chip 
-                            icon={<BuildingIcon />}
-                            label="Edificio"
-                            size="small"
-                            color="primary"
-                            sx={{ mb: 1 }}
-                          />
-                        )}
-                        
-                        {/* Nombre del edificio */}
-                        <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
-                          {building.nombre_edificio}
-                        </Typography>
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ flexGrow: 1 }}>
+                          {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                          {searchType === 'todo' && (
+                            <Chip 
+                              icon={<BuildingIcon />}
+                              label="Edificio"
+                              size="small"
+                              color="primary"
+                              sx={{ mb: 1 }}
+                            />
+                          )}
+                          
+                          {/* Nombre del edificio */}
+                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            {building.nombre_edificio}
+                          </Typography>
 
-                        {/* Acrónimo */}
-                        {building.acronimo && (
-                          <Chip 
-                            label={building.acronimo}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ mb: 2 }}
-                          />
-                        )}
+                          {/* Acrónimo */}
+                          {building.acronimo && (
+                            <Chip 
+                              label={building.acronimo}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              sx={{ mb: 2 }}
+                            />
+                          )}
 
-                        {/* Estado y Disponibilidad */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <Chip
-                            label={building.disponibilidad}
-                            size="small"
-                            color={building.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                          />
-                          <Chip
-                            label={building.estado ? 'Activo' : 'Inactivo'}
-                            size="small"
-                            color={building.estado ? 'success' : 'error'}
-                          />
-                        </Box>
-
-                        {/* Distancia */}
-                        {building.distance !== undefined && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
-                            <WalkIcon color="primary" fontSize="small" />
-                            <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
-                              A {building.distance < 1000 
-                                ? `${building.distance} metros` 
-                                : `${(building.distance / 1000).toFixed(2)} km`} de ti
-                            </Typography>
+                          {/* Disponibilidad */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip
+                              label={building.disponibilidad}
+                              size="small"
+                              color={building.disponibilidad === 'Disponible' ? 'success' : 'error'}
+                            />
                           </Box>
-                        )}
+
+                          {/* Distancia */}
+                          {building.distance !== undefined && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
+                              <WalkIcon color="primary" fontSize="small" />
+                              <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
+                                A {building.distance < 1000 
+                                  ? `${building.distance} metros` 
+                                  : `${(building.distance / 1000).toFixed(2)} km`} de ti
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
 
                         {/* Botones de acción */}
                         <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
@@ -1485,96 +1485,93 @@ export default function HomePage() {
                         </Box>
                       )}
 
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
-                        {searchType === 'todo' && (
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ flexGrow: 1 }}>
+                          {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
+                          {searchType === 'todo' && (
+                            <Chip 
+                              icon={<RoomIcon />}
+                              label="Sala"
+                              size="small"
+                              color="secondary"
+                              sx={{ mb: 1 }}
+                            />
+                          )}
+                          
+                          {/* Nombre de la sala */}
+                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            {room.nombre_sala}
+                          </Typography>
+
+                          {/* Acrónimo */}
+                          {room.acronimo && (
+                            <Chip 
+                              label={room.acronimo}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                              sx={{ mr: 1, mb: 2 }}
+                            />
+                          )}
+
+                          {/* Tipo de sala */}
                           <Chip 
-                            icon={<RoomIcon />}
-                            label="Sala"
+                            label={room.tipo_sala || 'Sin tipo'}
                             size="small"
                             color="secondary"
-                            sx={{ mb: 1 }}
-                          />
-                        )}
-                        
-                        {/* Nombre de la sala */}
-                        <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
-                          {room.nombre_sala}
-                        </Typography>
-
-                        {/* Acrónimo */}
-                        {room.acronimo && (
-                          <Chip 
-                            label={room.acronimo}
-                            size="small"
-                            color="primary"
                             variant="outlined"
-                            sx={{ mr: 1, mb: 2 }}
+                            sx={{ mb: 2 }}
                           />
-                        )}
 
-                        {/* Tipo de sala */}
-                        <Chip 
-                          label={room.tipo_sala || 'Sin tipo'}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          sx={{ mb: 2 }}
-                        />
+                          {/* Edificio */}
+                          {room.building && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Edificio:</strong> {room.building.nombre_edificio}
+                              </Typography>
+                            </Box>
+                          )}
 
-                        {/* Edificio */}
-                        {room.building && (
+                          {/* Piso */}
+                          {room.floor && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <RoomIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>Piso:</strong> {room.floor.nombre_piso}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {/* Capacidad */}
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <BuildingIcon color="action" fontSize="small" />
+                            <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                             <Typography variant="body2" color="text.secondary">
-                              <strong>Edificio:</strong> {room.building.nombre_edificio}
+                              <strong>Capacidad:</strong> {room.capacidad} personas
                             </Typography>
                           </Box>
-                        )}
 
-                        {/* Piso */}
-                        {room.floor && (
+                          {/* Disponibilidad */}
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <RoomIcon color="action" fontSize="small" />
-                            <Typography variant="body2" color="text.secondary">
-                              <strong>Piso:</strong> {room.floor.nombre_piso}
-                            </Typography>
+                            <Chip
+                              label={room.disponibilidad}
+                              size="small"
+                              color={room.disponibilidad === 'Disponible' ? 'success' : 'error'}
+                            />
                           </Box>
-                        )}
 
-                        {/* Capacidad */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <PeopleIcon color="action" fontSize="small" />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Capacidad:</strong> {room.capacidad} personas
-                          </Typography>
+                          {/* Distancia */}
+                          {room.distance !== undefined && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
+                              <WalkIcon color="primary" fontSize="small" />
+                              <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
+                                A {room.distance < 1000 
+                                  ? `${room.distance} metros` 
+                                  : `${(room.distance / 1000).toFixed(2)} km`} de ti
+                              </Typography>
+                            </Box>
+                          )}
                         </Box>
-
-                        {/* Disponibilidad */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <Chip
-                            label={room.disponibilidad}
-                            size="small"
-                            color={room.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                          />
-                          <Chip
-                            label={room.estado ? 'Activa' : 'Inactiva'}
-                            size="small"
-                            color={room.estado ? 'success' : 'error'}
-                          />
-                        </Box>
-
-                        {/* Distancia */}
-                        {room.distance !== undefined && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
-                            <WalkIcon color="primary" fontSize="small" />
-                            <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
-                              A {room.distance < 1000 
-                                ? `${room.distance} metros` 
-                                : `${(room.distance / 1000).toFixed(2)} km`} de ti
-                            </Typography>
-                          </Box>
-                        )}
 
                         {/* Botones de acción */}
                         <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
@@ -1770,7 +1767,7 @@ export default function HomePage() {
                           {/* Edificio asociado (si existe) */}
                           {associatedBuilding && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                              <BuildingIcon color="action" fontSize="small" />
+                              <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                               <Typography variant="body2" color="text.secondary">
                                 <strong>Edificio:</strong> {associatedBuilding.nombre_edificio}
                               </Typography>
@@ -2161,7 +2158,7 @@ export default function HomePage() {
                           <Chip
                             label={bathroom.disponibilidad}
                             size="small"
-                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'error'}
                           />
                         </Box>
 
@@ -2438,13 +2435,13 @@ export default function HomePage() {
                   </Typography>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <PeopleIcon color="action" fontSize="small" />
+                    <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                     <Typography variant="body2"><strong>Capacidad:</strong> {selectedRoom.capacidad} personas</Typography>
                   </Box>
 
                   {selectedRoom.floor && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocationIcon color="action" fontSize="small" />
+                      <LocationIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2">
                         <strong>Piso:</strong> {selectedRoom.floor.nombre_piso}{selectedRoom.floor.numero_piso != null ? ` • N° ${selectedRoom.floor.numero_piso}` : ''}
                       </Typography>
@@ -2453,7 +2450,7 @@ export default function HomePage() {
 
                   {selectedRoom.building && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <BuildingIcon color="action" fontSize="small" />
+                      <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2">
                         <strong>Edificio:</strong> {selectedRoom.building.nombre_edificio}{selectedRoom.building.acronimo ? ` (${selectedRoom.building.acronimo})` : ''}
                       </Typography>
@@ -2716,14 +2713,14 @@ export default function HomePage() {
                   
                   {selectedBathroom.capacidad > 0 && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <PeopleIcon color="action" fontSize="small" />
+                      <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2"><strong>Capacidad:</strong> {selectedBathroom.capacidad} cubículos</Typography>
                     </Box>
                   )}
 
                   {selectedBathroom.floor && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocationIcon color="action" fontSize="small" />
+                      <LocationIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2">
                         <strong>Piso:</strong> {selectedBathroom.floor.nombre_piso}{selectedBathroom.floor.numero_piso != null ? ` • N° ${selectedBathroom.floor.numero_piso}` : ''}
                       </Typography>
@@ -2732,7 +2729,7 @@ export default function HomePage() {
 
                   {selectedBathroom.building && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <BuildingIcon color="action" fontSize="small" />
+                      <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2">
                         <strong>Edificio:</strong> {selectedBathroom.building.nombre_edificio}{selectedBathroom.building.acronimo ? ` (${selectedBathroom.building.acronimo})` : ''}
                       </Typography>
@@ -2967,7 +2964,7 @@ export default function HomePage() {
                   {/* Capacidad si aplica */}
                   {routeDestinationData.capacity && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PeopleIcon color="action" fontSize="small" />
+                      <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2" color="text.secondary">
                         Capacidad: {routeDestinationData.capacity} personas
                       </Typography>
@@ -3150,7 +3147,7 @@ export default function HomePage() {
                   {/* Capacidad si aplica */}
                   {routeDestinationData.capacity && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <PeopleIcon color="action" fontSize="small" />
+                      <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
                       <Typography variant="body2" color="text.secondary">
                         Capacidad: {routeDestinationData.capacity} personas
                       </Typography>
