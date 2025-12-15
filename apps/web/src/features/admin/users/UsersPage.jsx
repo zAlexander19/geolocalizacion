@@ -172,6 +172,12 @@ export default function UsersPage() {
     setError('')
   }
 
+  const handleOpenDialog = () => {
+    setFormData({ nombre: '', email: '', password: '', rol: 'admin_secundario' })
+    setError('')
+    setOpenDialog(true)
+  }
+
   const handleCloseDialog = () => {
     setOpenDialog(false)
     setEditingUser(null)
