@@ -146,11 +146,9 @@ h1, h2, h3, h4, h5, h6 {
   color: white !important;
 }
 
-/* AppBar con fondo negro */
+/* AppBar manejado por componente */
 .MuiAppBar-root {
-  background: rgba(0, 0, 0, 0.9) !important;
-  backdrop-filter: blur(24px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  /* background managed by component sx prop */
 }
 
 /* TextField dentro del SearchBar y Admin */

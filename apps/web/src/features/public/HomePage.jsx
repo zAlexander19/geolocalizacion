@@ -724,131 +724,107 @@ export default function HomePage() {
         </Alert>
       </Snackbar>
 
-      {/* Header / Navbar con efecto glassmorphism */}
+      {/* Header / Navbar con Diseño Personalizado Mobile-First */}
       <AppBar 
-        position="sticky" 
+        position="fixed" 
         elevation={0} 
         sx={{ 
-          background: 'rgba(0, 0, 0, 0.9)',
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-          boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.4)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          background: 'rgba(12, 36, 68, 0.7)', // Azul institucional translúcido
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)', 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          height: { xs: 60, md: 70 },
+          justifyContent: 'center',
+          left: 0,
+          right: 0,
+          top: 0,
+          zIndex: (theme) => theme.zIndex.drawer + 1, 
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)' 
         }}
       >
         <Toolbar sx={{ 
           justifyContent: 'space-between',
-          gap: isMobile ? 1 : 0,
-          py: isMobile ? 1.5 : 1,
-          minHeight: isMobile ? 'auto' : 70,
-          px: isMobile ? 2 : 4,
+          px: { xs: 2, md: 3 }, // Padding lateral
+          minHeight: '100% !important' // Forzar altura del toolbar
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              component="img"
-              src="/logo.png"
-              alt="Geo-Campus Logo"
-              sx={{ 
-                height: isMobile ? 40 : 50,
-                width: 'auto',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-              }}
-            />
+          {/* Elemento Izquierdo (Branding) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {/* Ícono Cuadrado Blanco */}
+            <Box sx={{ 
+              width: { xs: 36, md: 40 }, 
+              height: { xs: 36, md: 40 }, 
+              bgcolor: 'white', 
+              borderRadius: '8px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+              transition: 'transform 0.2s',
+              '&:hover': { transform: 'scale(1.05)' }
+            }}>
+              <LocationIcon sx={{ color: '#040b14', fontSize: { xs: 20, md: 24 } }} />
+            </Box>
+            
+            {/* Texto Branding */}
             <Typography 
-              variant={isMobile ? 'h6' : 'h5'} 
+              variant="h6" 
               component="h1" 
               sx={{ 
-                fontWeight: 800, 
+                fontFamily: '"Poppins", "Inter", sans-serif',
+                fontWeight: 700, 
                 color: 'white',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                letterSpacing: '-0.5px',
+                fontSize: { xs: '1.1rem', md: '1.25rem' },
+                letterSpacing: '0.5px'
               }}
             >
               Geo-Campus
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: isMobile ? 0.5 : 2, alignItems: 'center' }}>
-            {/* Botón de estado de ubicación */}
-            {userLocation ? (
-              <Tooltip title={locationAccuracy ? `Precisión: ${Math.round(locationAccuracy)}m` : 'Ubicación activada'}>
-                <Button
-                  size="small"
-                  startIcon={!isMobile && <MyLocationIcon />}
-                  sx={{ 
-                    color: 'white',
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    textTransform: 'none',
-                    fontSize: isMobile ? '0.7rem' : '0.875rem',
-                    minWidth: isMobile ? 'auto' : 'auto',
-                    px: isMobile ? 1 : 2,
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    '&:hover': {
-                      background: 'rgba(16, 185, 129, 0.3)',
-                    }
-                  }}
-                >
-                  {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'GPS Activo'}
-                  {locationAccuracy && locationAccuracy <= 20 && !isMobile && (
-                    <Chip 
-                      label={`${Math.round(locationAccuracy)}m`}
-                      size="small" 
-                      sx={{ 
-                        ml: 1, 
-                        height: 22,
-                        background: '#10b981',
-                        color: 'white',
-                        fontWeight: 600,
-                      }}
-                    />
-                  )}
-                </Button>
-              </Tooltip>
-            ) : (
-              <Button
-                size="small"
-                startIcon={!isMobile && <MyLocationIcon />}
-                onClick={handleRetryLocation}
-                sx={{ 
-                  color: 'white',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  textTransform: 'none',
-                  fontSize: isMobile ? '0.7rem' : '0.875rem',
-                  minWidth: isMobile ? 'auto' : 'auto',
-                  px: isMobile ? 1 : 2,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  '&:hover': {
-                    background: 'rgba(245, 158, 11, 0.3)',
-                  }
-                }}
-              >
-                {isMobile ? <MyLocationIcon sx={{ fontSize: 18 }} /> : 'Activar GPS'}
-              </Button>
-            )}
+          {/* Elemento Derecho (Acciones) */}
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            {/* Botón GPS (Icono Cuadrado) */}
+            <Tooltip title={userLocation ? `GPS Activo (${Math.round(locationAccuracy || 0)}m)` : 'Activar GPS'}>
+               <IconButton
+                 onClick={!userLocation ? handleRetryLocation : undefined}
+                 sx={{ 
+                   bgcolor: userLocation ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.1)', // Verde sutil si está activo, sino oscuro translúcido
+                   color: userLocation ? '#10b981' : 'white',
+                   borderRadius: '8px', 
+                   width: { xs: 36, md: 40 }, 
+                   height: { xs: 36, md: 40 },
+                   border: '1px solid rgba(255,255,255,0.1)',
+                   transition: 'all 0.2s',
+                   '&:hover': { 
+                      bgcolor: userLocation ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.2)',
+                      transform: 'translateY(-1px)'
+                   }
+                 }}
+               >
+                 {userLocation ? <MyLocationIcon sx={{ fontSize: 20 }} /> : <LocationIcon sx={{ fontSize: 20 }} />}
+               </IconButton>
+            </Tooltip>
 
+            {/* Botón Login */}
             <Button 
               variant="contained"
               onClick={() => navigate('/login')}
-              size="small"
               sx={{ 
-                background: 'linear-gradient(135deg, #0d335a 0%, #164e85 100%)',
-                boxShadow: '0 4px 15px 0 rgba(13, 51, 90, 0.3)',
+                bgcolor: '#007bff', // Azul eléctrico brillante
                 color: 'white',
-                '&:hover': { 
-                  background: 'linear-gradient(135deg, #164e85 0%, #0d335a 100%)',
-                  boxShadow: '0 6px 20px 0 rgba(13, 51, 90, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
+                borderRadius: '20px', // Bordes redondeados estilo 'pill'
                 textTransform: 'none',
-                fontWeight: 700,
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
-                px: isMobile ? 2 : 3,
-                py: isMobile ? 0.75 : 1,
-                minWidth: isMobile ? 'auto' : 'auto',
-                borderRadius: 2,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                fontWeight: 600,
+                fontFamily: '"Poppins", sans-serif',
+                px: { xs: 2.5, md: 3 },
+                height: { xs: 36, md: 40 },
+                boxShadow: '0 4px 14px rgba(0, 123, 255, 0.3)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                '&:hover': { 
+                  bgcolor: '#0069d9',
+                  boxShadow: '0 6px 20px rgba(0, 123, 255, 0.5)',
+                  transform: 'translateY(-1px)',
+                }
               }}
             >
               Login
@@ -858,7 +834,7 @@ export default function HomePage() {
       </AppBar>
 
       {/* Main Content - Con efectos 3D y glassmorphism */}
-      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8, pt: { xs: 12, md: 16 }, position: 'relative', zIndex: 1 }}>
         {/* Hero Section con efecto 3D */}
         <Box sx={{ 
           textAlign: 'center', 
