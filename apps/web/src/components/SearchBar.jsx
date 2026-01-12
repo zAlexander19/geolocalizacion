@@ -10,6 +10,8 @@ import {
   TextField,
   useMediaQuery,
   useTheme,
+  Backdrop,
+  ClickAwayListener,
 } from '@mui/material'
 import {
   Search as SearchIcon,
@@ -32,6 +34,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [searchType, setSearchType] = useState(initialType)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
 
   // Efecto para actualizar resultados en tiempo real mientras se escribe
   useEffect(() => {
@@ -62,7 +65,28 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
   }
 
   return (
-    <Paper elevation={3} sx={{ p: isMobile ? 1 : 1.5, borderRadius: isMobile ? 2 : 3 }}>
+    <>
+      <Backdrop
+        open={isFocused}
+        onClick={() => setIsFocused(false)}
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        }}
+      />
+      <ClickAwayListener onClickAway={() => setIsFocused(false)}>
+        <Paper
+          elevation={isFocused ? 12 : 3}
+          sx={{
+            p: isMobile ? 1 : 1.5,
+            borderRadius: isMobile ? 2 : 3,
+            position: 'relative',
+            zIndex: isFocused ? (theme) => theme.zIndex.drawer + 2 : 'auto',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: isFocused ? 'scale(1.02)' : 'none',
+          }}
+        >
       <Box sx={{ 
         display: 'flex', 
         flexDirection: isMobile ? 'column-reverse' : 'row',
@@ -73,6 +97,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
         <TextField
           fullWidth
           value={searchQuery}
+          onFocus={() => setIsFocused(true)}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={isMobile 
@@ -83,9 +108,10 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon color="action" sx={{ fontSize: isMobile ? 20 : 24 }} />
+                <SearchIcon color="action" sx={{ fontSize: isMobile ? 24 : 24 }} />
               </InputAdornment>
             ),
+            sx: { fontSize: isMobile ? '1.1rem' : '1rem' }
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
@@ -97,7 +123,6 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
           }}
         />
 
-        {/* Selector de tipo */}
         <FormControl sx={{ minWidth: isMobile ? '100%' : 160 }}>
           <Select
             value={searchType}
@@ -107,7 +132,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
               bgcolor: 'primary.main',
               color: 'white',
               borderRadius: isMobile ? 1.5 : 2,
-              fontSize: isMobile ? '0.875rem' : '1rem',
+              fontSize: isMobile ? '1.1rem' : '1rem',
               '& .MuiOutlinedInput-notchedOutline': {
                 border: 'none',
               },
@@ -131,6 +156,8 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
           </Select>
         </FormControl>
       </Box>
-    </Paper>
+        </Paper>
+      </ClickAwayListener>
+    </>
   )
 }

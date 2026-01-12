@@ -958,8 +958,8 @@ export default function HomePage() {
           </Box>
         </Box>
 
-        {/* Mapa de Edificios - Visible solo cuando el tipo es 'todo' o 'edificio' y no hay búsqueda activa */}
-        {!searchQuery && (searchType === 'todo' || searchType === 'edificio') && (
+        {/* Mapa de Edificios - Visible solo cuando el tipo es 'todo' y no hay búsqueda activa */}
+        {!searchQuery && searchType === 'todo' && (
           buildings && buildings.length > 0 ? (
           <Box sx={{ 
             mb: 6,
