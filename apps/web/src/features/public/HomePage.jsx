@@ -62,6 +62,7 @@ import {
   Close as CloseIcon,
   Navigation as NavigationIcon,
   Info as InfoIcon,
+  Map as MapIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -986,22 +987,7 @@ export default function HomePage() {
               Mapa de Edificios del Campus
             </Typography>
 
-            {/* Leyenda del mapa - ARRIBA */}
-            <Box sx={{ 
-              mb: 2, 
-              p: 2, 
-              background: 'rgba(0, 0, 0, 0.7)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: 2,
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
-                Explora todos los edificios de la UNAP
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                Haz clic en los marcadores para ver información detallada de cada edificio
-              </Typography>
-            </Box>
+
 
             <Paper 
               elevation={6} 
@@ -1206,21 +1192,23 @@ export default function HomePage() {
               '100%': { opacity: 1 },
             },
           }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontWeight: 800, 
-                mb: 3,
-                color: 'white',
-                textShadow: '0 2px 15px rgba(0,0,0,0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              {searchQuery ? 'Resultados de búsqueda' : (searchType === 'edificio' ? 'Todos los Edificios' : searchType === 'sala' ? 'Todas las Salas' : searchType === 'bano' ? 'Todos los Baños' : searchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
-              {searchQuery && searchType !== 'todo' && ` - ${searchType === 'edificio' ? 'Edificios' : searchType === 'sala' ? 'Salas' : searchType === 'bano' ? 'Baños' : 'Facultades'}`}
-            </Typography>
+            {(searchResults?.length > 0 || searchQuery) && (
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 800, 
+                  mb: 3,
+                  color: 'white',
+                  textShadow: '0 2px 15px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {searchQuery ? 'Resultados de búsqueda' : (searchType === 'edificio' ? 'Todos los Edificios' : searchType === 'sala' ? 'Todas las Salas' : searchType === 'bano' ? 'Todos los Baños' : searchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
+                {searchQuery && searchType !== 'todo' && ` - ${searchType === 'edificio' ? 'Edificios' : searchType === 'sala' ? 'Salas' : searchType === 'bano' ? 'Baños' : 'Facultades'}`}
+              </Typography>
+            )}
 
             {isSearching ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -1988,40 +1976,6 @@ export default function HomePage() {
                           Mapa de Baños
                         </Typography>
 
-                        {/* Leyenda del mapa - ARRIBA */}
-                        <Box sx={{ 
-                          mb: 2, 
-                          p: 2, 
-                          background: 'rgba(0, 0, 0, 0.7)',
-                          backdropFilter: 'blur(20px)',
-                          borderRadius: 2,
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                        }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
-                            Leyenda:
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{ width: 12, height: 12, bgcolor: 'green', borderRadius: '50%' }} />
-                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Hombres</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{ width: 12, height: 12, bgcolor: '#ee82ee', borderRadius: '50%' }} />
-                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Mujeres</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{ width: 12, height: 12, bgcolor: 'red', borderRadius: '50%' }} />
-                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Mixto</Typography>
-                            </Box>
-                            {userLocation && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ width: 12, height: 12, bgcolor: '#2196f3', borderRadius: '50%' }} />
-                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>Tu ubicación</Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        </Box>
-
                         <Paper 
                           elevation={6} 
                           sx={{ 
@@ -2031,6 +1985,7 @@ export default function HomePage() {
                             background: 'rgba(0, 0, 0, 0.7)',
                             backdropFilter: 'blur(20px)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
+                            position: 'relative' // Necesario para posicionar la leyenda absoluta
                           }}
                         >
                           <MapContainer
@@ -2241,6 +2196,46 @@ export default function HomePage() {
                               )
                             })}
                           </MapContainer>
+
+                          {/* Leyenda Flotante Superpuesta */}
+                          <Box sx={{ 
+                              position: 'absolute', 
+                              top: 20, 
+                              right: 20, 
+                              zIndex: 1000, // Leaflet tiene z-index altos, aseguramos que esté encima
+                              bgcolor: 'rgba(0, 5, 16, 0.85)',
+                              backdropFilter: 'blur(12px)',
+                              borderRadius: 2,
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              p: 1.5,
+                              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                              display: 'flex',
+                              flexDirection: 'column'
+                          }}>
+                              <Typography variant="caption" sx={{ color: 'grey.400', fontWeight: 'bold', letterSpacing: '1px', mb: 1, textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                                  REFERENCIA
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  <Box sx={{ width: 8, height: 8, bgcolor: 'green', borderRadius: '50%', boxShadow: '0 0 8px rgba(0,255,0,0.6)' }} />
+                                  <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>Hombres</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  <Box sx={{ width: 8, height: 8, bgcolor: '#ee82ee', borderRadius: '50%', boxShadow: '0 0 8px rgba(238,130,238,0.6)' }} />
+                                  <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>Mujeres</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  <Box sx={{ width: 8, height: 8, bgcolor: 'red', borderRadius: '50%', boxShadow: '0 0 8px rgba(255,0,0,0.6)' }} />
+                                  <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>Mixto</Typography>
+                                </Box>
+                                {userLocation && (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 8, height: 8, bgcolor: '#2196f3', borderRadius: '50%', boxShadow: '0 0 8px rgba(33,150,243,0.6)' }} />
+                                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>Tu ubicación</Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                          </Box>
                         </Paper>
                       </Box>
                     )}
@@ -2251,214 +2246,309 @@ export default function HomePage() {
                   <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
                     <Card 
                       sx={{ 
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'all 0.3s',
+                        height: 320,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                        cursor: 'default',
+                        background: '#0a1929', 
                         '&:hover': {
-                          boxShadow: 6,
-                          transform: 'translateY(-4px)'
+                          transform: 'translateY(-8px)',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                          '& .bathroom-details-overlay': {
+                            opacity: 1,
+                            transform: 'translateY(0)',
+                          },
+                          '& .bathroom-title-overlay': {
+                            opacity: 0, 
+                          }
                         }
                       }}
                     >
-                      {/* Imagen del baño */}
-                      {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
-                        <Box sx={{ position: 'relative' }}>
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={getFullImageUrl(bathroom.imagen)}
-                            alt={bathroom.nombre}
-                            sx={{ objectFit: 'cover' }}
-                          />
-                          {bathroom.disponibilidad === 'En mantenimiento' && (
+                      <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
+                        {/* 1. Imagen de fondo */}
+                        {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
+                            <CardMedia
+                                component="img"
+                                image={getFullImageUrl(bathroom.imagen)}
+                                alt={bathroom.nombre}
+                                sx={{ 
+                                    height: '100%', 
+                                    width: '100%', 
+                                    objectFit: 'cover',
+                                }}
+                            />
+                        ) : (
                             <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 10,
-                                left: 0,
-                                right: 0,
-                                bgcolor: 'error.main',
-                                color: 'white',
-                                py: 1,
-                                px: 2,
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                transform: 'rotate(-5deg)',
-                                boxShadow: 3,
-                                zIndex: 1
-                              }}
+                                sx={{
+                                    height: '100%',
+                                    width: '100%',
+                                    bgcolor: 'grey.800',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
                             >
-                              ⚠️ EN MANTENIMIENTO
+                                <BathroomIcon sx={{ fontSize: 80, color: 'grey.600' }} />
                             </Box>
-                          )}
-                        </Box>
-                      ) : (
+                        )}
+
+                        {/* 2. Gradientes */}
+                        <Box sx={{
+                          position: 'absolute',
+                          top: 0, left: 0, right: 0, height: '50%',
+                          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+                        <Box sx={{
+                          position: 'absolute',
+                          bottom: 0, left: 0, right: 0, height: '40%',
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+
+                        {/* 3. Cinta de Mantenimiento */}
+                        {bathroom.disponibilidad === 'En mantenimiento' && (
+                             <Box
+                               sx={{
+                                 position: 'absolute',
+                                 top: '22%',
+                                 left: '50%',
+                                 width: '150%',
+                                 transform: 'translate(-50%, -50%) rotate(-10deg)',
+                                 background: 'linear-gradient(90deg, rgba(220,38,38,0.95) 0%, rgba(185,28,28,0.95) 100%)',
+                                 color: 'white',
+                                 py: 1,
+                                 textAlign: 'center',
+                                 fontWeight: 900,
+                                 fontSize: '1rem',
+                                 letterSpacing: 4,
+                                 textTransform: 'uppercase',
+                                 zIndex: 10,
+                                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                 borderTop: '2px solid rgba(255,255,255,0.3)',
+                                 borderBottom: '2px solid rgba(255,255,255,0.3)',
+                               }}
+                             >
+                               EN MANTENIMIENTO
+                             </Box>
+                        )}
+
+                        {/* 4. Title Overlay (Visible por defecto, desaparece en hover) */}
+                         <Box 
+                           className="bathroom-title-overlay"
+                           sx={{ 
+                             position: 'absolute',
+                             top: 20,
+                             left: 20,
+                             right: 20,
+                             zIndex: 2,
+                             transition: 'opacity 0.3s ease-in-out',
+                           }}
+                         >
+                            {/* Tags/Chips Pequeños */}
+                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                <Box sx={{ 
+                                    borderRadius: '50px', 
+                                    border: '1px solid rgba(33, 150, 243, 0.8)', 
+                                    px: 1.5,
+                                    py: 0.2,
+                                    color: '#42a5f5', 
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    backdropFilter: 'blur(4px)',
+                                    bgcolor: 'rgba(33, 150, 243, 0.2)'
+                                }}>
+                                    {bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                                </Box>
+                                {bathroom.acceso_discapacidad && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid rgba(102, 187, 106, 0.8)', // Green
+                                        px: 1.5,
+                                        py: 0.2,
+                                        color: '#81c784', 
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        backdropFilter: 'blur(4px)',
+                                        bgcolor: 'rgba(102, 187, 106, 0.2)'
+                                    }}>
+                                        ♿
+                                    </Box>
+                                )}
+                            </Box>
+
+                           <Typography 
+                             variant="h4" 
+                             sx={{ 
+                               fontWeight: 900, 
+                               color: 'white', 
+                               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                               fontSize: '2rem',
+                               lineHeight: 1
+                             }}
+                           >
+                             {bathroom.nombre || 'Baño'}
+                           </Typography>
+                         </Box>
+
+                        {/* 5. Detalles Overlay (Visible en Hover, Fondo Oscuro) */}
                         <Box
-                          sx={{
-                            height: 200,
-                            bgcolor: 'grey.200',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
+                            className="bathroom-details-overlay"
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                bgcolor: 'rgba(0, 5, 16, 0.85)', 
+                                backdropFilter: 'blur(8px)',
+                                opacity: 0,
+                                transform: 'translateY(20px)',
+                                transition: 'all 0.3s ease-in-out',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                p: 3,
+                            }}
                         >
-                          <BathroomIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                             {/* Chips Superiores (Duplicados) */}
+                             <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                                <Box sx={{ 
+                                    borderRadius: '50px', 
+                                    border: '1px solid rgba(33, 150, 243, 0.8)', 
+                                    px: 1.5,
+                                    py: 0.2,
+                                    color: '#42a5f5', 
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    backdropFilter: 'blur(4px)',
+                                    bgcolor: 'rgba(33, 150, 243, 0.2)'
+                                }}>
+                                    {bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                                </Box>
+                            </Box>
+
+                            {/* Lista de Detalles */}
+                            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <BuildingIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Edificio:</span> {bathroom.building?.nombre_edificio || "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <RoomIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Piso:</span> {bathroom.floor?.nombre_piso || "N/A"}
+                                    </Typography>
+                                </Box>
+                                {bathroom.capacidad > 0 && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <PeopleIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                        <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                            <span style={{ fontWeight: 800, marginRight: 6 }}>Capacidad:</span> {bathroom.capacidad}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
                         </Box>
-                      )}
 
-                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
-                        {searchType === 'todo' && (
-                          <Chip 
-                            icon={<BathroomIcon />}
-                            label="Baño"
-                            size="small"
-                            color="warning"
-                            sx={{ mb: 0, alignSelf: 'flex-start' }}
-                          />
-                        )}
-                        
-                        {/* Nombre */}
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
-                          {bathroom.nombre || 'Baño sin nombre'}
-                        </Typography>
+                        {/* 6. Botones de acción (Siempre Visibles) */}
+                        <Box sx={{ 
+                            position: 'absolute',
+                            bottom: 20,
+                            left: 20,
+                            right: 20,
+                            display: 'flex',
+                            gap: 1.5,
+                            zIndex: 10 
+                        }}>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                startIcon={<LocationIcon />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!userLocation) {
+                                    setSnackbar({
+                                      open: true,
+                                      message: 'Por favor, activa tu ubicación para ver la ruta',
+                                      severity: 'warning'
+                                    })
+                                    return
+                                  }
+                                  
+                                  // Lógica de ruta (adaptada de salas)
+                                  let routeDestLat, routeDestLng, compassDestLat, compassDestLng
+                                  
+                                  if (bathroom.building && bathroom.building.cord_latitud && bathroom.building.cord_longitud) {
+                                    routeDestLat = bathroom.building.cord_latitud
+                                    routeDestLng = bathroom.building.cord_longitud
+                                    compassDestLat = bathroom.cord_latitud
+                                    compassDestLng = bathroom.cord_longitud
+                                  } else {
+                                    routeDestLat = bathroom.cord_latitud
+                                    routeDestLng = bathroom.cord_longitud
+                                    compassDestLat = bathroom.cord_latitud
+                                    compassDestLng = bathroom.cord_longitud
+                                  }
+                                  
+                                  setRouteDestination({
+                                    lat: routeDestLat,
+                                    lng: routeDestLng
+                                  })
+                                  setRouteDestinationName(`Baño ${bathroom.nombre || ''}`)
+                                  setRouteDestinationData({
+                                    type: 'bathroom',
+                                    name: bathroom.nombre || 'Baño',
+                                    image: bathroom.imagen,
+                                    distance: bathroom.distance,
+                                    latitude: compassDestLat,
+                                    longitude: compassDestLng,
+                                    building: bathroom.building?.nombre_edificio,
+                                    floor: bathroom.floor?.nombre_piso,
+                                    tipo: bathroom.tipo
+                                  })
+                                  setRouteWaypoints([])
+                                  setRouteMapOpen(true)
+                                }}
+                                sx={{
+                                   borderRadius: 2,
+                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
+                                   textTransform: 'none',
+                                   fontWeight: 'bold',
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                   '&:hover': {
+                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                   }
+                                }}
+                              >
+                                VER RUTA
+                              </Button>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  logSearch('bano', bathroom.id_bano, bathroom.nombre)
+                                  setSelectedBathroom(bathroom)
+                                  setBathroomDetailOpen(true)
+                                }}
+                                sx={{
+                                   borderRadius: 2,
+                                   background: 'rgba(255,255,255,0.2)',
+                                   backdropFilter: 'blur(4px)',
+                                   border: '1px solid rgba(255,255,255,0.4)',
+                                   color: 'white',
+                                   textTransform: 'none',
+                                   fontWeight: 'bold',
+                                   '&:hover': { background: 'rgba(255,255,255,0.3)' }
+                                }}
+                              >
+                                VER MÁS
+                              </Button>
+                         </Box>
 
-                        {/* Chips: Tipo y Disponibilidad */}
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          <Chip 
-                            label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
-                        </Box>
-
-                        {/* Edificio */}
-                        {bathroom.building && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
-                            <BuildingIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {bathroom.building.nombre_edificio}
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {/* Piso */}
-                        {bathroom.floor && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
-                            <RoomIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {bathroom.floor.nombre_piso}
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {/* Capacidad */}
-                        {bathroom.capacidad > 0 && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
-                            <PeopleIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.25, flexShrink: 0 }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {bathroom.capacidad} cubículos
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {/* Acceso discapacidad */}
-                        {bathroom.acceso_discapacidad && (
-                          <Chip 
-                            label="♿ Acceso discapacidad"
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
-                          />
-                        )}
-
-                        {/* Distancia */}
-                        {bathroom.distance !== undefined && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 1 }}>
-                            <WalkIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
-                            <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
-                              A {bathroom.distance < 1000 
-                                ? `${bathroom.distance} metros` 
-                                : `${(bathroom.distance / 1000).toFixed(2)} km`} de ti
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {/* Botones de acción */}
-                        <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<LocationIcon />}
-                            onClick={() => {
-                              if (!userLocation) {
-                                setSnackbar({
-                                  open: true,
-                                  message: 'Por favor, activa tu ubicación para ver la ruta',
-                                  severity: 'warning'
-                                })
-                                return
-                              }
-                              
-                              // La ruta lleva al edificio, la brújula guía al baño
-                              let routeDestLat, routeDestLng, compassDestLat, compassDestLng
-                              
-                              if (bathroom.building && bathroom.building.cord_latitud && bathroom.building.cord_longitud) {
-                                // Si hay edificio, la ruta va al edificio
-                                routeDestLat = bathroom.building.cord_latitud
-                                routeDestLng = bathroom.building.cord_longitud
-                                // La brújula apunta al baño
-                                compassDestLat = bathroom.cord_latitud
-                                compassDestLng = bathroom.cord_longitud
-                                console.log('🏢 Ruta al edificio, brújula al baño')
-                              } else {
-                                // Si no hay edificio, todo apunta al baño
-                                routeDestLat = bathroom.cord_latitud
-                                routeDestLng = bathroom.cord_longitud
-                                compassDestLat = bathroom.cord_latitud
-                                compassDestLng = bathroom.cord_longitud
-                                console.log('⚠️ Sin edificio, ruta directa al baño')
-                              }
-                              
-                              setRouteDestination({
-                                lat: routeDestLat,
-                                lng: routeDestLng
-                              })
-                              setRouteDestinationName(`Baño en ${bathroom.nombre_edificio}`)
-                              setRouteDestinationData({
-                                type: 'bathroom',
-                                name: `Baño en ${bathroom.nombre_edificio}`,
-                                acronym: bathroom.nombre_piso,
-                                image: bathroom.imagen,
-                                distance: bathroom.distance,
-                                latitude: compassDestLat,
-                                longitude: compassDestLng,
-                                capacity: bathroom.capacidad_personas
-                              })
-                              setRouteWaypoints([])
-                              setRouteMapOpen(true)
-                            }}
-                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
-                          >
-                            Ver Ruta
-                          </Button>
-                          <Button
-                            fullWidth
-                            variant="contained"
-                            onClick={() => {
-                              logSearch('bano', bathroom.id_bano, bathroom.nombre)
-                              setSelectedBathroom(bathroom)
-                              setBathroomDetailOpen(true)
-                            }}
-                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
-                          >
-                            Ver más
-                          </Button>
-                        </Box>
-                      </CardContent>
+                      </Box>
                     </Card>
                   </Grid>
                 ))}
@@ -2466,7 +2556,7 @@ export default function HomePage() {
                   </Box>
                 )}
               </Box>
-            ) : (
+            ) : searchQuery ? (
               <Paper sx={{ 
                 p: 6, 
                 textAlign: 'center',
@@ -2483,7 +2573,7 @@ export default function HomePage() {
                   Intenta con otro término de búsqueda o verifica la ortografía
                 </Typography>
               </Paper>
-            )}
+            ) : null}
           </Box>
         )}
       </Container>
@@ -2805,170 +2895,234 @@ export default function HomePage() {
       >
         {selectedBathroom && (
           <>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                  {selectedBathroom.nombre || 'Baño sin nombre'}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip
-                    label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
-                    color="primary"
-                    size="small"
-                  />
-                </Box>
-              </Box>
-            </DialogTitle>
-            <DialogContent dividers>
-              <Grid container spacing={3}>
-                {/* Columna izquierda: Imagen del baño */}
-                <Grid item xs={12} md={5}>
-                  {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
+            {/* 1. Header Image con Información Superpuesta */}
+            <Box sx={{ position: 'relative', width: '100%', height: 350, bgcolor: 'black', overflow: 'hidden' }}>
+                {/* Imagen de Fondo */}
+                {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
                     <Box
-                      component="img"
-                      src={getFullImageUrl(selectedBathroom.imagen)}
-                      alt={selectedBathroom.nombre}
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        maxHeight: 350,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        boxShadow: 2
-                      }}
+                        component="img"
+                        src={getFullImageUrl(selectedBathroom.imagen)}
+                        alt={selectedBathroom.nombre}
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                            opacity: 0.85
+                        }}
                     />
-                  ) : (
+                ) : (
                     <Box
-                      sx={{
-                        width: '100%',
-                        height: 300,
-                        bgcolor: 'grey.200',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 2
-                      }}
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            bgcolor: '#0a1929',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                     >
-                      <BathroomIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                        <BathroomIcon sx={{ fontSize: 80, color: 'rgba(255,255,255,0.2)' }} />
                     </Box>
-                  )}
-                </Grid>
+                )}
 
-                {/* Columna derecha: Descripción y datos */}
-                <Grid item xs={12} md={7}>
-                  {/* Chips de información */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                    <Chip label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'} size="small" color="primary" variant="outlined" />
-                    {selectedBathroom.acceso_discapacidad && (
-                      <Chip label="♿ Acceso discapacidad" size="small" color="success" variant="outlined" />
-                    )}
+                {/* Botón Cerrar Flotante */}
+                <IconButton 
+                    onClick={() => {
+                        setBathroomDetailOpen(false)
+                        setSelectedBathroom(null)
+                    }}
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        right: 16,
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        color: 'white',
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                        zIndex: 10
+                    }}
+                >
+                    <CloseIcon />
+                </IconButton>
+
+                {/* Gradiente Overlay */}
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '70%',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)',
+                    zIndex: 1
+                }} />
+
+                {/* Contenido Superpuesto */}
+                <Box sx={{ 
+                    position: 'absolute', 
+                    bottom: 0, 
+                    left: 0, 
+                    right: 0, 
+                    p: 3, 
+                    zIndex: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1
+                }}>
+                    {/* Chips Superiores */}
+                    <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+                        <Chip
+                            label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
+                            size="small"
+                            sx={{ 
+                                bgcolor: selectedBathroom.tipo === 'h' ? '#1976d2' : selectedBathroom.tipo === 'm' ? '#e91e63' : '#9c27b0', // Blue/Pink/Purple
+                                color: 'white',
+                                fontWeight: 'bold'
+                            }}
+                        />
+                        {selectedBathroom.acceso_discapacidad && (
+                            <Chip 
+                                icon={<Box component="span" sx={{ fontSize: '1rem', mr: -0.5 }}>♿</Box>} 
+                                label="Accesible" 
+                                size="small" 
+                                color="success" 
+                                sx={{ color: 'white', fontWeight: 'bold' }}
+                            />
+                        )}
+                        {selectedBathroom.disponibilidad === 'En mantenimiento' && (
+                             <Chip label="Mantenimiento" color="error" size="small" />
+                        )}
+                    </Box>
+
+                    {/* Título Principal */}
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'white', lineHeight: 1.1 }}>
+                        {selectedBathroom.nombre || 'Baño'}
+                    </Typography>
+
+                    {/* Información Rápida (Edificio/Piso/Capacidad) */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 1, color: 'rgba(255,255,255,0.8)' }}>
+                        {selectedBathroom.building && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                <BuildingIcon fontSize="small" />
+                                <Typography variant="body2" fontWeight={500}>
+                                    {selectedBathroom.building.nombre_edificio}
+                                </Typography>
+                            </Box>
+                        )}
+                        {selectedBathroom.floor && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                <LocationIcon fontSize="small" />
+                                <Typography variant="body2" fontWeight={500}>
+                                    {selectedBathroom.floor.nombre_piso}
+                                </Typography>
+                            </Box>
+                        )}
+                        {selectedBathroom.capacidad > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                <PeopleIcon fontSize="small" />
+                                <Typography variant="body2" fontWeight={500}>
+                                    {selectedBathroom.capacidad} cubículos
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+                </Box>
+            </Box>
+
+            <DialogContent dividers sx={{ p: 0 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', p: 3, gap: 4 }}>
+                  
+                  {/* Descripción */}
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <InfoIcon color="primary" /> Detalles
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                        {selectedBathroom.descripcion || 
+                        "No hay descripción disponible para este baño. " + 
+                        (selectedBathroom.acceso_discapacidad ? "Cuenta con acceso para personas con discapacidad." : "")}
+                    </Typography>
                   </Box>
 
-                  {/* Descripción */}
-                  {selectedBathroom.descripcion ? (
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                        Descripción
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                        {selectedBathroom.descripcion}
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ mb: 3 }}>
-                      No hay descripción disponible para este baño
+                  <Divider />
+
+                  {/* Ubicación Visual (Mapas) */}
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <MapIcon color="primary" /> Ubicación en Mapa
                     </Typography>
-                  )}
 
-                  <Divider sx={{ my: 2 }} />
+                    <Grid container spacing={2}>
+                        {/* Mapa del Piso - Solo si hay más de 1 piso (o numero_piso > 1) */}
+                        {selectedBathroom.floor && selectedBathroom.floor.numero_piso > 1 && (
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary' }}>
+                                    Plano del Piso ({selectedBathroom.floor.nombre_piso})
+                                </Typography>
+                                <Box sx={{ 
+                                    borderRadius: 3, 
+                                    overflow: 'hidden', 
+                                    boxShadow: 2, 
+                                    height: 220, 
+                                    bgcolor: 'grey.100',
+                                    border: '1px solid rgba(0,0,0,0.1)'
+                                }}>
+                                    {selectedBathroom.floor.imagen && !/via\.placeholder\.com/.test(selectedBathroom.floor.imagen) ? (
+                                        <Box
+                                            component="img"
+                                            src={getFullImageUrl(selectedBathroom.floor.imagen)}
+                                            alt="Plano del Piso"
+                                            sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1, bgcolor: 'white' }}
+                                        />
+                                    ) : (
+                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <LocationIcon sx={{ fontSize: 40, color: 'grey.300', mb: 1 }} />
+                                            <Typography variant="caption" color="text.secondary">Imagen no disponible</Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Grid>
+                        )}
 
-                  {/* Información del baño */}
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    Información
-                  </Typography>
-                  
-                  {selectedBathroom.capacidad > 0 && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                      <Typography variant="body2"><strong>Capacidad:</strong> {selectedBathroom.capacidad} cubículos</Typography>
-                    </Box>
-                  )}
-
-                  {selectedBathroom.floor && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocationIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                      <Typography variant="body2">
-                        <strong>Piso:</strong> {selectedBathroom.floor.nombre_piso}{selectedBathroom.floor.numero_piso != null ? ` • N° ${selectedBathroom.floor.numero_piso}` : ''}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {selectedBathroom.building && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                      <Typography variant="body2">
-                        <strong>Edificio:</strong> {selectedBathroom.building.nombre_edificio}{selectedBathroom.building.acronimo ? ` (${selectedBathroom.building.acronimo})` : ''}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {selectedBathroom.distance !== undefined && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-                      <WalkIcon color="primary" fontSize="small" />
-                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
-                        A {selectedBathroom.distance < 1000 ? `${selectedBathroom.distance} metros` : `${(selectedBathroom.distance / 1000).toFixed(2)} km`} de ti
-                      </Typography>
-                    </Box>
-                  )}
-                </Grid>
-              </Grid>
-
-              {/* Sección de imágenes del Piso y Edificio */}
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Piso y Edificio
-                </Typography>
-                <Grid container spacing={2}>
-                  {/* Piso */}
-                  {selectedBathroom.floor && (
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Piso</Typography>
-                      {selectedBathroom.floor.imagen && !/via\.placeholder\.com/.test(selectedBathroom.floor.imagen) ? (
-                        <Box
-                          component="img"
-                          src={getFullImageUrl(selectedBathroom.floor.imagen)}
-                          alt={selectedBathroom.floor.nombre_piso}
-                          sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
-                        />
-                      ) : (
-                        <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
-                          <LocationIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                        </Box>
-                      )}
+                        {/* Mapa del Edificio (Ubicación General) */}
+                        {selectedBathroom.building && (
+                            <Grid item xs={12} sm={selectedBathroom.floor && selectedBathroom.floor.numero_piso > 1 ? 6 : 12}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary' }}>
+                                    Ubicación del Edificio
+                                </Typography>
+                                <Box sx={{ 
+                                    borderRadius: 3, 
+                                    overflow: 'hidden', 
+                                    boxShadow: 2, 
+                                    height: 220, 
+                                    bgcolor: 'grey.100',
+                                    position: 'relative'
+                                }}>
+                                    {selectedBathroom.building.imagen && !/via\.placeholder\.com/.test(selectedBathroom.building.imagen) ? (
+                                        <Box
+                                            component="img"
+                                            src={getFullImageUrl(selectedBathroom.building.imagen)}
+                                            alt="Edificio"
+                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <BuildingIcon sx={{ fontSize: 40, color: 'grey.300' }} />
+                                        </Box>
+                                    )}
+                                     <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 1, background: 'rgba(0,0,0,0.6)', color: 'white' }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', textAlign: 'center' }}>
+                                            {selectedBathroom.building.nombre_edificio}
+                                        </Typography>
+                                     </Box>
+                                </Box>
+                            </Grid>
+                        )}
                     </Grid>
-                  )}
-
-                  {/* Edificio */}
-                  {selectedBathroom.building && (
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>Edificio</Typography>
-                      {selectedBathroom.building.imagen && !/via\.placeholder\.com/.test(selectedBathroom.building.imagen) ? (
-                        <Box
-                          component="img"
-                          src={getFullImageUrl(selectedBathroom.building.imagen)}
-                          alt={selectedBathroom.building.nombre_edificio}
-                          sx={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 2 }}
-                        />
-                      ) : (
-                        <Box sx={{ width: '100%', height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>
-                          <BuildingIcon sx={{ fontSize: 60, color: 'grey.400' }} />
-                        </Box>
-                      )}
-                    </Grid>
-                  )}
-                </Grid>
+                  </Box>
               </Box>
             </DialogContent>
+            
             <DialogActions sx={{ p: 2, gap: 1 }}>
               <Button
                 variant="outlined"
@@ -2976,11 +3130,13 @@ export default function HomePage() {
                   setBathroomDetailOpen(false)
                   setSelectedBathroom(null)
                 }}
+                sx={{ height: 48, borderRadius: 2, px: 3, borderColor: 'grey.300', color: 'text.secondary' }}
               >
                 Cerrar
               </Button>
               <Button
                 variant="contained"
+                fullWidth
                 startIcon={<LocationIcon />}
                 onClick={() => {
                   if (!userLocation) {
@@ -3021,8 +3177,16 @@ export default function HomePage() {
                   setRouteMapOpen(true)
                   setBathroomDetailOpen(false)
                 }}
+                sx={{ 
+                    height: 48, 
+                    borderRadius: 2, 
+                    background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
+                    boxShadow: '0 4px 12px rgba(21, 101, 192, 0.3)',
+                    fontSize: '1rem',
+                    fontWeight: 700
+                }}
               >
-                Ver Ruta
+                VER RUTA AHORA
               </Button>
             </DialogActions>
           </>
