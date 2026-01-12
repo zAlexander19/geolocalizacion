@@ -153,6 +153,9 @@ export default function HomePage() {
   const [selectedFaculty, setSelectedFaculty] = useState(null)
   const [facultyDetailOpen, setFacultyDetailOpen] = useState(false)
   const [compassGuideOpen, setCompassGuideOpen] = useState(false)
+  const [fullImageOpen, setFullImageOpen] = useState(false)
+  const [fullImageSrc, setFullImageSrc] = useState('')
+  const [fullImageAlt, setFullImageAlt] = useState('')
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -2630,50 +2633,64 @@ export default function HomePage() {
           setRoomDetailOpen(false)
           setSelectedRoom(null)
         }}
-        maxWidth={isMobile ? "xs" : "md"}
+        maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
         PaperProps={{
           sx: { 
             m: isMobile ? 2 : 3,
             borderRadius: isMobile ? 2 : 3,
+            maxHeight: '90vh',
+            overflow: 'hidden'
           }
         }}
       >
         {selectedRoom && (
           <>
             <DialogTitle sx={{ 
-              pb: 1,
+              pb: 1.5,
+              borderBottom: 1,
+              borderColor: 'divider',
               fontSize: isMobile ? '1rem' : '1.25rem',
             }}>
               <Box sx={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 gap: 1,
-                flexDirection: isMobile ? 'column' : 'row',
               }}>
-                <Typography 
-                  variant={isMobile ? "h6" : "h5"} 
-                  component="div" 
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  {selectedRoom.nombre_sala}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Chip
-                    label={selectedRoom.tipo_sala || 'Sin tipo'}
-                    color="primary"
-                    size="small"
-                  />
+                <Box>
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
+                    >
+                      {selectedRoom.nombre_sala}
+                    </Typography>
+                    {selectedRoom.acronimo && (
+                        <Typography variant="caption" color="text.secondary">
+                            {selectedRoom.acronimo}
+                        </Typography>
+                    )}
                 </Box>
+                <Chip
+                    label={selectedRoom.tipo_sala || 'Aula'}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                />
               </Box>
             </DialogTitle>
-            <DialogContent dividers sx={{ p: 0 }}> {/* Removed padding from content to let image be full width if needed, or keeping spacing inside */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', p: 3, pt: 2, gap: 3 }}>
+
+            <DialogContent sx={{ p: 0 }}>
+              <Grid container sx={{ height: isMobile ? 'auto' : 500 }}>
                 
-                {/* 1. Imagen Principal con Información Superpuesta (Overlay) */}
-                <Box sx={{ position: 'relative', width: '100%', borderRadius: 3, overflow: 'hidden', boxShadow: 4, bgcolor: 'black' }}>
-                    {/* Imagen */}
+                {/* COLUMNA IZQUIERDA: IMAGEN */}
+                <Grid item xs={12} md={6} sx={{ 
+                    bgcolor: 'black', 
+                    position: 'relative', 
+                    height: isMobile ? 250 : '100%',
+                    order: isMobile ? 1 : 1 
+                }}>
                     {selectedRoom.imagen && !/via\.placeholder\.com/.test(selectedRoom.imagen) ? (
                         <Box
                         component="img"
@@ -2681,19 +2698,17 @@ export default function HomePage() {
                         alt={selectedRoom.nombre_sala}
                         sx={{
                             width: '100%',
-                            height: 'auto',
-                            minHeight: 300,
-                            maxHeight: 500,
+                            height: '100%',
                             objectFit: 'cover',
                             display: 'block',
-                            opacity: 0.9
+                            opacity: 0.95
                         }}
                         />
                     ) : (
                         <Box
                         sx={{
                             width: '100%',
-                            height: 300,
+                            height: '100%',
                             bgcolor: 'grey.900',
                             display: 'flex',
                             alignItems: 'center',
@@ -2703,224 +2718,204 @@ export default function HomePage() {
                         <ImageIcon sx={{ fontSize: 60, color: 'grey.700' }} />
                         </Box>
                     )}
-
-                    {/* Gradiente Oscuro para legibilidad */}
+                    
+                    {/* Overlay solo con nombre si es necesario, pero ya está en título. Quizás capacidad aquí. */}
                     <Box sx={{
                         position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        top: '30%', // Fade desde la mitad hacia abajo
-                        background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.95) 100%)',
-                        zIndex: 1
-                    }} />
-
-                    {/* Información Superpuesta (Overlay) */}
-                    <Box sx={{ 
-                        position: 'absolute', 
-                        bottom: 0, 
-                        left: 0, 
-                        right: 0, 
-                        p: 2.5, 
-                        zIndex: 2,
+                        bottom: 0, left: 0, right: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                        p: 2,
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1.5
+                        alignItems: 'center',
+                        gap: 2
                     }}>
-                        {/* Chips (Acrónimo, Tipo) */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                            {selectedRoom.acronimo && (
-                                <Box sx={{ 
-                                    bgcolor: 'primary.main', 
-                                    color: 'white', 
-                                    px: 1.5, py: 0.5, 
-                                    borderRadius: 10, 
-                                    fontSize: '0.75rem', 
-                                    fontWeight: 'bold',
-                                    boxShadow: 2
-                                }}>
-                                    {selectedRoom.acronimo}
-                                </Box>
-                            )}
-                            <Box sx={{ 
-                                bgcolor: 'rgba(255,255,255,0.2)', 
-                                backdropFilter: 'blur(10px)',
-                                color: 'white', 
-                                px: 1.5, py: 0.5, 
-                                borderRadius: 10, 
-                                fontSize: '0.75rem', 
-                                fontWeight: 'bold',
-                                border: '1px solid rgba(255,255,255,0.3)'
-                            }}>
-                                {selectedRoom.tipo_sala || 'Sin tipo'}
-                            </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                             <PeopleIcon sx={{ color: 'white' }} />
+                             <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                Aforo: {selectedRoom.capacidad}
+                             </Typography>
                         </Box>
-
-                        {/* Datos Clave */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <PeopleIcon sx={{ fontSize: 20, color: 'rgba(255,255,255,0.9)' }} />
-                                <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
-                                    {selectedRoom.capacidad} personas
+                        {selectedRoom.floor && (
+                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <LocationIcon sx={{ color: 'white' }} />
+                                <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                   {selectedRoom.floor.nombre_piso}
                                 </Typography>
-                            </Box>
+                             </Box>
+                        )}
+                    </Box>
+                </Grid>
 
-                            {selectedRoom.floor && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <LocationIcon sx={{ fontSize: 20, color: 'rgba(255,255,255,0.9)' }} />
-                                    <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
-                                        {selectedRoom.floor.nombre_piso}{selectedRoom.floor.numero_piso != null ? ` • N° ${selectedRoom.floor.numero_piso}` : ''}
-                                    </Typography>
-                                </Box>
-                            )}
+                {/* COLUMNA DERECHA: INFO Y DETALLES */}
+                <Grid item xs={12} md={6} sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    order: isMobile ? 2 : 2,
+                    bgcolor: '#0f172a', /* Dark slate background */
+                    color: 'white'
+                }}>
+                    <Box sx={{ p: 3, overflowY: 'auto', flexGrow: 1 }}>
+                        {/* Descripción */}
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="subtitle2" sx={{ color: '#94a3b8', fontWeight: 'bold', mb: 1, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem' }}>
+                                DESCRIPCIÓN
+                            </Typography>
+                            <Typography variant="body1" sx={{ lineHeight: 1.6, color: '#e2e8f0' }}>
+                                {selectedRoom.descripcion || "No hay información adicional disponible para esta sala."}
+                            </Typography>
+                        </Box>
+                        
+                        <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                        {/* Ubicación Visual */}
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ color: '#94a3b8', fontWeight: 'bold', mb: 2, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem' }}>
+                                UBICACIÓN EN CAMPUS
+                            </Typography>
                             
-                            {selectedRoom.distance !== undefined && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <WalkIcon sx={{ fontSize: 20, color: '#4fc3f7' }} />
-                                    <Typography variant="body1" sx={{ color: '#4fc3f7', fontWeight: 700 }}>
-                                        A {selectedRoom.distance < 1000 ? `${selectedRoom.distance} metros` : `${(selectedRoom.distance / 1000).toFixed(2)} km`} de ti
-                                    </Typography>
-                                </Box>
-                            )}
+                            <Grid container spacing={2}>
+                                {selectedRoom.floor && (
+                                    <Grid item xs={6}>
+                                        <Box 
+                                            onClick={() => {
+                                                if (selectedRoom.floor.imagen) {
+                                                    setFullImageSrc(getFullImageUrl(selectedRoom.floor.imagen))
+                                                    setFullImageAlt(selectedRoom.floor.nombre_piso)
+                                                    setFullImageOpen(true)
+                                                }
+                                            }}
+                                            sx={{ 
+                                                cursor: selectedRoom.floor.imagen ? 'pointer' : 'default',
+                                                borderRadius: 2, 
+                                                border: '1px solid', 
+                                                borderColor: 'rgba(255,255,255,0.1)', 
+                                                overflow: 'hidden', 
+                                                height: 120, 
+                                                bgcolor: '#1e293b',
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    borderColor: selectedRoom.floor.imagen ? 'white' : 'rgba(255,255,255,0.1)',
+                                                    transform: selectedRoom.floor.imagen ? 'translateY(-2px)' : 'none',
+                                                    boxShadow: selectedRoom.floor.imagen ? '0 4px 12px rgba(0,0,0,0.5)' : 'none'
+                                                }
+                                            }}
+                                        >
+                                            {selectedRoom.floor.imagen ? (
+                                                <Box component="img" src={getFullImageUrl(selectedRoom.floor.imagen)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><LocationIcon sx={{ color: '#475569' }} /></Box>
+                                            )}
+                                        </Box>
+                                        <Typography variant="caption" sx={{ mt: 1, display: 'block', fontWeight: 600, color: '#e2e8f0' }}>
+                                            {selectedRoom.floor.nombre_piso}
+                                        </Typography>
+                                    </Grid>
+                                )}
+                                {selectedRoom.building && (
+                                    <Grid item xs={6}>
+                                         <Box 
+                                            onClick={() => {
+                                                if (selectedRoom.building.imagen) {
+                                                    setFullImageSrc(getFullImageUrl(selectedRoom.building.imagen))
+                                                    setFullImageAlt(selectedRoom.building.nombre_edificio)
+                                                    setFullImageOpen(true)
+                                                }
+                                            }}
+                                            sx={{ 
+                                                cursor: selectedRoom.building.imagen ? 'pointer' : 'default',
+                                                borderRadius: 2, 
+                                                border: '1px solid', 
+                                                borderColor: 'rgba(255,255,255,0.1)', 
+                                                overflow: 'hidden', 
+                                                height: 120, 
+                                                bgcolor: '#1e293b',
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    borderColor: selectedRoom.building.imagen ? 'white' : 'rgba(255,255,255,0.1)',
+                                                    transform: selectedRoom.building.imagen ? 'translateY(-2px)' : 'none',
+                                                    boxShadow: selectedRoom.building.imagen ? '0 4px 12px rgba(0,0,0,0.5)' : 'none'
+                                                }
+                                            }}
+                                        >
+                                            {selectedRoom.building.imagen ? (
+                                                <Box component="img" src={getFullImageUrl(selectedRoom.building.imagen)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><BuildingIcon sx={{ color: '#475569' }} /></Box>
+                                            )}
+                                        </Box>
+                                        <Typography variant="caption" sx={{ mt: 1, display: 'block', fontWeight: 600, color: '#e2e8f0' }}>
+                                            {selectedRoom.building.nombre_edificio}
+                                        </Typography>
+                                    </Grid>
+                                )}
+                            </Grid>
                         </Box>
                     </Box>
-                </Box>
 
-                {/* 2. Descripción */}
-                <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <InfoIcon color="primary" fontSize="small"/> Detalles
-                    </Typography>
-                    {selectedRoom.descripcion ? (
-                        <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7, pl: 0.5 }}>
-                        {selectedRoom.descripcion}
-                        </Typography>
-                    ) : (
-                        <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ pl: 0.5 }}>
-                        No hay descripción disponible para esta sala
-                        </Typography>
-                    )}
-                </Box>
-
-                <Divider />
-
-
-                {/* 3. Edificio y Piso */}
-                <Box>
-                    {/* Título de Sección */}
-                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <BuildingIcon color="primary" /> Ubicación
-                    </Typography>
-
-                    {/* Contenedor Grid para Piso y Edificio */}
-                    <Grid container spacing={2}>
-                        {/* Piso */}
-                        {selectedRoom.floor && (
-                            <Grid item xs={12} sm={6}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <RoomIcon fontSize="small" /> Piso: {selectedRoom.floor.nombre_piso}
-                                </Typography>
-                                <Box sx={{ borderRadius: 2, overflow: 'hidden', boxShadow: 2, height: 200, bgcolor: 'grey.100' }}>
-                                    {selectedRoom.floor.imagen && !/via\.placeholder\.com/.test(selectedRoom.floor.imagen) ? (
-                                        <Box
-                                            component="img"
-                                            src={getFullImageUrl(selectedRoom.floor.imagen)}
-                                            alt={selectedRoom.floor.nombre_piso}
-                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <LocationIcon sx={{ fontSize: 40, color: 'grey.300' }} />
-                                            <Typography variant="caption" sx={{ color: 'grey.500',  mt: 1 }}>Sin imagen</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                    {/* Botones Fijos Abajo en Columna Derecha */}
+                    <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
+                         <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => setRoomDetailOpen(false)}
+                                    title="Cerrar"
+                                    fullWidth
+                                    size="large"
+                                    sx={{ 
+                                        color: '#cbd5e1', 
+                                        borderColor: 'rgba(255,255,255,0.2)',
+                                        '&:hover': { borderColor: 'white', color: 'white', bgcolor: 'rgba(255,255,255,0.05)' } 
+                                    }}
+                                >
+                                    Cerrar
+                                </Button>
                             </Grid>
-                        )}
-
-                        {/* Edificio */}
-                        {selectedRoom.building && (
-                            <Grid item xs={12} sm={6}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <BuildingIcon fontSize="small" /> Edificio: {selectedRoom.building.nombre_edificio}
-                                </Typography>
-                                <Box sx={{ borderRadius: 2, overflow: 'hidden', boxShadow: 2, height: 200, bgcolor: 'grey.100' }}>
-                                    {selectedRoom.building.imagen && !/via\.placeholder\.com/.test(selectedRoom.building.imagen) ? (
-                                        <Box
-                                            component="img"
-                                            src={getFullImageUrl(selectedRoom.building.imagen)}
-                                            alt={selectedRoom.building.nombre_edificio}
-                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <BuildingIcon sx={{ fontSize: 40, color: 'grey.300' }} />
-                                             <Typography variant="caption" sx={{ color: 'grey.500', mt: 1 }}>Sin imagen</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                            <Grid item xs={8}>
+                                <Button
+                                    variant="contained"
+                                    fullWidth
+                                    size="large"
+                                    startIcon={<LocationIcon />}
+                                    onClick={() => {
+                                      // Lógica de Ruta
+                                      if (!userLocation) {
+                                        setSnackbar({ open: true, message: 'Activa tu ubicación', severity: 'warning' })
+                                        return
+                                      }
+                                      const distance = Math.round(Math.sqrt(Math.pow((selectedRoom.cord_latitud - userLocation.latitude) * 111320, 2) + Math.pow((selectedRoom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)))
+                                      
+                                      setRouteDestination({ lat: selectedRoom.cord_latitud, lng: selectedRoom.cord_longitud })
+                                      setRouteDestinationName(`Sala ${selectedRoom.nombre_sala}`)
+                                      setRouteDestinationData({
+                                        type: 'room',
+                                        name: `Sala ${selectedRoom.nombre_sala}`,
+                                        acronym: selectedRoom.acronimo,
+                                        image: selectedRoom.imagen,
+                                        distance: distance,
+                                        latitude: selectedRoom.cord_latitud,
+                                        longitude: selectedRoom.cord_longitud,
+                                        building: selectedRoom.building?.nombre_edificio,
+                                        floor: selectedRoom.floor?.nombre_piso
+                                      })
+                                      setRouteWaypoints([])
+                                      setRouteMapOpen(true)
+                                      setRoomDetailOpen(false)
+                                    }}
+                                    sx={{ 
+                                        bgcolor: '#2563eb',
+                                        '&:hover': { bgcolor: '#1d4ed8' }
+                                    }}
+                                >
+                                    IR AHORA
+                                </Button>
                             </Grid>
-                        )}
-                    </Grid>
-                </Box>
-
-
-              </Box>
+                         </Grid>
+                    </Box>
+                </Grid>
+              </Grid>
             </DialogContent>
-            <DialogActions sx={{ p: isMobile ? 1 : 2, gap: 1, flexDirection: isMobile ? 'column' : 'row' }}>
-              <Button
-                variant="outlined"
-                onClick={() => setRoomDetailOpen(false)}
-                fullWidth={isMobile}
-              >
-                Cerrar
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<LocationIcon />}
-                onClick={() => {
-                  if (!userLocation) {
-                    setSnackbar({
-                      open: true,
-                      message: 'Por favor, activa tu ubicación para ver la ruta',
-                      severity: 'warning'
-                    })
-                    return
-                  }
-
-                  // Calcular distancia
-                  const distance = userLocation ? 
-                    Math.round(
-                      Math.sqrt(
-                        Math.pow((selectedRoom.cord_latitud - userLocation.latitude) * 111320, 2) +
-                        Math.pow((selectedRoom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
-                      )
-                    ) : undefined
-
-                  setRouteDestination({
-                    lat: selectedRoom.cord_latitud,
-                    lng: selectedRoom.cord_longitud
-                  })
-                  setRouteDestinationName(`Sala ${selectedRoom.nombre_sala}`)
-                  setRouteDestinationData({
-                    type: 'room',
-                    name: `Sala ${selectedRoom.nombre_sala}`,
-                    acronym: selectedRoom.acronimo,
-                    image: selectedRoom.imagen,
-                    distance: distance,
-                    latitude: selectedRoom.cord_latitud,
-                    longitude: selectedRoom.cord_longitud,
-                    building: selectedRoom.building?.nombre_edificio,
-                    floor: selectedRoom.floor?.nombre_piso
-                  })
-                  setRouteWaypoints([])
-                  setRouteMapOpen(true)
-                  setRoomDetailOpen(false)
-                }}
-              >
-                Ver Ruta
-              </Button>
-            </DialogActions>
           </>
         )}
       </Dialog>
@@ -2932,310 +2927,361 @@ export default function HomePage() {
           setBathroomDetailOpen(false)
           setSelectedBathroom(null)
         }}
-        maxWidth="md"
+        maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
         PaperProps={{
-          sx: { maxHeight: '90vh' }
+          sx: { 
+             maxHeight: '90vh',
+             m: isMobile ? 2 : 3,
+             borderRadius: isMobile ? 2 : 3,
+             overflow: 'hidden'
+          }
         }}
       >
         {selectedBathroom && (
           <>
-            {/* 1. Header Image con Información Superpuesta */}
-            <Box sx={{ position: 'relative', width: '100%', height: 350, bgcolor: 'black', overflow: 'hidden' }}>
-                {/* Imagen de Fondo */}
-                {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
-                    <Box
-                        component="img"
-                        src={getFullImageUrl(selectedBathroom.imagen)}
-                        alt={selectedBathroom.nombre}
-                        sx={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block',
-                            opacity: 0.85
-                        }}
-                    />
-                ) : (
-                    <Box
-                        sx={{
-                            width: '100%',
-                            height: '100%',
-                            bgcolor: '#0a1929',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
+            <DialogTitle sx={{ 
+              pb: 1.5,
+              borderBottom: 1,
+              borderColor: 'divider',
+              fontSize: isMobile ? '1rem' : '1.25rem',
+            }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                gap: 1,
+              }}>
+                 <Box>
+                    <Typography 
+                      variant={isMobile ? "h6" : "h5"} 
+                      component="div" 
+                      sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
                     >
-                        <BathroomIcon sx={{ fontSize: 80, color: 'rgba(255,255,255,0.2)' }} />
-                    </Box>
-                )}
-
-                {/* Botón Cerrar Flotante */}
-                <IconButton 
-                    onClick={() => {
-                        setBathroomDetailOpen(false)
-                        setSelectedBathroom(null)
-                    }}
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        bgcolor: 'rgba(0,0,0,0.5)',
+                        {selectedBathroom.nombre || 'Baño'}
+                    </Typography>
+                 </Box>
+                 <Chip
+                    label={selectedBathroom.tipo === 'h' ? 'Hombres' : selectedBathroom.tipo === 'm' ? 'Mujeres' : 'Mixto'}
+                    size="small"
+                    sx={{ 
+                        bgcolor: selectedBathroom.tipo === 'h' ? '#1976d2' : selectedBathroom.tipo === 'm' ? '#e91e63' : '#9c27b0', // Blue/Pink/Purple
                         color: 'white',
-                        backdropFilter: 'blur(4px)',
-                        '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-                        zIndex: 10
+                        fontWeight: 'bold'
                     }}
-                >
-                    <CloseIcon />
-                </IconButton>
+                />
+              </Box>
+            </DialogTitle>
 
-                {/* Gradiente Overlay */}
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '70%',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)',
-                    zIndex: 1
-                }} />
-
-                {/* Contenido Superpuesto */}
-                <Box sx={{ 
-                    position: 'absolute', 
-                    bottom: 0, 
-                    left: 0, 
-                    right: 0, 
-                    p: 3, 
-                    zIndex: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1
+            <DialogContent sx={{ p: 0 }}>
+               <Grid container sx={{ height: isMobile ? 'auto' : 500 }}>
+                {/* COLUMNA IZQUIERDA: IMAGEN */}
+                <Grid item xs={12} md={6} sx={{ 
+                    bgcolor: 'black', 
+                    position: 'relative', 
+                    height: isMobile ? 250 : '100%',
+                    order: isMobile ? 1 : 1 
                 }}>
-                    {/* Chips Superiores */}
-                    <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-                        <Chip
-                            label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
-                            size="small"
-                            sx={{ 
-                                bgcolor: selectedBathroom.tipo === 'h' ? '#1976d2' : selectedBathroom.tipo === 'm' ? '#e91e63' : '#9c27b0', // Blue/Pink/Purple
-                                color: 'white',
-                                fontWeight: 'bold'
+                    {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
+                        <Box
+                            component="img"
+                            src={getFullImageUrl(selectedBathroom.imagen)}
+                            alt={selectedBathroom.nombre}
+                            sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                display: 'block',
+                                opacity: 0.95
                             }}
                         />
+                    ) : (
+                        <Box
+                            sx={{
+                                width: '100%',
+                                height: '100%',
+                                bgcolor: '#0a1929',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <BathroomIcon sx={{ fontSize: 80, color: 'rgba(255,255,255,0.2)' }} />
+                        </Box>
+                    )}
+                    
+                    {/* Overlay inferior con info rápida */}
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 0, left: 0, right: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2
+                    }}>
+                        {selectedBathroom.capacidad > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <PeopleIcon sx={{ color: 'white' }} />
+                                <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {selectedBathroom.capacidad} cubículos
+                                </Typography>
+                            </Box>
+                        )}
                         {selectedBathroom.acceso_discapacidad && (
                             <Chip 
                                 icon={<Box component="span" sx={{ fontSize: '1rem', mr: -0.5 }}>♿</Box>} 
                                 label="Accesible" 
                                 size="small" 
-                                color="success" 
-                                sx={{ color: 'white', fontWeight: 'bold' }}
+                                color="success"
+                                sx={{ color: 'white', fontWeight: 'bold', height: 24 }}
                             />
                         )}
                         {selectedBathroom.disponibilidad === 'En mantenimiento' && (
-                             <Chip label="Mantenimiento" color="error" size="small" />
+                             <Chip label="Mantenimiento" color="error" size="small" sx={{ height: 24 }} />
                         )}
                     </Box>
+                </Grid>
 
-                    {/* Título Principal */}
-                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'white', lineHeight: 1.1 }}>
-                        {selectedBathroom.nombre || 'Baño'}
-                    </Typography>
+                {/* COLUMNA DERECHA: INFO Y DETALLES */}
+                <Grid item xs={12} md={6} sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    order: isMobile ? 2 : 2,
+                    bgcolor: '#0f172a', /* Dark slate background */
+                    color: 'white'
+                }}>
+                     <Box sx={{ p: 3, overflowY: 'auto', flexGrow: 1 }}>
+                        {/* Descripción */}
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="subtitle2" sx={{ color: '#94a3b8', fontWeight: 'bold', mb: 1, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem' }}>
+                                DESCRIPCIÓN
+                            </Typography>
+                            <Typography variant="body1" sx={{ lineHeight: 1.6, color: '#e2e8f0' }}>
+                                {selectedBathroom.descripcion || "No hay información adicional disponible para este baño."}
+                            </Typography>
+                        </Box>
 
-                    {/* Información Rápida (Edificio/Piso/Capacidad) */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 1, color: 'rgba(255,255,255,0.8)' }}>
-                        {selectedBathroom.building && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                <BuildingIcon fontSize="small" />
-                                <Typography variant="body2" fontWeight={500}>
-                                    {selectedBathroom.building.nombre_edificio}
-                                </Typography>
-                            </Box>
-                        )}
-                        {selectedBathroom.floor && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                <LocationIcon fontSize="small" />
-                                <Typography variant="body2" fontWeight={500}>
-                                    {selectedBathroom.floor.nombre_piso}
-                                </Typography>
-                            </Box>
-                        )}
-                        {selectedBathroom.capacidad > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                <PeopleIcon fontSize="small" />
-                                <Typography variant="body2" fontWeight={500}>
-                                    {selectedBathroom.capacidad} cubículos
-                                </Typography>
-                            </Box>
-                        )}
-                    </Box>
-                </Box>
-            </Box>
+                        <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
 
-            <DialogContent dividers sx={{ p: 0 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', p: 3, gap: 4 }}>
-                  
-                  {/* Descripción */}
-                  <Box>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <InfoIcon color="primary" /> Detalles
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                        {selectedBathroom.descripcion || 
-                        "No hay descripción disponible para este baño. " + 
-                        (selectedBathroom.acceso_discapacidad ? "Cuenta con acceso para personas con discapacidad." : "")}
-                    </Typography>
-                  </Box>
-
-                  <Divider />
-
-                  {/* Ubicación Visual (Mapas) */}
-                  <Box>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <MapIcon color="primary" /> Ubicación en Mapa
-                    </Typography>
-
-                    <Grid container spacing={2}>
-                        {/* Mapa del Piso - Solo si hay más de 1 piso (o numero_piso > 1) */}
-                        {selectedBathroom.floor && selectedBathroom.floor.numero_piso > 1 && (
-                            <Grid item xs={12} sm={6}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary' }}>
-                                    Plano del Piso ({selectedBathroom.floor.nombre_piso})
-                                </Typography>
-                                <Box sx={{ 
-                                    borderRadius: 3, 
-                                    overflow: 'hidden', 
-                                    boxShadow: 2, 
-                                    height: 220, 
-                                    bgcolor: 'grey.100',
-                                    border: '1px solid rgba(0,0,0,0.1)'
-                                }}>
-                                    {selectedBathroom.floor.imagen && !/via\.placeholder\.com/.test(selectedBathroom.floor.imagen) ? (
-                                        <Box
-                                            component="img"
-                                            src={getFullImageUrl(selectedBathroom.floor.imagen)}
-                                            alt="Plano del Piso"
-                                            sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1, bgcolor: 'white' }}
-                                        />
-                                    ) : (
-                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <LocationIcon sx={{ fontSize: 40, color: 'grey.300', mb: 1 }} />
-                                            <Typography variant="caption" color="text.secondary">Imagen no disponible</Typography>
+                        {/* Ubicación Visual */}
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ color: '#94a3b8', fontWeight: 'bold', mb: 2, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem' }}>
+                                UBICACIÓN EN CAMPUS
+                            </Typography>
+                            
+                             <Grid container spacing={2}>
+                                {selectedBathroom.floor && (
+                                    <Grid item xs={6}>
+                                        <Box 
+                                            onClick={() => {
+                                                if (selectedBathroom.floor.imagen) {
+                                                    setFullImageSrc(getFullImageUrl(selectedBathroom.floor.imagen))
+                                                    setFullImageAlt(selectedBathroom.floor.nombre_piso)
+                                                    setFullImageOpen(true)
+                                                }
+                                            }}
+                                            sx={{ 
+                                                cursor: selectedBathroom.floor.imagen ? 'pointer' : 'default',
+                                                borderRadius: 2, 
+                                                border: '1px solid', 
+                                                borderColor: 'rgba(255,255,255,0.1)', 
+                                                overflow: 'hidden', 
+                                                height: 120, 
+                                                bgcolor: '#1e293b',
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    borderColor: selectedBathroom.floor.imagen ? 'white' : 'rgba(255,255,255,0.1)',
+                                                    transform: selectedBathroom.floor.imagen ? 'translateY(-2px)' : 'none',
+                                                    boxShadow: selectedBathroom.floor.imagen ? '0 4px 12px rgba(0,0,0,0.5)' : 'none'
+                                                }
+                                            }}
+                                        >
+                                            {selectedBathroom.floor.imagen ? (
+                                                <Box component="img" src={getFullImageUrl(selectedBathroom.floor.imagen)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><LocationIcon sx={{ color: '#475569' }} /></Box>
+                                            )}
                                         </Box>
-                                    )}
-                                </Box>
-                            </Grid>
-                        )}
-
-                        {/* Mapa del Edificio (Ubicación General) */}
-                        {selectedBathroom.building && (
-                            <Grid item xs={12} sm={selectedBathroom.floor && selectedBathroom.floor.numero_piso > 1 ? 6 : 12}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'text.secondary' }}>
-                                    Ubicación del Edificio
-                                </Typography>
-                                <Box sx={{ 
-                                    borderRadius: 3, 
-                                    overflow: 'hidden', 
-                                    boxShadow: 2, 
-                                    height: 220, 
-                                    bgcolor: 'grey.100',
-                                    position: 'relative'
-                                }}>
-                                    {selectedBathroom.building.imagen && !/via\.placeholder\.com/.test(selectedBathroom.building.imagen) ? (
-                                        <Box
-                                            component="img"
-                                            src={getFullImageUrl(selectedBathroom.building.imagen)}
-                                            alt="Edificio"
-                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <BuildingIcon sx={{ fontSize: 40, color: 'grey.300' }} />
+                                        <Typography variant="caption" sx={{ mt: 1, display: 'block', fontWeight: 600, color: '#e2e8f0' }}>
+                                            {selectedBathroom.floor.nombre_piso}
+                                        </Typography>
+                                    </Grid>
+                                )}
+                                {selectedBathroom.building && (
+                                    <Grid item xs={6}>
+                                         <Box 
+                                            onClick={() => {
+                                                if (selectedBathroom.building.imagen) {
+                                                    setFullImageSrc(getFullImageUrl(selectedBathroom.building.imagen))
+                                                    setFullImageAlt(selectedBathroom.building.nombre_edificio)
+                                                    setFullImageOpen(true)
+                                                }
+                                            }}
+                                            sx={{ 
+                                                cursor: selectedBathroom.building.imagen ? 'pointer' : 'default',
+                                                borderRadius: 2, 
+                                                border: '1px solid', 
+                                                borderColor: 'rgba(255,255,255,0.1)', 
+                                                overflow: 'hidden', 
+                                                height: 120, 
+                                                bgcolor: '#1e293b',
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    borderColor: selectedBathroom.building.imagen ? 'white' : 'rgba(255,255,255,0.1)',
+                                                    transform: selectedBathroom.building.imagen ? 'translateY(-2px)' : 'none',
+                                                    boxShadow: selectedBathroom.building.imagen ? '0 4px 12px rgba(0,0,0,0.5)' : 'none'
+                                                }
+                                            }}
+                                        >
+                                            {selectedBathroom.building.imagen ? (
+                                                <Box component="img" src={getFullImageUrl(selectedBathroom.building.imagen)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><BuildingIcon sx={{ color: '#475569' }} /></Box>
+                                            )}
                                         </Box>
-                                    )}
-                                     <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 1, background: 'rgba(0,0,0,0.6)', color: 'white' }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', textAlign: 'center' }}>
+                                        <Typography variant="caption" sx={{ mt: 1, display: 'block', fontWeight: 600, color: '#e2e8f0' }}>
                                             {selectedBathroom.building.nombre_edificio}
                                         </Typography>
-                                     </Box>
-                                </Box>
+                                    </Grid>
+                                )}
                             </Grid>
-                        )}
-                    </Grid>
-                  </Box>
-              </Box>
+                        </Box>
+                     </Box>
+
+                     {/* Botones Fijos Abajo en Columna Derecha */}
+                     <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => {
+                                      setBathroomDetailOpen(false)
+                                      setSelectedBathroom(null)
+                                    }}
+                                    fullWidth
+                                    size="large"
+                                    sx={{ 
+                                        color: '#cbd5e1', 
+                                        borderColor: 'rgba(255,255,255,0.2)',
+                                        '&:hover': { borderColor: 'white', color: 'white', bgcolor: 'rgba(255,255,255,0.05)' } 
+                                    }}
+                                >
+                                    Cerrar
+                                </Button>
+                            </Grid>
+                            <Grid item xs={8}>
+                                <Button
+                                    variant="contained"
+                                    fullWidth
+                                    size="large"
+                                    startIcon={<LocationIcon />}
+                                    onClick={() => {
+                                      if (!userLocation) {
+                                        setSnackbar({
+                                          open: true,
+                                          message: 'Por favor, activa tu ubicación para ver la ruta',
+                                          severity: 'warning'
+                                        })
+                                        return
+                                      }
+
+                                      // Calcular distancia
+                                      const distance = userLocation ? 
+                                        Math.round(
+                                          Math.sqrt(
+                                            Math.pow((selectedBathroom.cord_latitud - userLocation.latitude) * 111320, 2) +
+                                            Math.pow((selectedBathroom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
+                                          )
+                                        ) : undefined
+
+                                      setRouteDestination({
+                                        lat: selectedBathroom.cord_latitud,
+                                        lng: selectedBathroom.cord_longitud
+                                      })
+                                      setRouteDestinationName(selectedBathroom.nombre || 'Baño')
+                                      setRouteDestinationData({
+                                        type: 'bathroom',
+                                        name: selectedBathroom.nombre || 'Baño',
+                                        image: selectedBathroom.imagen,
+                                        distance: distance,
+                                        latitude: selectedBathroom.cord_latitud,
+                                        longitude: selectedBathroom.cord_longitud,
+                                        building: selectedBathroom.building?.nombre_edificio,
+                                        floor: selectedBathroom.floor?.nombre_piso,
+                                        tipo: selectedBathroom.tipo
+                                      })
+                                      setRouteWaypoints([])
+                                      setRouteMapOpen(true)
+                                      setBathroomDetailOpen(false)
+                                    }}
+                                    sx={{ 
+                                        bgcolor: '#2563eb',
+                                        '&:hover': { bgcolor: '#1d4ed8' },
+                                        fontWeight: 700
+                                    }}
+                                >
+                                    IR AHORA
+                                </Button>
+                            </Grid>
+                        </Grid>
+                     </Box>
+                </Grid>
+               </Grid>
             </DialogContent>
-            
-            <DialogActions sx={{ p: 2, gap: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setBathroomDetailOpen(false)
-                  setSelectedBathroom(null)
-                }}
-                sx={{ height: 48, borderRadius: 2, px: 3, borderColor: 'grey.300', color: 'text.secondary' }}
-              >
-                Cerrar
-              </Button>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<LocationIcon />}
-                onClick={() => {
-                  if (!userLocation) {
-                    setSnackbar({
-                      open: true,
-                      message: 'Por favor, activa tu ubicación para ver la ruta',
-                      severity: 'warning'
-                    })
-                    return
-                  }
-
-                  // Calcular distancia
-                  const distance = userLocation ? 
-                    Math.round(
-                      Math.sqrt(
-                        Math.pow((selectedBathroom.cord_latitud - userLocation.latitude) * 111320, 2) +
-                        Math.pow((selectedBathroom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
-                      )
-                    ) : undefined
-
-                  setRouteDestination({
-                    lat: selectedBathroom.cord_latitud,
-                    lng: selectedBathroom.cord_longitud
-                  })
-                  setRouteDestinationName(selectedBathroom.nombre || 'Baño')
-                  setRouteDestinationData({
-                    type: 'bathroom',
-                    name: selectedBathroom.nombre || 'Baño',
-                    image: selectedBathroom.imagen,
-                    distance: distance,
-                    latitude: selectedBathroom.cord_latitud,
-                    longitude: selectedBathroom.cord_longitud,
-                    building: selectedBathroom.building?.nombre_edificio,
-                    floor: selectedBathroom.floor?.nombre_piso,
-                    tipo: selectedBathroom.tipo
-                  })
-                  setRouteWaypoints([])
-                  setRouteMapOpen(true)
-                  setBathroomDetailOpen(false)
-                }}
-                sx={{ 
-                    height: 48, 
-                    borderRadius: 2, 
-                    background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
-                    boxShadow: '0 4px 12px rgba(21, 101, 192, 0.3)',
-                    fontSize: '1rem',
-                    fontWeight: 700
-                }}
-              >
-                VER RUTA AHORA
-              </Button>
-            </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Modal para Imagen Completa (Zoom) */}
+      <Dialog
+        open={fullImageOpen}
+        onClose={() => setFullImageOpen(false)}
+        maxWidth="xl"
+        PaperProps={{
+          sx: { 
+            bgcolor: 'transparent', 
+            boxShadow: 'none',
+            overflow: 'visible',
+            m: 0
+          }
+        }}
+      >
+        <Box sx={{ position: 'relative', width: 'auto', maxWidth: '90vw', maxHeight: '90vh', outline: 'none' }}>
+            <IconButton
+                onClick={() => setFullImageOpen(false)}
+                sx={{
+                    position: 'absolute',
+                    top: -20,
+                    right: -20,
+                    color: 'white',
+                    bgcolor: 'rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 10,
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }
+                }}
+            >
+                <CloseIcon />
+            </IconButton>
+            
+            {fullImageSrc && (
+                <Box
+                    component="img"
+                    src={fullImageSrc}
+                    alt={fullImageAlt}
+                    onClick={() => setFullImageOpen(false)}
+                    sx={{
+                        maxWidth: '100%',
+                        maxHeight: '90vh',
+                        display: 'block',
+                        borderRadius: 2,
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        cursor: 'zoom-out'
+                    }}
+                />
+            )}
+        </Box>
       </Dialog>
 
       {/* Popup del mapa con Google Maps */}
