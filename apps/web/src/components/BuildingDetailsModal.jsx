@@ -15,6 +15,9 @@ import {
   CardMedia,
   Chip,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
@@ -98,187 +101,248 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
     <Dialog 
       open={open && !!building} 
       onClose={handleClose} 
-      maxWidth="lg" 
+      maxWidth="md"
       fullWidth
       keepMounted={false}
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          m: 2,
+          width: 'calc(100% - 32px)',
+          maxHeight: '85vh',
+          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)',
+        }
+      }}
     >
       {building && (
         <>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-        <Typography variant="h6" fontWeight="bold">
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', p: 3, pb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: 'sans-serif', lineHeight: 1.2 }}>
           {selectedFloor ? `${selectedFloor.nombre_piso} - ${building.nombre_edificio}` : building.nombre_edificio}
         </Typography>
-        <IconButton onClick={handleClose} size="small">
+        <IconButton 
+          onClick={handleClose}
+          sx={{ 
+            bgcolor: 'rgba(0,0,0,0.05)', 
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
+            ml: 2,
+            mt: -0.5
+          }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
-      <Divider />
 
-      <DialogContent sx={{ p: 0, maxHeight: '75vh', overflowY: 'auto' }}>
+      <DialogContent sx={{ p: 0, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}>
         {!selectedFloor ? (
-          // Vista de edificio con lista de pisos
+          // Vista Moderna de Detalles del Edificio
           <Box>
-            {/* Imagen del edificio a la izquierda y descripción a la derecha */}
-            <Box sx={{ px: 3, pt: 2, pb: 2, display: 'flex', gap: 3, alignItems: 'flex-start' }}>
-              {/* Imagen */}
-              <Box sx={{ flex: '0 0 45%', minWidth: 0, position: 'relative' }}>
-                {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
-                  <>
-                    <Box
-                      component="img"
-                      src={getFullImageUrl(building.imagen)}
-                      alt={building.nombre_edificio}
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        maxHeight: 350,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        boxShadow: 2,
-                      }}
-                    />
-                    {building.disponibilidad === 'En mantenimiento' && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 15,
-                          left: 0,
-                          right: 0,
-                          bgcolor: 'error.main',
-                          color: 'white',
-                          py: 1,
-                          px: 2,
-                          fontWeight: 'bold',
-                          textAlign: 'center',
-                          transform: 'rotate(-5deg)',
-                          boxShadow: 3,
-                          zIndex: 1
-                        }}
-                      >
-                        ⚠️ EN MANTENIMIENTO
-                      </Box>
-                    )}
-                  </>
-                ) : (
+            {/* Imagen Principal - Full Width */}
+            <Box sx={{ width: '100%', height: 280, position: 'relative', bgcolor: 'grey.100' }}>
+              {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
+                <>
                   <Box
+                    component="img"
+                    src={getFullImageUrl(building.imagen)}
+                    alt={building.nombre_edificio}
                     sx={{
                       width: '100%',
-                      height: 300,
-                      bgcolor: 'grey.200',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 2,
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block'
                     }}
-                  >
-                    <Typography variant="h6" color="text.secondary">
-                      Sin imagen
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Descripción y botón */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {/* Acrónimo */}
-                {building.acronimo && (
-                  <Chip 
-                    label={building.acronimo}
-                    color="primary"
-                    sx={{ alignSelf: 'flex-start' }}
                   />
-                )}
-
-                {/* Descripción */}
-                {building.descripcion ? (
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                      Descripción
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                      {building.descripcion}
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                    No hay descripción disponible para este edificio
+                  {building.disponibilidad === 'En mantenimiento' && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 20,
+                        right: 0,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        py: 0.5,
+                        px: 2,
+                        fontWeight: 'bold',
+                        boxShadow: 2,
+                        zIndex: 1,
+                        borderTopLeftRadius: 4,
+                        borderBottomLeftRadius: 4,
+                      }}
+                    >
+                      EN MANTENIMIENTO
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: 1
+                  }}
+                >
+                  <RoomIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Sin imagen disponible
                   </Typography>
-                )}
-
-                {/* Botón Ver Ruta */}
-                {isPublic && onViewRoute && (
-                  <Button
-                    variant="contained"
-                    startIcon={<LocationOnIcon />}
-                    onClick={() => {
-                      onViewRoute({
-                        type: 'building',
-                        name: building.nombre_edificio,
-                        acronym: building.acronimo,
-                        image: building.imagen,
-                        distance: building.distance,
-                        latitude: building.cord_latitud,
-                        longitude: building.cord_longitud
-                      })
-                    }}
-                    sx={{ alignSelf: 'flex-start', minWidth: 200 }}
-                  >
-                    Ver Ruta
-                  </Button>
-                )}
-              </Box>
+                </Box>
+              )}
             </Box>
 
-            {/* Lista de pisos */}
-            <Box sx={{ px: 3, pb: 3 }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                PISOS Y SALAS
-              </Typography>
-              
-              {floors && floors.length > 0 ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                  {floors.map((floor) => (
-                    <Card key={floor.id_piso} variant="outlined">
-                      <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, '&:last-child': { pb: 2 } }}>
-                        <Box>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {floor.nombre_piso}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Número de piso: {floor.numero_piso ?? '-'}
-                          </Typography>
-                        </Box>
+            {/* Contenido */}
+            <Box sx={{ p: 3 }}>
+              {/* Acrónimo y Etiquetas */}
+              {building.acronimo && (
+                <Chip 
+                  label={building.acronimo}
+                  color="primary"
+                  sx={{ mb: 2, fontWeight: 600 }}
+                />
+              )}
+
+              {/* Descripción */}
+              <Box sx={{ mb: 4 }}>
+                {building.descripcion ? (
+                  <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, fontSize: '1.05rem' }}>
+                    {building.descripcion}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                    No hay descripción disponible para este edificio.
+                  </Typography>
+                )}
+              </Box>
+
+              {/* Botón Acción Principal */}
+              {isPublic && onViewRoute && (
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  startIcon={<LocationOnIcon />}
+                  onClick={() => {
+                    onViewRoute({
+                      type: 'building',
+                      name: building.nombre_edificio,
+                      acronym: building.acronimo,
+                      image: building.imagen,
+                      distance: building.distance,
+                      latitude: building.cord_latitud,
+                      longitude: building.cord_longitud
+                    })
+                  }}
+                  sx={{ 
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
+                    textTransform: 'none'
+                  }}
+                >
+                  Ver Ruta
+                </Button>
+              )}
+
+              <Divider sx={{ my: 4 }} />
+
+              {/* Sección Pisos */}
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+                  PISOS Y SALAS
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Selecciona un piso para ver sus aulas y laboratorios
+                </Typography>
+
+                <List disablePadding>
+                  {floors && floors.length > 0 ? (
+                    floors.map((floor) => (
+                      <ListItem 
+                        key={floor.id_piso} 
+                        // divider={index !== floors.length - 1}
+                        disableGutters
+                        sx={{ 
+                          py: 2, 
+                          px: 3, 
+                          mb: 2, 
+                          borderRadius: 3, 
+                          bgcolor: 'rgba(0, 0, 0, 0.3)', 
+                          border: '1px solid',
+                          borderColor: 'rgba(255, 255, 255, 0.05)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <ListItemText 
+                          primary={floor.nombre_piso}
+                          secondary={`Piso ${floor.numero_piso ?? '-'}`}
+                          primaryTypographyProps={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}
+                        />
                         <Button
-                          variant="outlined"
+                          variant="contained"
                           size="small"
                           onClick={() => handleFloorClick(floor)}
-                          sx={{ minWidth: 100 }}
+                          sx={{ 
+                            borderRadius: 2, 
+                            fontWeight: 700,
+                            bgcolor: 'white',
+                            color: 'primary.dark',
+                            '&:hover': {
+                              bgcolor: 'grey.200',
+                            },
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            minWidth: 100,
+                            ml: 2
+                          }}
                         >
                           VER PISO
                         </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  No hay pisos disponibles para este edificio
-                </Typography>
-              )}
+                      </ListItem>
+                    ))
+                  ) : (
+                    <Box sx={{ py: 3, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 2, mt: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No hay información de pisos disponible.
+                      </Typography>
+                    </Box>
+                  )}
+                </List>
+              </Box>
             </Box>
           </Box>
         ) : (
           // Vista de salas del piso (carrusel con 3 salas)
           <Box>
             {/* Botón para regresar */}
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ px: 3, pt: 3, pb: 1 }}>
               <Button
                 variant="text"
-                size="small"
+                startIcon={<ChevronLeftIcon />}
                 onClick={handleBackToFloors}
+                sx={{
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                    color: 'primary.main',
+                    transform: 'translateX(-4px)'
+                  },
+                  transition: 'all 0.2s ease',
+                  justifyContent: 'flex-start',
+                  p: 0,
+                  minWidth: 0
+                }}
+                disableRipple
               >
-                ← Volver a pisos
+                Volver a lista de pisos
               </Button>
             </Box>
 
@@ -340,7 +404,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             </Box>
 
             {/* Contador de salas */}
-            {rooms && rooms.length > 0 && (
+            {rooms && rooms.filter(r => r.estado).length > 0 && (
               <Box sx={{ px: 3, pb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">
                   Salas
@@ -349,10 +413,10 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
             )}
 
             {/* Lista de salas */}
-            {rooms && rooms.length > 0 ? (
+            {rooms && rooms.filter(r => r.estado).length > 0 ? (
               <Box sx={{ px: 3, pb: 3 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {rooms.map((room) => (
+                  {rooms.filter(r => r.estado).map((room) => (
                     <Card 
                       key={room.id_sala} 
                       variant="outlined"
@@ -407,14 +471,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                             />
                           </Box>
 
-                          {/* Estado y Disponibilidad */}
-                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                            <Chip
-                              label={room.estado ? 'Activa' : 'Inactiva'}
-                              size="small"
-                              color={room.estado ? 'success' : 'error'}
-                            />
-                          </Box>
+                          {/* Estado y Disponibilidad - ELIMINADO */}
                         </Box>
 
                         <Button
