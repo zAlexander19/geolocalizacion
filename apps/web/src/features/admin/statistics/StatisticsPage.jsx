@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../../lib/api'
+import DateRangeCalendar from '../../../components/DateRangeCalendar'
 import {
   Box,
   Card,
@@ -20,6 +21,7 @@ import {
   TableRow,
   Chip,
   Divider,
+  Popover,
 } from '@mui/material'
 import {
   TrendingUp as TrendingUpIcon,
@@ -29,11 +31,36 @@ import {
   Wc as BathroomIcon,
   Download as DownloadIcon,
   Assessment as AssessmentIcon,
+  CalendarMonth as CalendarMonthIcon,
 } from '@mui/icons-material'
 
 export default function StatisticsPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  
+  // Estado para el popover de filtro de fecha
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [tempStartDate, setTempStartDate] = useState('')
+  const [tempEndDate, setTempEndDate] = useState('')
+
+  const handleOpenFilter = (event) => {
+    setTempStartDate(startDate)
+    setTempEndDate(endDate)
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleCloseFilter = () => {
+    setAnchorEl(null)
+  }
+
+  const handleApplyFilter = () => {
+    setStartDate(tempStartDate)
+    setEndDate(tempEndDate)
+    handleCloseFilter()
+  }
+
+  const openFilter = Boolean(anchorEl)
+  const filterId = openFilter ? 'date-filter-popover' : undefined
 
   // Query para obtener estadísticas
   const { data: statistics, isLoading, error, refetch } = useQuery({
@@ -44,20 +71,6 @@ export default function StatisticsPage() {
       if (endDate) params.append('endDate', endDate)
       
       const res = await api.get(`/statistics/summary?${params}`)
-      return res.data.data
-    },
-  })
-
-  // Query para obtener reporte completo
-  const { data: report } = useQuery({
-    queryKey: ['statistics-report', startDate, endDate],
-    queryFn: async () => {
-      const params = new URLSearchParams()
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
-      params.append('limit', '1000')
-      
-      const res = await api.get(`/statistics/report?${params}`)
       return res.data.data
     },
   })
@@ -134,40 +147,102 @@ export default function StatisticsPage() {
           <Typography variant="h6" gutterBottom>
             Filtrar por Fecha
           </Typography>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Fecha Inicio"
-                type="date"
-                fullWidth
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Fecha Fin"
-                type="date"
-                fullWidth
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<CalendarMonthIcon />}
+              onClick={handleOpenFilter}
+              size="large"
+            >
+              {startDate || endDate 
+                ? `${startDate || 'Inicio'} - ${endDate || 'Fin'}`
+                : 'Seleccionar Rango de Fecha'}
+            </Button>
+            
+            {(startDate || endDate) && (
               <Button
-                variant="outlined"
+                color="error"
                 onClick={() => {
                   setStartDate('')
                   setEndDate('')
                 }}
-                fullWidth
               >
                 Limpiar Filtros
               </Button>
-            </Grid>
-          </Grid>
+            )}
+          </Box>
+
+          <Popover
+            id={filterId}
+            open={openFilter}
+            anchorEl={anchorEl}
+            onClose={handleCloseFilter}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            PaperProps={{
+              sx: { bgcolor: '#1e293b', color: 'white' }
+            }}
+          >
+            <Box sx={{ borderRadius: 1 }}>
+              <DateRangeCalendar
+                startDate={tempStartDate}
+                endDate={tempEndDate}
+                onChange={(start, end) => {
+                  setTempStartDate(start)
+                  setTempEndDate(end)
+                }}
+              />
+              <Box sx={{ p: 2, pt: 0 }}>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Inicio"
+                    size="small"
+                    value={tempStartDate}
+                    InputProps={{ 
+                      readOnly: true,
+                      sx: { color: 'white' }
+                    }}
+                    InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                      }
+                    }}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Fin"
+                    size="small"
+                    value={tempEndDate}
+                    InputProps={{ 
+                      readOnly: true,
+                      sx: { color: 'white' }
+                    }}
+                    InputLabelProps={{ sx: { color: 'rgba(255,255,255,0.7)' } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                      }
+                    }}
+                    fullWidth
+                  />
+                </Box>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={handleApplyFilter}
+                  disabled={!tempStartDate}
+                >
+                  Aplicar Filtro
+                </Button>
+              </Box>
+            </Box>
+          </Popover>
         </CardContent>
       </Card>
 
@@ -245,64 +320,50 @@ export default function StatisticsPage() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Cobertura de Registros
-                  </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    {report?.percentage || 0}%
-                  </Typography>
-                </Box>
-                <TrendingUpIcon sx={{ fontSize: 40, color: 'info.main', opacity: 0.3 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+
       </Grid>
 
       {/* Búsquedas por tipo */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Top edificios más buscados */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Distribución por Tipo de Búsqueda
+                Top 10 Edificios Más Buscados
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              {statistics?.byType?.map((item, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-                      {item.search_type}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      {item.count} ({item.percentage}%)
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: 8,
-                      bgcolor: 'grey.200',
-                      borderRadius: 1,
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: `${item.percentage}%`,
-                        height: '100%',
-                        bgcolor: 'primary.main',
-                        transition: 'width 0.3s'
-                      }}
-                    />
-                  </Box>
-                </Box>
-              ))}
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>#</TableCell>
+                      <TableCell>Edificio</TableCell>
+                      <TableCell align="right">Búsquedas</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {statistics?.topBuildings?.slice(0, 10).map((building, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{building.name}</TableCell>
+                        <TableCell align="right">
+                          <Chip label={building.searches} size="small" color="warning" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!statistics?.topBuildings || statistics.topBuildings.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">
+                          <Typography variant="body2" color="text.secondary">
+                            No hay datos disponibles
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>
@@ -350,45 +411,43 @@ export default function StatisticsPage() {
           </Card>
         </Grid>
 
-        {/* Top edificios más buscados */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Top 10 Edificios Más Buscados
+                Distribución por Tipo de Búsqueda
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>#</TableCell>
-                      <TableCell>Edificio</TableCell>
-                      <TableCell align="right">Búsquedas</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {statistics?.topBuildings?.slice(0, 10).map((building, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>{building.name}</TableCell>
-                        <TableCell align="right">
-                          <Chip label={building.searches} size="small" color="warning" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(!statistics?.topBuildings || statistics.topBuildings.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center">
-                          <Typography variant="body2" color="text.secondary">
-                            No hay datos disponibles
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              {statistics?.byType?.map((item, index) => (
+                <Box key={index} sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                      {item.search_type}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {item.count} ({item.percentage}%)
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 8,
+                      bgcolor: 'grey.200',
+                      borderRadius: 1,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${item.percentage}%`,
+                        height: '100%',
+                        bgcolor: 'primary.main',
+                        transition: 'width 0.3s'
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ))}
             </CardContent>
           </Card>
         </Grid>
@@ -422,46 +481,7 @@ export default function StatisticsPage() {
         </Grid>
       </Grid>
 
-      {/* Reporte de cobertura */}
-      {report && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Reporte de Cobertura de Registros
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-                  <Typography variant="body2">Total de Registros</Typography>
-                  <Typography variant="h5" fontWeight="bold">{report.total}</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper sx={{ p: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
-                  <Typography variant="body2">Registros Retornados</Typography>
-                  <Typography variant="h5" fontWeight="bold">{report.returned}</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Paper sx={{ p: 2, bgcolor: report.percentage >= 95 ? 'success.main' : 'warning.main', color: 'white' }}>
-                  <Typography variant="body2">Porcentaje de Cobertura</Typography>
-                  <Typography variant="h5" fontWeight="bold">{report.percentage}%</Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-            {report.percentage >= 95 ? (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                ✓ Cumple con el criterio de aceptación (≥95% de cobertura)
-              </Alert>
-            ) : (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                ⚠ No cumple con el criterio de aceptación (requiere ≥95% de cobertura)
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
     </Box>
   )
 }

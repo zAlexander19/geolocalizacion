@@ -512,7 +512,7 @@ export default function FacultiesPage() {
                       <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
                     </TableCell>
                     <TableCell>
-                      <IconButton size="small" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" color="primary" onClick={() => handleEdit(f.codigo_facultad || f.codigo_facultad)}><EditIcon fontSize="small" /></IconButton>
                       <IconButton size="small" color="error" onClick={() => handleDelete(f.codigo_facultad || f.codigo_facultad)}><DeleteIcon fontSize="small" /></IconButton>
                     </TableCell>
                   </TableRow>

@@ -281,7 +281,7 @@ export default function UsersPage() {
       renderCell: (params) => (
         <Chip
           label={params.value === 'admin_primario' ? 'Super Admin' : 'Admin Secundario'}
-          color={params.value === 'admin_primario' ? 'primary' : 'default'}
+          color={params.value === 'admin_primario' ? 'primary' : 'warning'}
           size="small"
         />
       ),
@@ -312,6 +312,7 @@ export default function UsersPage() {
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <IconButton
             size="small"
+            color="primary"
             onClick={() => handleOpenEditDialog(params.row)}
             disabled={params.row.id_usuario === parseInt(currentUser.id)}
             title="Editar usuario"

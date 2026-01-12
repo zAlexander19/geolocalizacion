@@ -413,7 +413,7 @@ export default function FloorsPage() {
                     <Chip label={f.estado ? 'Activo' : 'Inactivo'} color={f.estado ? 'success' : 'default'} size="small" />
                   </TableCell>
                   <TableCell>
-                    <IconButton size="small" onClick={() => handleEdit(f.id_piso)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="primary" onClick={() => handleEdit(f.id_piso)}><EditIcon fontSize="small" /></IconButton>
                     <IconButton size="small" color="error" onClick={() => handleDelete(f.id_piso)}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>
                 </TableRow>

@@ -198,7 +198,7 @@ export default function HomePage() {
         const roomsFiltered = rooms.filter(item => {
           const nombre = item.nombre_sala?.toLowerCase() || ''
           const acronimo = item.acronimo?.toLowerCase() || ''
-          return nombre.includes(query) || acronimo.includes(query)
+          return (nombre.includes(query) || acronimo.includes(query)) && item.estado
         }).map(room => {
           const floor = allFloors?.find(f => f.id_piso === room.id_piso)
           const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
@@ -210,7 +210,7 @@ export default function HomePage() {
         const bathrooms = bathroomsRes.data.data
         const bathroomsFiltered = bathrooms.filter(item => {
           const nombre = item.nombre?.toLowerCase() || ''
-          return nombre.includes(query)
+          return nombre.includes(query) && item.estado
         }).map(bathroom => {
           const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
           const building = buildings?.find(b => b.id_edificio === bathroom.id_edificio)
@@ -328,12 +328,12 @@ export default function HomePage() {
       } else if (searchType === 'sala') {
         // Si no hay query, mostrar todos
         if (!query) {
-          filtered = data
+          filtered = data.filter(item => item.estado)
         } else {
           filtered = data.filter(item => {
             const nombre = item.nombre_sala?.toLowerCase() || ''
             const acronimo = item.acronimo?.toLowerCase() || ''
-            return nombre.includes(query) || acronimo.includes(query)
+            return (nombre.includes(query) || acronimo.includes(query)) && item.estado
           })
         }
         
@@ -353,11 +353,11 @@ export default function HomePage() {
       } else if (searchType === 'bano') {
         // Si no hay query, mostrar todos
         if (!query) {
-          filtered = data
+          filtered = data.filter(item => item.estado)
         } else {
           filtered = data.filter(item => {
             const nombre = item.nombre?.toLowerCase() || ''
-            return nombre.includes(query)
+            return nombre.includes(query) && item.estado
           })
         }
         
@@ -1341,7 +1341,7 @@ export default function HomePage() {
                             <Chip
                               label={building.disponibilidad}
                               size="small"
-                              color={building.disponibilidad === 'Disponible' ? 'success' : 'error'}
+                              color={building.disponibilidad === 'Disponible' ? 'success' : (building.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                             />
                           </Box>
 
@@ -1556,7 +1556,7 @@ export default function HomePage() {
                             <Chip
                               label={room.disponibilidad}
                               size="small"
-                              color={room.disponibilidad === 'Disponible' ? 'success' : 'error'}
+                              color={room.disponibilidad === 'Disponible' ? 'success' : (room.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                             />
                           </Box>
 
@@ -1662,9 +1662,11 @@ export default function HomePage() {
                     <Grid container spacing={3}>
                       {/* Resultados para FACULTADES */}
                       {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
-                  const associatedBuilding = faculty.id_edificio
-                    ? (buildings || []).find(b => Number(b.id_edificio) === Number(faculty.id_edificio))
-                    : null
+                  const associatedBuildings = faculty.edificios && faculty.edificios.length > 0
+                    ? faculty.edificios
+                    : (faculty.id_edificio 
+                        ? [(buildings || []).find(b => Number(b.id_edificio) === Number(faculty.id_edificio))].filter(Boolean)
+                        : [])
 
                   return (
                     <Grid item xs={12} md={6} lg={4} key={faculty.codigo_facultad}>
@@ -1764,13 +1766,22 @@ export default function HomePage() {
                             </Typography>
                           )}
 
-                          {/* Edificio asociado (si existe) */}
-                          {associatedBuilding && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                              <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                <strong>Edificio:</strong> {associatedBuilding.nombre_edificio}
-                              </Typography>
+                          {/* Edificios asociados */}
+                          {associatedBuildings.length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+                                <Typography variant="body2" color="text.secondary">
+                                  <strong>{associatedBuildings.length > 1 ? 'Edificios:' : 'Edificio:'}</strong>
+                                </Typography>
+                              </Box>
+                              <Box sx={{ pl: 3.5 }}>
+                                {associatedBuildings.map((b, idx) => (
+                                  <Typography key={idx} variant="body2" color="text.secondary" sx={{ display: 'block' }}>
+                                    {b.nombre_edificio}
+                                  </Typography>
+                                ))}
+                              </Box>
                             </Box>
                           )}
 
@@ -2005,9 +2016,9 @@ export default function HomePage() {
                                           label={bathroom.disponibilidad || 'Disponible'}
                                           size="small"
                                           sx={{
-                                            bgcolor: bathroom.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
-                                            color: bathroom.disponibilidad === 'Disponible' ? '#81c784' : '#bdbdbd',
-                                            borderColor: bathroom.disponibilidad === 'Disponible' ? '#81c784' : '#bdbdbd'
+                                            bgcolor: bathroom.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : (bathroom.disponibilidad === 'En mantenimiento' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(158, 158, 158, 0.2)'),
+                                            color: bathroom.disponibilidad === 'Disponible' ? '#81c784' : (bathroom.disponibilidad === 'En mantenimiento' ? '#e57373' : '#bdbdbd'),
+                                            borderColor: bathroom.disponibilidad === 'Disponible' ? '#81c784' : (bathroom.disponibilidad === 'En mantenimiento' ? '#e57373' : '#bdbdbd')
                                           }}
                                         />
                                         {bathroom.acceso_discapacidad && (
@@ -2158,7 +2169,7 @@ export default function HomePage() {
                           <Chip
                             label={bathroom.disponibilidad}
                             size="small"
-                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : 'error'}
+                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : (bathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                           />
                         </Box>
 
@@ -2359,8 +2370,8 @@ export default function HomePage() {
                     size="small"
                   />
                   <Chip
-                    label={selectedRoom.estado ? 'Activa' : 'Inactiva'}
-                    color={selectedRoom.estado ? 'success' : 'error'}
+                    label={selectedRoom.disponibilidad || 'Disponible'}
+                    color={selectedRoom.disponibilidad === 'Disponible' ? 'success' : (selectedRoom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                     size="small"
                   />
                 </Box>
@@ -2631,8 +2642,8 @@ export default function HomePage() {
                     size="small"
                   />
                   <Chip
-                    label={selectedBathroom.estado ? 'Activo' : 'Inactivo'}
-                    color={selectedBathroom.estado ? 'success' : 'error'}
+                    label={selectedBathroom.disponibilidad || 'Disponible'}
+                    color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : (selectedBathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                     size="small"
                   />
                 </Box>
@@ -2681,7 +2692,7 @@ export default function HomePage() {
                     <Chip
                       label={selectedBathroom.disponibilidad}
                       size="small"
-                      color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : 'default'}
+                      color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : (selectedBathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                     />
                     {selectedBathroom.acceso_discapacidad && (
                       <Chip label="♿ Acceso discapacidad" size="small" color="success" variant="outlined" />
@@ -3321,107 +3332,117 @@ export default function HomePage() {
               </Box>
 
               {/* Edificios asociados */}
-              {selectedFaculty.id_edificio && (
+              {(selectedFaculty.edificios?.length > 0 || selectedFaculty.id_edificio) && (
                 <Box sx={{ mt: 4 }}>
                   <Divider sx={{ mb: 3 }} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <BuildingIcon color="primary" />
-                    Edificio Asociado
+                    {(selectedFaculty.edificios?.length > 1) ? 'Edificios Asociados' : 'Edificio Asociado'}
                   </Typography>
                   {(() => {
-                    const associatedBuilding = buildings?.find(b => Number(b.id_edificio) === Number(selectedFaculty.id_edificio))
+                    // Obtener lista de IDs de edificios asociados
+                    const associatedBuildingIds = selectedFaculty.edificios && selectedFaculty.edificios.length > 0
+                      ? selectedFaculty.edificios.map(b => Number(b.id_edificio))
+                      : (selectedFaculty.id_edificio ? [Number(selectedFaculty.id_edificio)] : [])
                     
-                    if (!associatedBuilding) return (
+                    // Buscar los objetos completos de edificios
+                    const associatedBuildings = (buildings || []).filter(b => associatedBuildingIds.includes(Number(b.id_edificio)))
+                    
+                    if (associatedBuildings.length === 0) return (
                       <Alert severity="info">
-                        No se encontró información del edificio asociado
+                        No se encontró información de edificios asociados
                       </Alert>
                     )
 
                     return (
-                      <Card variant="outlined" sx={{ overflow: 'hidden', boxShadow: 1 }}>
-                        <Grid container>
-                          {associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen) ? (
-                            <Grid item xs={12} sm={5}>
-                              <CardMedia
-                                component="img"
-                                height="220"
-                                image={getFullImageUrl(associatedBuilding.imagen)}
-                                alt={associatedBuilding.nombre_edificio}
-                                sx={{ objectFit: 'cover', height: '100%', minHeight: 220 }}
-                              />
-                            </Grid>
-                          ) : (
-                            <Grid item xs={12} sm={5}>
-                              <Box
-                                sx={{
-                                  height: 220,
-                                  bgcolor: 'grey.100',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
-                              </Box>
-                            </Grid>
-                          )}
-                          <Grid item xs={12} sm={7}>
-                            <CardContent sx={{ p: 3 }}>
-                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 1.5 }}>
-                                {associatedBuilding.nombre_edificio}
-                              </Typography>
-                              
-                              {associatedBuilding.acronimo && (
-                                <Chip 
-                                  label={associatedBuilding.acronimo}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  sx={{ mb: 2 }}
-                                />
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {associatedBuildings.map((associatedBuilding) => (
+                          <Card key={associatedBuilding.id_edificio} variant="outlined" sx={{ overflow: 'hidden', boxShadow: 1 }}>
+                            <Grid container>
+                              {associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen) ? (
+                                <Grid item xs={12} sm={5}>
+                                  <CardMedia
+                                    component="img"
+                                    height="220"
+                                    image={getFullImageUrl(associatedBuilding.imagen)}
+                                    alt={associatedBuilding.nombre_edificio}
+                                    sx={{ objectFit: 'cover', height: '100%', minHeight: 220 }}
+                                  />
+                                </Grid>
+                              ) : (
+                                <Grid item xs={12} sm={5}>
+                                  <Box
+                                    sx={{
+                                      height: 220,
+                                      bgcolor: 'grey.100',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
+                                  </Box>
+                                </Grid>
                               )}
-
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
-                                <Chip
-                                  label={associatedBuilding.disponibilidad}
-                                  size="small"
-                                  color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'warning'}
-                                />
-                                <Chip
-                                  label={associatedBuilding.estado ? 'Activo' : 'Inactivo'}
-                                  size="small"
-                                  color={associatedBuilding.estado ? 'success' : 'error'}
-                                />
-                              </Box>
-
-                              {associatedBuilding.distance !== undefined && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, p: 1.5, bgcolor: 'primary.50', borderRadius: 1 }}>
-                                  <WalkIcon color="primary" fontSize="small" />
-                                  <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
-                                    A {associatedBuilding.distance < 1000 
-                                      ? `${associatedBuilding.distance.toFixed(0)} metros` 
-                                      : `${(associatedBuilding.distance / 1000).toFixed(2)} km`} de tu ubicación
+                              <Grid item xs={12} sm={7}>
+                                <CardContent sx={{ p: 3 }}>
+                                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 1.5 }}>
+                                    {associatedBuilding.nombre_edificio}
                                   </Typography>
-                                </Box>
-                              )}
+                                  
+                                  {associatedBuilding.acronimo && (
+                                    <Chip 
+                                      label={associatedBuilding.acronimo}
+                                      size="small"
+                                      color="primary"
+                                      variant="outlined"
+                                      sx={{ mb: 2 }}
+                                    />
+                                  )}
 
-                              <Button
-                                variant="contained"
-                                startIcon={<BuildingIcon />}
-                                size="medium"
-                                onClick={() => {
-                                  setSelectedBuilding(associatedBuilding)
-                                  setBuildingDetailOpen(true)
-                                  setFacultyDetailOpen(false)
-                                }}
-                                fullWidth
-                              >
-                                Ver detalles del edificio
-                              </Button>
-                            </CardContent>
-                          </Grid>
-                        </Grid>
-                      </Card>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
+                                    <Chip
+                                      label={associatedBuilding.disponibilidad}
+                                      size="small"
+                                      color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'warning'}
+                                    />
+                                    <Chip
+                                      label={associatedBuilding.estado ? 'Activo' : 'Inactivo'}
+                                      size="small"
+                                      color={associatedBuilding.estado ? 'success' : 'error'}
+                                    />
+                                  </Box>
+
+                                  {associatedBuilding.distance !== undefined && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5, p: 1.5, bgcolor: 'primary.50', borderRadius: 1 }}>
+                                      <WalkIcon color="primary" fontSize="small" />
+                                      <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
+                                        A {associatedBuilding.distance < 1000 
+                                          ? `${associatedBuilding.distance.toFixed(0)} metros` 
+                                          : `${(associatedBuilding.distance / 1000).toFixed(2)} km`} de tu ubicación
+                                      </Typography>
+                                    </Box>
+                                  )}
+
+                                  <Button
+                                    variant="contained"
+                                    startIcon={<BuildingIcon />}
+                                    size="medium"
+                                    onClick={() => {
+                                      setSelectedBuilding(associatedBuilding)
+                                      setBuildingDetailOpen(true)
+                                      setFacultyDetailOpen(false)
+                                    }}
+                                    fullWidth
+                                  >
+                                    Ver detalles del edificio
+                                  </Button>
+                                </CardContent>
+                              </Grid>
+                            </Grid>
+                          </Card>
+                        ))}
+                      </Box>
                     )
                   })()}
                 </Box>

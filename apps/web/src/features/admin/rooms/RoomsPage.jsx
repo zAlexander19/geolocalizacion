@@ -487,7 +487,7 @@ export default function RoomsPage() {
                     <Chip label={r.estado ? 'Activa' : 'Inactiva'} color={r.estado ? 'success' : 'default'} size="small" />
                   </TableCell>
                   <TableCell>
-                    <IconButton size="small" onClick={() => handleEdit(r.id_sala)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="primary" onClick={() => handleEdit(r.id_sala)}><EditIcon fontSize="small" /></IconButton>
                     <IconButton size="small" color="error" onClick={() => handleDelete(r.id_sala)}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>
                 </TableRow>

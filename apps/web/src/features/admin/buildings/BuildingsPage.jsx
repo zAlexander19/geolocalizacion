@@ -363,7 +363,7 @@ export default function BuildingsPage() {
                       <strong>Acrónimo:</strong> {b.acronimo}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      <strong>Coordenadas:</strong> {b.cord_latitud}, {b.cord_longitud}
+                      <strong>Disponibilidad:</strong> {b.disponibilidad || 'Disponible'}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
                       <Button 
@@ -410,8 +410,7 @@ export default function BuildingsPage() {
                 <TableCell>Imagen</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Acrónimo</TableCell>
-                <TableCell>Latitud</TableCell>
-                <TableCell>Longitud</TableCell>
+                <TableCell>Disponibilidad</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
@@ -438,14 +437,19 @@ export default function BuildingsPage() {
                     </TableCell>
                     <TableCell>{b.nombre_edificio}</TableCell>
                     <TableCell>{b.acronimo}</TableCell>
-                    <TableCell>{b.cord_latitud}</TableCell>
-                    <TableCell>{b.cord_longitud}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={b.disponibilidad || 'Disponible'} 
+                        color={b.disponibilidad === 'Disponible' ? 'success' : (b.disponibilidad === 'En mantenimiento' ? 'error' : 'default')} 
+                        size="small" 
+                      />
+                    </TableCell>
                     <TableCell>
                       <Chip label={b.estado ? 'Activo' : 'Inactivo'} color={b.estado ? 'success' : 'default'} size="small" />
                     </TableCell>
                     <TableCell>
                       <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => handleEdit(b.id_edificio)}>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(b.id_edificio)}>
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

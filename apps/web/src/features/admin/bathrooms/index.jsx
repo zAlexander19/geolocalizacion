@@ -523,7 +523,7 @@ export default function BathroomsAdmin() {
                   </TableCell>
                   <TableCell>{b.acceso_discapacidad ? 'Sí' : 'No'}</TableCell>
                   <TableCell>
-                    <IconButton size="small" onClick={() => openEdit(b)}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" color="primary" onClick={() => openEdit(b)}><EditIcon fontSize="small" /></IconButton>
                     <IconButton size="small" color="error" onClick={() => handleDelete(b.id_bano)}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>
                 </TableRow>
