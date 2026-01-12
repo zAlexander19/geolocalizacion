@@ -63,6 +63,7 @@ import {
   Navigation as NavigationIcon,
   Info as InfoIcon,
   Map as MapIcon,
+  Stairs as StairsIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -914,24 +915,7 @@ export default function HomePage() {
           </Typography>
 
           {/* Search Bar con efecto glassmorphism mejorado */}
-          <Box sx={{ 
-            maxWidth: 900, 
-            mx: 'auto',
-            '& > *': {
-              background: 'rgba(0, 0, 0, 0.7)',
-              backdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-              borderRadius: 3,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2)',
-              },
-              '& .MuiInputAdornment-root svg': {
-                color: 'white !important',
-              }
-            }
-          }}>
+          <Box sx={{ maxWidth: 900, mx: 'auto', px: 2, position: 'relative', zIndex: 10 }}>
             <SearchBar onSearch={handleSearch} initialType="todo" />
           </Box>
         </Box>
@@ -2082,150 +2066,175 @@ export default function HomePage() {
                                   })}
                                 >
                                   <Popup 
-                                    maxWidth={280} 
-                                    minWidth={220}
-                                    className="custom-popup-bathroom"
+                                    maxWidth={240} 
+                                    minWidth={240}
+                                    className="custom-popup-bathroom compact-popup"
+                                    closeButton={false}
                                   >
                                     <Box 
                                       sx={{ 
-                                        minWidth: 220,
-                                        bgcolor: '#1a1a1a',
-                                        color: 'white',
-                                        p: 2,
-                                        borderRadius: 2,
-                                        margin: '-15px',
+                                        width: 240, 
+                                        height: 280, 
+                                        position: 'relative',
+                                        borderRadius: 3,
+                                        overflow: 'hidden',
+                                        margin: '-14px -20px -14px -20px',
+                                        cursor: 'pointer',
+                                        bgcolor: '#000',
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                                        transition: 'transform 0.2s',
+                                        '&:hover': {
+                                            transform: 'scale(1.02)'
+                                        }
+                                      }}
+                                      onClick={() => {
+                                        logSearch('bano', bathroom.id_bano, bathroom.nombre)
+                                        setSelectedBathroom(bathroom)
+                                        setBathroomDetailOpen(true)
                                       }}
                                     >
-                                      {/* Nombre del baño - DESTACADO */}
-                                      <Typography 
-                                        variant="h6" 
-                                        sx={{ 
-                                          fontWeight: 'bold', 
-                                          mb: 1.5, 
-                                          color: 'white',
-                                          textAlign: 'center',
-                                          pb: 1,
-                                          borderBottom: '2px solid rgba(255,255,255,0.2)'
-                                        }}
-                                      >
-                                        {bathroom.nombre || 'Baño sin nombre'}
-                                      </Typography>
-
-                                      {/* Imagen del baño */}
+                                      {/* 1. IMAGEN DE FONDO COMPLETA */}
                                       {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
-                                        <Box sx={{ position: 'relative' }}>
-                                          <Box
+                                        <Box
                                             component="img"
                                             src={getFullImageUrl(bathroom.imagen)}
                                             alt={bathroom.nombre || 'Baño'}
-                                            sx={{
-                                              width: '100%',
-                                              height: 140,
-                                              objectFit: 'cover',
-                                              borderRadius: 1,
-                                              mb: 1.5
-                                            }}
-                                          />
-                                          {bathroom.disponibilidad === 'En mantenimiento' && (
-                                            <Box
-                                              sx={{
-                                                position: 'absolute',
-                                                top: 10,
-                                                left: 0,
-                                                right: 0,
-                                                bgcolor: 'error.main',
-                                                color: 'white',
-                                                py: 1,
-                                                px: 2,
-                                                fontWeight: 'bold',
-                                                textAlign: 'center',
-                                                transform: 'rotate(-5deg)',
-                                                boxShadow: 3,
-                                                zIndex: 1
-                                              }}
-                                            >
-                                              ⚠️ EN MANTENIMIENTO
-                                            </Box>
-                                          )}
-                                        </Box>
-                                      ) : (
-                                        <Box
-                                          sx={{
-                                            width: '100%',
-                                            height: 140,
-                                            bgcolor: 'grey.200',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            borderRadius: 1,
-                                            mb: 1.5
-                                          }}
-                                        >
-                                          <BathroomIcon sx={{ fontSize: 50, color: 'grey.400' }} />
-                                        </Box>
-                                      )}
-
-                                      {/* Etiquetas (Chips) */}
-                                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
-                                        <Chip 
-                                          label={bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
-                                          size="small"
-                                          color="primary"
-                                          sx={{ 
-                                            bgcolor: 'rgba(33, 150, 243, 0.2)',
-                                            color: '#42a5f5',
-                                            borderColor: '#42a5f5'
-                                          }}
-                                          variant="outlined"
+                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
-                                        {bathroom.acceso_discapacidad && (
-                                          <Chip 
-                                            label="♿"
-                                            size="small"
-                                            sx={{
-                                              bgcolor: 'rgba(76, 175, 80, 0.2)',
-                                              color: '#81c784',
-                                              borderColor: '#81c784'
-                                            }}
-                                            variant="outlined"
-                                            title="Acceso para discapacidad"
-                                          />
-                                        )}
-                                      </Box>
-
-                                      {/* Información adicional */}
-                                      {bathroom.building && (
-                                        <Typography variant="body2" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
-                                          <BuildingIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
-                                          {bathroom.building.nombre_edificio}
-                                        </Typography>
-                                      )}
-                                      {bathroom.floor && (
-                                        <Typography variant="body2" sx={{ mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
-                                          <RoomIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
-                                          {bathroom.floor.nombre_piso}
-                                        </Typography>
-                                      )}
-                                      {bathroom.capacidad > 0 && (
-                                        <Typography variant="body2" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.9)' }}>
-                                          <PeopleIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }} />
-                                          {bathroom.capacidad} cubículos
-                                        </Typography>
+                                      ) : (
+                                        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#1e293b' }}>
+                                            <BathroomIcon sx={{ fontSize: 60, color: '#334155' }} />
+                                        </Box>
                                       )}
                                       
-                                      {/* Botón Ver más */}
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        fullWidth
-                                        onClick={() => {
-                                          logSearch('bano', bathroom.id_bano, bathroom.nombre)
-                                          setSelectedBathroom(bathroom)
-                                          setBathroomDetailOpen(true)
-                                        }}
-                                      >
-                                        Ver más
-                                      </Button>
+                                      {/* 2. GRADIENTE OVERLAY */}
+                                      <Box sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        background: 'linear-gradient(to top, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.6) 50%, rgba(15, 23, 42, 0.2) 100%)',
+                                        zIndex: 1
+                                      }} />
+
+                                      {/* Badge Mantenimiento */}
+                                      {bathroom.disponibilidad === 'En mantenimiento' && (
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 15,
+                                                right: -32,
+                                                bgcolor: '#ef4444',
+                                                color: 'white',
+                                                py: 0.5,
+                                                px: 4,
+                                                fontWeight: 800,
+                                                textAlign: 'center',
+                                                fontSize: '0.65rem',
+                                                transform: 'rotate(45deg)',
+                                                boxShadow: 2,
+                                                zIndex: 10,
+                                                letterSpacing: 1
+                                            }}
+                                        >
+                                            MANT
+                                        </Box>
+                                      )}
+
+                                      {/* 3. CONTENIDO SUPERPUESTO */}
+                                      <Box sx={{ 
+                                          position: 'absolute', 
+                                          bottom: 0, 
+                                          left: 0, 
+                                          right: 0, 
+                                          p: 2, 
+                                          zIndex: 2,
+                                          display: 'flex',
+                                          flexDirection: 'column'
+                                      }}>
+                                          {/* Tag Tipo */}
+                                          <Box sx={{ display: 'flex', mb: 1 }}>
+                                              <Box sx={{ 
+                                                  bgcolor: bathroom.tipo === 'h' ? '#3b82f6' : bathroom.tipo === 'm' ? '#ec4899' : '#a855f7', 
+                                                  color: 'white',
+                                                  px: 1, py: 0.25, 
+                                                  borderRadius: 1, 
+                                                  fontSize: '0.65rem', 
+                                                  fontWeight: 800,
+                                                  textTransform: 'uppercase',
+                                                  letterSpacing: 0.5,
+                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                              }}>
+                                                  {bathroom.tipo === 'h' ? 'Hombres' : bathroom.tipo === 'm' ? 'Mujeres' : 'Mixto'}
+                                              </Box>
+                                          </Box>
+
+                                          {/* Título Principal */}
+                                          <Typography variant="h6" sx={{ 
+                                              fontWeight: 800, 
+                                              color: 'white', 
+                                              fontSize: '1.1rem', 
+                                              lineHeight: 1.2, 
+                                              mb: 1.5,
+                                              textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
+                                          }}>
+                                              {bathroom.nombre || 'Baño'}
+                                          </Typography>
+
+                                          {/* Metadatos Compactos */}
+                                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                                              {/* Edificio */}
+                                              {bathroom.building && (
+                                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                      <BuildingIcon sx={{ fontSize: 14, color: '#94a3b8' }} />
+                                                      <Typography variant="caption" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.8rem' }}>
+                                                          {bathroom.building.nombre_edificio}
+                                                      </Typography>
+                                                  </Box>
+                                              )}
+                                              
+                                              {/* Piso y Capacidad */}
+                                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                  {bathroom.floor && (
+                                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                          <StairsIcon sx={{ fontSize: 14, color: '#64748b' }} /> 
+                                                          <Typography variant="caption" sx={{ color: '#cbd5e1', fontSize: '0.75rem' }}>
+                                                              {bathroom.floor.nombre_piso}
+                                                          </Typography>
+                                                      </Box>
+                                                  )}
+                                                  {bathroom.capacidad > 0 && (
+                                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                          <PeopleIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                                          <Typography variant="caption" sx={{ color: '#cbd5e1', fontSize: '0.75rem' }}>
+                                                              {bathroom.capacidad}
+                                                          </Typography>
+                                                      </Box>
+                                                  )}
+                                              </Box>
+                                          </Box>
+                                          
+                                          {/* Botón "Ver más" estilo Edificio */}
+                                          <Button
+                                              fullWidth
+                                              size="small"
+                                              sx={{
+                                                  mt: 2,
+                                                  bgcolor: 'rgba(0, 0, 0, 0.6)', 
+                                                  backdropFilter: 'blur(4px)',
+                                                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                  color: 'white',
+                                                  textTransform: 'none',
+                                                  fontWeight: 'bold',
+                                                  borderRadius: 1.5,
+                                                  boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                                                  '&:hover': {
+                                                      bgcolor: 'rgba(0, 0, 0, 0.8)',
+                                                      borderColor: 'white'
+                                                  }
+                                              }}
+                                          >
+                                              Ver más
+                                          </Button>
+                                      </Box>
                                     </Box>
                                   </Popup>
                                 </Marker>
