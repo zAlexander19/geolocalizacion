@@ -153,24 +153,29 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                     }}
                   />
                   {building.disponibilidad === 'En mantenimiento' && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 20,
-                        right: 0,
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        py: 0.5,
-                        px: 2,
-                        fontWeight: 'bold',
-                        boxShadow: 2,
-                        zIndex: 1,
-                        borderTopLeftRadius: 4,
-                        borderBottomLeftRadius: 4,
-                      }}
-                    >
-                      EN MANTENIMIENTO
-                    </Box>
+                     <Box
+                       sx={{
+                         position: 'absolute',
+                         top: '15%',
+                         left: '50%',
+                         width: '150%',
+                         transform: 'translate(-50%, -50%) rotate(-10deg)',
+                         background: 'linear-gradient(90deg, rgba(220,38,38,0.95) 0%, rgba(185,28,28,0.95) 100%)',
+                         color: 'white',
+                         py: 1,
+                         textAlign: 'center',
+                         fontWeight: 900,
+                         fontSize: '1rem',
+                         letterSpacing: 4,
+                         textTransform: 'uppercase',
+                         zIndex: 10,
+                         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                         borderTop: '2px solid rgba(255,255,255,0.3)',
+                         borderBottom: '2px solid rgba(255,255,255,0.3)',
+                       }}
+                     >
+                       EN MANTENIMIENTO
+                     </Box>
                   )}
                 </>
               ) : (
@@ -306,7 +311,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                       </ListItem>
                     ))
                   ) : (
-                    <Box sx={{ py: 3, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 2, mt: 2 }}>
+                    <Box sx={{ py: 3, textAlign: 'center', mt: 2 }}>
                       <Typography variant="body2" color="text.secondary">
                         No hay información de pisos disponible.
                       </Typography>

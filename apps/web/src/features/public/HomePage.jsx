@@ -1240,156 +1240,219 @@ export default function HomePage() {
                       {/* Resultados para EDIFICIOS */}
                       {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).map((building) => (
                   <Grid item xs={12} md={6} lg={4} key={building.id_edificio}>
-                    <Card 
-                      sx={{ 
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'all 0.3s',
-                        '&:hover': {
-                          boxShadow: 6,
-                          transform: 'translateY(-4px)'
-                        }
-                      }}
-                    >
-                      {/* Imagen del edificio */}
-                      {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
-                        <Box sx={{ position: 'relative' }}>
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={getFullImageUrl(building.imagen)}
-                            alt={building.nombre_edificio}
-                            sx={{ objectFit: 'cover' }}
-                          />
-                          {building.disponibilidad === 'En mantenimiento' && (
+                    <Box sx={{
+                      position: 'relative',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      '&:hover': {
+                        transform: 'translateY(-4px)'
+                      },
+                      transition: 'all 0.3s ease-in-out'
+                    }}>
+                       {/* Contenedor de Imagen y Contenido */}
+                       <Box sx={{ 
+                         position: 'relative', 
+                         borderRadius: 4, 
+                         overflow: 'hidden', 
+                         height: 320, // Aumentado un poco para dar espacio
+                         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)',
+                         bgcolor: 'grey.900'
+                       }}>
+                         {/* Imagen */}
+                         {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
+                            <CardMedia
+                              component="img"
+                              image={getFullImageUrl(building.imagen)}
+                              alt={building.nombre_edificio}
+                              sx={{ 
+                                height: '100%', 
+                                width: '100%',
+                                objectFit: 'cover',
+                                transition: 'transform 0.5s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.05)'
+                                }
+                              }}
+                            />
+                          ) : (
                             <Box
                               sx={{
-                                position: 'absolute',
-                                top: 10,
-                                left: 0,
-                                right: 0,
-                                bgcolor: 'error.main',
-                                color: 'white',
-                                py: 1,
-                                px: 2,
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                transform: 'rotate(-5deg)',
-                                boxShadow: 3,
-                                zIndex: 1
+                                height: '100%',
+                                width: '100%',
+                                bgcolor: '#1e293b',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexDirection: 'column',
+                                gap: 2
                               }}
                             >
-                              ⚠️ EN MANTENIMIENTO
-                            </Box>
-                          )}
-                        </Box>
-                      ) : (
-                        <Box
-                          sx={{
-                            height: 200,
-                            bgcolor: 'grey.200',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
-                        </Box>
-                      )}
-
-                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
-                          {searchType === 'todo' && (
-                            <Chip 
-                              icon={<BuildingIcon />}
-                              label="Edificio"
-                              size="small"
-                              color="primary"
-                              sx={{ mb: 1 }}
-                            />
-                          )}
-                          
-                          {/* Nombre del edificio */}
-                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
-                            {building.nombre_edificio}
-                          </Typography>
-
-                          {/* Acrónimo */}
-                          {building.acronimo && (
-                            <Chip 
-                              label={building.acronimo}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                              sx={{ mb: 2 }}
-                            />
-                          )}
-
-                          {/* Distancia */}
-                          {building.distance !== undefined && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
-                              <WalkIcon color="primary" fontSize="small" />
-                              <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
-                                A {building.distance < 1000 
-                                  ? `${building.distance} metros` 
-                                  : `${(building.distance / 1000).toFixed(2)} km`} de ti
+                              <BuildingIcon sx={{ fontSize: 60, color: 'rgba(255,255,255,0.2)' }} />
+                              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                                Sin imagen disponible
                               </Typography>
                             </Box>
                           )}
-                        </Box>
 
-                        {/* Botones de acción */}
-                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<LocationIcon />}
-                            onClick={() => {
-                              if (!userLocation) {
-                                setSnackbar({
-                                  open: true,
-                                  message: 'Por favor, activa tu ubicación para ver la ruta',
-                                  severity: 'warning'
+                          {/* Gradient Overlays para legibilidad */}
+                          <Box sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '50%',
+                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                            zIndex: 1
+                          }} />
+                          <Box sx={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '40%',
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                            zIndex: 1
+                          }} />
+
+                          {/* Título dentro de la tarjeta, arriba */}
+                          <Typography 
+                             variant="h6" 
+                             sx={{ 
+                               position: 'absolute',
+                               top: 20,
+                               left: 20,
+                               right: 20,
+                               fontWeight: 800, 
+                               color: 'white', 
+                               fontFamily: "Inter, Roboto, sans-serif",
+                               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                               fontSize: '1.25rem',
+                               letterSpacing: 0.5,
+                               zIndex: 2,
+                               lineHeight: 1.2
+                             }}
+                           >
+                             {building.nombre_edificio}
+                           </Typography>
+
+                          {/* Mantenimiento Badge Ribbon */}
+                          {building.disponibilidad === 'En mantenimiento' && (
+                             <Box
+                               sx={{
+                                 position: 'absolute',
+                                 top: '22%',
+                                 left: '50%',
+                                 width: '150%',
+                                 transform: 'translate(-50%, -50%) rotate(-10deg)',
+                                 background: 'linear-gradient(90deg, rgba(220,38,38,0.95) 0%, rgba(185,28,28,0.95) 100%)',
+                                 color: 'white',
+                                 py: 1,
+                                 textAlign: 'center',
+                                 fontWeight: 900,
+                                 fontSize: '1rem',
+                                 letterSpacing: 4,
+                                 textTransform: 'uppercase',
+                                 zIndex: 10,
+                                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                 borderTop: '2px solid rgba(255,255,255,0.3)',
+                                 borderBottom: '2px solid rgba(255,255,255,0.3)',
+                               }}
+                             >
+                               EN MANTENIMIENTO
+                             </Box>
+                          )}
+
+                          {/* Botones Flotantes (Sin fondo difuminado) */}
+                          <Box sx={{
+                            position: 'absolute',
+                            bottom: 20,
+                            left: 20,
+                            right: 20,
+                            display: 'flex',
+                            gap: 1.5,
+                            alignItems: 'center',
+                            zIndex: 2
+                          }}>
+                            {/* Ver Ruta */}
+                            <Button
+                              fullWidth
+                              variant="contained"
+                              startIcon={<LocationIcon />}
+                              onClick={() => {
+                                if (!userLocation) {
+                                  setSnackbar({
+                                    open: true,
+                                    message: 'Por favor, activa tu ubicación para ver la ruta',
+                                    severity: 'warning'
+                                  })
+                                  return
+                                }
+                                setRouteDestination({
+                                  lat: building.cord_latitud,
+                                  lng: building.cord_longitud
                                 })
-                                return
-                              }
-                              setRouteDestination({
-                                lat: building.cord_latitud,
-                                lng: building.cord_longitud
-                              })
-                              setRouteDestinationName(building.nombre_edificio)
-                              setRouteDestinationData({
-                                type: 'building',
-                                name: building.nombre_edificio,
-                                acronym: building.acronimo,
-                                image: building.imagen,
-                                distance: building.distance,
-                                latitude: building.cord_latitud,
-                                longitude: building.cord_longitud
-                              })
-                              setRouteWaypoints([]) // Sin waypoints para edificios
-                              setRouteMapOpen(true)
-                            }}
-                          >
-                            Ver Ruta
-                          </Button>
-                          <Button
-                            fullWidth
-                            variant="contained"
-                            onClick={() => {
-                              logSearch('edificio', building.id_edificio, building.nombre_edificio)
-                              setSelectedBuilding(building)
-                              setBuildingDetailOpen(true)
-                              setFloorRoomCarousels({})
-                            }}
-                          >
-                            Ver más
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                                setRouteDestinationName(building.nombre_edificio)
+                                setRouteDestinationData({
+                                  type: 'building',
+                                  name: building.nombre_edificio,
+                                  acronym: building.acronimo,
+                                  image: building.imagen,
+                                  distance: building.distance,
+                                  latitude: building.cord_latitud,
+                                  longitude: building.cord_longitud
+                                })
+                                setRouteWaypoints([]) // Sin waypoints para edificios
+                                setRouteMapOpen(true)
+                              }}
+                              sx={{
+                                borderRadius: 2,
+                                background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
+                                color: 'white',
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                height: 44,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                '&:hover': {
+                                  background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                }
+                              }}
+                            >
+                              VER RUTA
+                            </Button>
+
+                             {/* Ver Más */}
+                             <Button
+                               fullWidth
+                               variant="contained"
+                               onClick={() => {
+                                  logSearch('edificio', building.id_edificio, building.nombre_edificio)
+                                  setSelectedBuilding(building)
+                                  setBuildingDetailOpen(true)
+                                  setFloorRoomCarousels({})
+                               }}
+                               sx={{
+                                 borderRadius: 2,
+                                 background: 'rgba(255,255,255,0.2)', // Más visible sobre oscuro
+                                 color: 'white',
+                                 textTransform: 'none',
+                                 fontWeight: 700,
+                                 fontSize: '0.875rem',
+                                 height: 44,
+                                 border: '1px solid rgba(255,255,255,0.4)',
+                                 backdropFilter: 'blur(4px)',
+                                 '&:hover': {
+                                   background: 'rgba(255,255,255,0.3)',
+                                 }
+                               }}
+                             >
+                               VER MÁS
+                             </Button>
+                          </Box>
+
+                       </Box>
+                    </Box>
                   </Grid>
                 ))}
                     </Grid>
@@ -1411,211 +1474,326 @@ export default function HomePage() {
                   <Grid item xs={12} md={6} lg={4} key={room.id_sala}>
                     <Card 
                       sx={{ 
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'all 0.3s',
+                        height: 320,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                        cursor: 'default', // Changed from pointer since we have specific buttons
+                        background: '#0a1929', 
                         '&:hover': {
-                          boxShadow: 6,
-                          transform: 'translateY(-4px)'
+                          transform: 'translateY(-8px)',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                          '& .room-details-overlay': {
+                            opacity: 1,
+                            transform: 'translateY(0)',
+                          },
+                          '& .room-title-overlay': {
+                            opacity: 0, 
+                          }
                         }
                       }}
                     >
-                      {/* Imagen de la sala */}
-                      {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
-                        <Box sx={{ position: 'relative' }}>
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={getFullImageUrl(room.imagen)}
-                            alt={room.nombre_sala}
-                            sx={{ objectFit: 'cover' }}
-                          />
-                          {room.disponibilidad === 'En mantenimiento' && (
+                      <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
+                        {/* Imagen de fondo */}
+                        {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
+                            <CardMedia
+                                component="img"
+                                image={getFullImageUrl(room.imagen)}
+                                alt={room.nombre_sala}
+                                sx={{ 
+                                    height: '100%', 
+                                    width: '100%', 
+                                    objectFit: 'cover',
+                                }}
+                            />
+                        ) : (
                             <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 10,
-                                left: 0,
-                                right: 0,
-                                bgcolor: 'error.main',
-                                color: 'white',
-                                py: 1,
-                                px: 2,
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                transform: 'rotate(-5deg)',
-                                boxShadow: 3,
-                                zIndex: 1
-                              }}
+                                sx={{
+                                    height: '100%',
+                                    width: '100%',
+                                    bgcolor: 'grey.800',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
                             >
-                              ⚠️ EN MANTENIMIENTO
+                                <ImageIcon sx={{ fontSize: 80, color: 'grey.600' }} />
                             </Box>
-                          )}
-                        </Box>
-                      ) : (
+                        )}
+
+                        {/* Gradientes */}
+                        <Box sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '50%',
+                          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+                        <Box sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: '40%',
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+
+                        {/* Cinta de Mantenimiento */}
+                        {room.disponibilidad === 'En mantenimiento' && (
+                             <Box
+                               sx={{
+                                 position: 'absolute',
+                                 top: '22%',
+                                 left: '50%',
+                                 width: '150%',
+                                 transform: 'translate(-50%, -50%) rotate(-10deg)',
+                                 background: 'linear-gradient(90deg, rgba(220,38,38,0.95) 0%, rgba(185,28,28,0.95) 100%)',
+                                 color: 'white',
+                                 py: 1,
+                                 textAlign: 'center',
+                                 fontWeight: 900,
+                                 fontSize: '1rem',
+                                 letterSpacing: 4,
+                                 textTransform: 'uppercase',
+                                 zIndex: 10,
+                                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                 borderTop: '2px solid rgba(255,255,255,0.3)',
+                                 borderBottom: '2px solid rgba(255,255,255,0.3)',
+                               }}
+                             >
+                               EN MANTENIMIENTO
+                             </Box>
+                        )}
+
+                        {/* Title Overlay (Visible por defecto, desaparece en hover) */}
+                         <Box 
+                           className="room-title-overlay"
+                           sx={{ 
+                             position: 'absolute',
+                             top: 20,
+                             left: 20,
+                             right: 20,
+                             zIndex: 2,
+                             transition: 'opacity 0.3s ease-in-out',
+                           }}
+                         >
+                            {/* Tags/Chips Pequeños */}
+                            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                {room.acronimo && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid rgba(13, 71, 161, 0.8)', 
+                                        px: 1.5,
+                                        py: 0.2,
+                                        color: '#42a5f5', 
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        backdropFilter: 'blur(4px)',
+                                        bgcolor: 'rgba(13, 71, 161, 0.2)'
+                                    }}>
+                                        {room.acronimo}
+                                    </Box>
+                                )}
+                                {room.tipo_sala && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid rgba(171, 71, 188, 0.8)', 
+                                        px: 1.5,
+                                        py: 0.2,
+                                        color: '#e1bee7', 
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        backdropFilter: 'blur(4px)',
+                                        bgcolor: 'rgba(171, 71, 188, 0.2)'
+                                    }}>
+                                        {room.tipo_sala}
+                                    </Box>
+                                )}
+                            </Box>
+
+                           <Typography 
+                             variant="h4" 
+                             sx={{ 
+                               fontWeight: 900, 
+                               color: 'white', 
+                               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                               fontSize: '2rem',
+                               lineHeight: 1
+                             }}
+                           >
+                             {room.nombre_sala}
+                           </Typography>
+                         </Box>
+
+                        {/* Detalles Overlay (Visible en Hover, Fondo Oscuro) */}
                         <Box
-                          sx={{
-                            height: 200,
-                            bgcolor: 'grey.200',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
+                            className="room-details-overlay"
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                bgcolor: 'rgba(0, 5, 16, 0.85)', 
+                                backdropFilter: 'blur(8px)',
+                                opacity: 0,
+                                transform: 'translateY(20px)',
+                                transition: 'all 0.3s ease-in-out',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                p: 3,
+                            }}
                         >
-                          <ImageIcon sx={{ fontSize: 80, color: 'grey.400' }} />
-                        </Box>
-                      )}
-
-                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          {/* Tipo de resultado (solo cuando es búsqueda "todo") */}
-                          {searchType === 'todo' && (
-                            <Chip 
-                              icon={<RoomIcon />}
-                              label="Sala"
-                              size="small"
-                              color="secondary"
-                              sx={{ mb: 1 }}
-                            />
-                          )}
-                          
-                          {/* Nombre de la sala */}
-                          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
-                            {room.nombre_sala}
-                          </Typography>
-
-                          {/* Acrónimo */}
-                          {room.acronimo && (
-                            <Chip 
-                              label={room.acronimo}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                              sx={{ mr: 1, mb: 2 }}
-                            />
-                          )}
-
-                          {/* Tipo de sala */}
-                          <Chip 
-                            label={room.tipo_sala || 'Sin tipo'}
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                            sx={{ mb: 2 }}
-                          />
-
-                          {/* Edificio */}
-                          {room.building && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                              <BuildingIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                <strong>Edificio:</strong> {room.building.nombre_edificio}
-                              </Typography>
+                             {/* Chips Superiores (Duplicados para visualización en hover) */}
+                            <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+                                {room.acronimo && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid #1565c0', 
+                                        px: 2,
+                                        py: 0.4,
+                                        color: '#42a5f5', 
+                                        fontSize: '0.9rem',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {room.acronimo}
+                                    </Box>
+                                )}
+                                {room.tipo_sala && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid #7b1fa2', 
+                                        px: 2,
+                                        py: 0.4,
+                                        color: '#e1bee7', 
+                                        fontSize: '0.9rem',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {room.tipo_sala}
+                                    </Box>
+                                )}
                             </Box>
-                          )}
 
-                          {/* Piso */}
-                          {room.floor && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                              <RoomIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                <strong>Piso:</strong> {room.floor.nombre_piso}
-                              </Typography>
+                            {/* Lista de Detalles */}
+                            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <BuildingIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Edificio:</span> {room.building?.nombre_edificio || "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <RoomIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Piso:</span> {room.floor?.nombre_piso || "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <PeopleIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Capacidad:</span> {room.capacidad} personas
+                                    </Typography>
+                                </Box>
                             </Box>
-                          )}
-
-                          {/* Capacidad */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              <strong>Capacidad:</strong> {room.capacidad} personas
-                            </Typography>
-                          </Box>
-
-                          {/* Distancia */}
-                          {room.distance !== undefined && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 2 }}>
-                              <WalkIcon color="primary" fontSize="small" />
-                              <Typography variant="body1" color="primary" sx={{ fontWeight: 'bold' }}>
-                                A {room.distance < 1000 
-                                  ? `${room.distance} metros` 
-                                  : `${(room.distance / 1000).toFixed(2)} km`} de ti
-                              </Typography>
-                            </Box>
-                          )}
                         </Box>
 
-                        {/* Botones de acción */}
-                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<LocationIcon />}
-                            onClick={() => {
-                              if (!userLocation) {
-                                setSnackbar({
-                                  open: true,
-                                  message: 'Por favor, activa tu ubicación para ver la ruta',
-                                  severity: 'warning'
-                                })
-                                return
-                              }
-                              
-                              // La ruta lleva al edificio, la brújula guía a la sala
-                              let routeDestLat, routeDestLng, compassDestLat, compassDestLng
-                              
-                              if (room.building && room.building.cord_latitud && room.building.cord_longitud) {
-                                // Si hay edificio, la ruta va al edificio
-                                routeDestLat = room.building.cord_latitud
-                                routeDestLng = room.building.cord_longitud
-                                // La brújula apunta a la sala
-                                compassDestLat = room.cord_latitud
-                                compassDestLng = room.cord_longitud
-                                console.log('🏢 Ruta al edificio, brújula a la sala')
-                              } else {
-                                // Si no hay edificio, todo apunta a la sala
-                                routeDestLat = room.cord_latitud
-                                routeDestLng = room.cord_longitud
-                                compassDestLat = room.cord_latitud
-                                compassDestLng = room.cord_longitud
-                                console.log('⚠️ Sin edificio, ruta directa a la sala')
-                              }
-                              
-                              setRouteDestination({
-                                lat: routeDestLat,
-                                lng: routeDestLng
-                              })
-                              setRouteDestinationName(`Sala ${room.nombre_sala}`)
-                              setRouteDestinationData({
-                                type: 'room',
-                                name: `Sala ${room.nombre_sala}`,
-                                acronym: room.nombre_edificio,
-                                image: room.imagen,
-                                distance: room.distance,
-                                latitude: compassDestLat,
-                                longitude: compassDestLng,
-                                capacity: room.capacidad_personas
-                              })
-                              setRouteWaypoints([])
-                              setRouteMapOpen(true)
-                            }}
-                          >
-                            Ver Ruta
-                          </Button>
-                          <Button
-                            fullWidth
-                            variant="contained"
-                            onClick={() => {
-                              logSearch('sala', room.id_sala, room.nombre_sala)
-                              setSelectedRoom(room)
-                              setRoomDetailOpen(true)
-                            }}
-                          >
-                            Ver más
-                          </Button>
-                        </Box>
-                      </CardContent>
+                        {/* Botones de acción (Siempre Visibles, encima de todo) */}
+                        <Box sx={{ 
+                            position: 'absolute',
+                            bottom: 20,
+                            left: 20,
+                            right: 20,
+                            display: 'flex',
+                            gap: 1.5,
+                            zIndex: 10 // Encima del overlay
+                        }}>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                startIcon={<LocationIcon />}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Evitar click en card si hubiera
+                                  if (!userLocation) {
+                                    setSnackbar({
+                                      open: true,
+                                      message: 'Por favor, activa tu ubicación para ver la ruta',
+                                      severity: 'warning'
+                                    })
+                                    return
+                                  }
+                                  
+                                  let routeDestLat, routeDestLng, compassDestLat, compassDestLng
+                                  
+                                  if (room.building && room.building.cord_latitud && room.building.cord_longitud) {
+                                    routeDestLat = room.building.cord_latitud
+                                    routeDestLng = room.building.cord_longitud
+                                    compassDestLat = room.cord_latitud
+                                    compassDestLng = room.cord_longitud
+                                  } else {
+                                    routeDestLat = room.cord_latitud
+                                    routeDestLng = room.cord_longitud
+                                    compassDestLat = room.cord_latitud
+                                    compassDestLng = room.cord_longitud
+                                  }
+                                  
+                                  setRouteDestination({
+                                    lat: routeDestLat,
+                                    lng: routeDestLng
+                                  })
+                                  setRouteDestinationName(`Sala ${room.nombre_sala}`)
+                                  setRouteDestinationData({
+                                    type: 'room',
+                                    name: `Sala ${room.nombre_sala}`,
+                                    acronym: room.nombre_edificio,
+                                    image: room.imagen,
+                                    distance: room.distance,
+                                    latitude: compassDestLat,
+                                    longitude: compassDestLng,
+                                    capacity: room.capacidad_personas
+                                  })
+                                  setRouteWaypoints([])
+                                  setRouteMapOpen(true)
+                                }}
+                                sx={{
+                                   borderRadius: 2,
+                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
+                                   textTransform: 'none',
+                                   fontWeight: 'bold',
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                   '&:hover': {
+                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                   }
+                                }}
+                              >
+                                VER RUTA
+                              </Button>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  logSearch('sala', room.id_sala, room.nombre_sala)
+                                  setSelectedRoom(room)
+                                  setRoomDetailOpen(true)
+                                }}
+                                sx={{
+                                   borderRadius: 2,
+                                   background: 'rgba(255,255,255,0.2)', // Estilo "Building"
+                                   backdropFilter: 'blur(4px)',
+                                   border: '1px solid rgba(255,255,255,0.4)',
+                                   color: 'white',
+                                   textTransform: 'none',
+                                   fontWeight: 'bold',
+                                   '&:hover': { background: 'rgba(255,255,255,0.3)' }
+                                }}
+                              >
+                                VER MÁS
+                              </Button>
+                         </Box>
+
+                      </Box>
                     </Card>
                   </Grid>
                 ))}
