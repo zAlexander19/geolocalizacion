@@ -414,11 +414,6 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                               size="small"
                               color={room.estado ? 'success' : 'error'}
                             />
-                            <Chip
-                              label={room.disponibilidad}
-                              size="small"
-                              color={room.disponibilidad === 'Disponible' ? 'success' : 'default'}
-                            />
                           </Box>
                         </Box>
 

@@ -1158,15 +1158,6 @@ export default function HomePage() {
                                 variant="outlined"
                               />
                             )}
-                            <Chip
-                              label={building.disponibilidad || 'Disponible'}
-                              size="small"
-                              sx={{
-                                bgcolor: building.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
-                                color: building.disponibilidad === 'Disponible' ? '#81c784' : '#e57373',
-                                borderColor: building.disponibilidad === 'Disponible' ? '#81c784' : '#e57373'
-                              }}
-                            />
                           </Box>
                           
                           {/* Botón Ver más */}
@@ -1335,15 +1326,6 @@ export default function HomePage() {
                               sx={{ mb: 2 }}
                             />
                           )}
-
-                          {/* Disponibilidad */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Chip
-                              label={building.disponibilidad}
-                              size="small"
-                              color={building.disponibilidad === 'Disponible' ? 'success' : (building.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
-                            />
-                          </Box>
 
                           {/* Distancia */}
                           {building.distance !== undefined && (
@@ -1549,15 +1531,6 @@ export default function HomePage() {
                             <Typography variant="body2" color="text.secondary">
                               <strong>Capacidad:</strong> {room.capacidad} personas
                             </Typography>
-                          </Box>
-
-                          {/* Disponibilidad */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Chip
-                              label={room.disponibilidad}
-                              size="small"
-                              color={room.disponibilidad === 'Disponible' ? 'success' : (room.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
-                            />
                           </Box>
 
                           {/* Distancia */}
@@ -1970,18 +1943,41 @@ export default function HomePage() {
 
                                       {/* Imagen del baño */}
                                       {bathroom.imagen && !/via\.placeholder\.com/.test(bathroom.imagen) ? (
-                                        <Box
-                                          component="img"
-                                          src={getFullImageUrl(bathroom.imagen)}
-                                          alt={bathroom.nombre || 'Baño'}
-                                          sx={{
-                                            width: '100%',
-                                            height: 140,
-                                            objectFit: 'cover',
-                                            borderRadius: 1,
-                                            mb: 1.5
-                                          }}
-                                        />
+                                        <Box sx={{ position: 'relative' }}>
+                                          <Box
+                                            component="img"
+                                            src={getFullImageUrl(bathroom.imagen)}
+                                            alt={bathroom.nombre || 'Baño'}
+                                            sx={{
+                                              width: '100%',
+                                              height: 140,
+                                              objectFit: 'cover',
+                                              borderRadius: 1,
+                                              mb: 1.5
+                                            }}
+                                          />
+                                          {bathroom.disponibilidad === 'En mantenimiento' && (
+                                            <Box
+                                              sx={{
+                                                position: 'absolute',
+                                                top: 10,
+                                                left: 0,
+                                                right: 0,
+                                                bgcolor: 'error.main',
+                                                color: 'white',
+                                                py: 1,
+                                                px: 2,
+                                                fontWeight: 'bold',
+                                                textAlign: 'center',
+                                                transform: 'rotate(-5deg)',
+                                                boxShadow: 3,
+                                                zIndex: 1
+                                              }}
+                                            >
+                                              ⚠️ EN MANTENIMIENTO
+                                            </Box>
+                                          )}
+                                        </Box>
                                       ) : (
                                         <Box
                                           sx={{
@@ -2011,15 +2007,6 @@ export default function HomePage() {
                                             borderColor: '#42a5f5'
                                           }}
                                           variant="outlined"
-                                        />
-                                        <Chip
-                                          label={bathroom.disponibilidad || 'Disponible'}
-                                          size="small"
-                                          sx={{
-                                            bgcolor: bathroom.disponibilidad === 'Disponible' ? 'rgba(76, 175, 80, 0.2)' : (bathroom.disponibilidad === 'En mantenimiento' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(158, 158, 158, 0.2)'),
-                                            color: bathroom.disponibilidad === 'Disponible' ? '#81c784' : (bathroom.disponibilidad === 'En mantenimiento' ? '#e57373' : '#bdbdbd'),
-                                            borderColor: bathroom.disponibilidad === 'Disponible' ? '#81c784' : (bathroom.disponibilidad === 'En mantenimiento' ? '#e57373' : '#bdbdbd')
-                                          }}
                                         />
                                         {bathroom.acceso_discapacidad && (
                                           <Chip 
@@ -2165,11 +2152,6 @@ export default function HomePage() {
                             size="small"
                             color="primary"
                             variant="outlined"
-                          />
-                          <Chip
-                            label={bathroom.disponibilidad}
-                            size="small"
-                            color={bathroom.disponibilidad === 'Disponible' ? 'success' : (bathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                           />
                         </Box>
 
@@ -2367,11 +2349,6 @@ export default function HomePage() {
                   <Chip
                     label={selectedRoom.tipo_sala || 'Sin tipo'}
                     color="primary"
-                    size="small"
-                  />
-                  <Chip
-                    label={selectedRoom.disponibilidad || 'Disponible'}
-                    color={selectedRoom.disponibilidad === 'Disponible' ? 'success' : (selectedRoom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
                     size="small"
                   />
                 </Box>
@@ -2641,11 +2618,6 @@ export default function HomePage() {
                     color="primary"
                     size="small"
                   />
-                  <Chip
-                    label={selectedBathroom.disponibilidad || 'Disponible'}
-                    color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : (selectedBathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
-                    size="small"
-                  />
                 </Box>
               </Box>
             </DialogTitle>
@@ -2689,11 +2661,6 @@ export default function HomePage() {
                   {/* Chips de información */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                     <Chip label={selectedBathroom.tipo === 'h' ? 'Hombre' : selectedBathroom.tipo === 'm' ? 'Mujer' : 'Mixto'} size="small" color="primary" variant="outlined" />
-                    <Chip
-                      label={selectedBathroom.disponibilidad}
-                      size="small"
-                      color={selectedBathroom.disponibilidad === 'Disponible' ? 'success' : (selectedBathroom.disponibilidad === 'En mantenimiento' ? 'error' : 'default')}
-                    />
                     {selectedBathroom.acceso_discapacidad && (
                       <Chip label="♿ Acceso discapacidad" size="small" color="success" variant="outlined" />
                     )}
@@ -3323,11 +3290,6 @@ export default function HomePage() {
                     color={selectedFaculty.estado !== false ? 'success' : 'error'}
                     icon={<SchoolIcon />}
                   />
-                  <Chip
-                    label={selectedFaculty.disponibilidad || 'Disponible'}
-                    size="small"
-                    color={selectedFaculty.disponibilidad === 'Disponible' ? 'success' : 'warning'}
-                  />
                 </Box>
               </Box>
 
@@ -3401,11 +3363,6 @@ export default function HomePage() {
                                   )}
 
                                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
-                                    <Chip
-                                      label={associatedBuilding.disponibilidad}
-                                      size="small"
-                                      color={associatedBuilding.disponibilidad === 'Disponible' ? 'success' : 'warning'}
-                                    />
                                     <Chip
                                       label={associatedBuilding.estado ? 'Activo' : 'Inactivo'}
                                       size="small"
