@@ -156,6 +156,7 @@ export default function HomePage() {
   const [fullImageOpen, setFullImageOpen] = useState(false)
   const [fullImageSrc, setFullImageSrc] = useState('')
   const [fullImageAlt, setFullImageAlt] = useState('')
+  const [isAnyPopupOpen, setIsAnyPopupOpen] = useState(false)
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -1198,7 +1199,7 @@ export default function HomePage() {
               '100%': { opacity: 1 },
             },
           }}>
-            {(searchResults?.length > 0 || searchQuery) && (
+            {(searchResults?.length > 0 || searchQuery) && (searchType !== 'bano' || searchQuery) && (
               <Typography 
                 variant="h5" 
                 sx={{ 
@@ -2052,6 +2053,10 @@ export default function HomePage() {
                                 <Marker
                                   key={bathroom.id_bano}
                                   position={[bathroom.cord_latitud, bathroom.cord_longitud]}
+                                  eventHandlers={{
+                                    popupopen: () => setIsAnyPopupOpen(true),
+                                    popupclose: () => setIsAnyPopupOpen(false)
+                                  }}
                                   icon={L.divIcon({
                                     className: 'custom-marker-bathroom',
                                     html: `
@@ -2258,7 +2263,11 @@ export default function HomePage() {
                               p: 1.5,
                               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                               display: 'flex',
-                              flexDirection: 'column'
+                              flexDirection: 'column',
+                              transition: 'all 0.3s ease-in-out',
+                              opacity: isAnyPopupOpen ? 0 : 1,
+                              pointerEvents: isAnyPopupOpen ? 'none' : 'auto',
+                              transform: isAnyPopupOpen ? 'translateY(-10px)' : 'translateY(0)'
                           }}>
                               <Typography variant="caption" sx={{ color: 'grey.400', fontWeight: 'bold', letterSpacing: '1px', mb: 1, textTransform: 'uppercase', fontSize: '0.7rem' }}>
                                   REFERENCIA
@@ -2290,7 +2299,7 @@ export default function HomePage() {
 
                     <Grid container spacing={3}>
                       {/* Resultados para BAÑOS */}
-                      {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
+                      {searchResults.filter(r => (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
                   <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
                     <Card 
                       sx={{ 
