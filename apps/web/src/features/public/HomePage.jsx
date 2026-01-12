@@ -7,6 +7,16 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import { getFullImageUrl } from '../../utils/imageUrl'
+
+// Icono personalizado para la ubicación del usuario (Punto azul pulsante)
+const userLocationIcon = L.divIcon({
+  className: 'user-location-marker',
+  html: '<div class="user-pulse"></div><div class="user-dot"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10]
+})
+
 import {
   Alert,
   AppBar,
@@ -979,14 +989,7 @@ export default function HomePage() {
                 {userLocation && (
                   <Marker 
                     position={[userLocation.latitude, userLocation.longitude]}
-                    icon={L.icon({
-                      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-                      iconSize: [25, 41],
-                      iconAnchor: [12, 41],
-                      popupAnchor: [1, -34],
-                      shadowSize: [41, 41]
-                    })}
+                    icon={userLocationIcon}
                   >
                     <Popup>
                       <strong>Tu ubicación</strong>
@@ -2016,14 +2019,7 @@ export default function HomePage() {
                             {userLocation && (
                               <Marker 
                                 position={[userLocation.latitude, userLocation.longitude]}
-                                icon={L.icon({
-                                  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                                  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-                                  iconSize: [25, 41],
-                                  iconAnchor: [12, 41],
-                                  popupAnchor: [1, -34],
-                                  shadowSize: [41, 41]
-                                })}
+                                icon={userLocationIcon}
                               >
                                 <Popup>
                                   <strong>Tu ubicación</strong>
@@ -3431,7 +3427,7 @@ export default function HomePage() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
+                  <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
                     <Popup>Tu ubicación</Popup>
                   </Marker>
                   <Marker position={[routeDestination.lat, routeDestination.lng]}>
@@ -3626,7 +3622,7 @@ export default function HomePage() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <Marker position={[userLocation.latitude, userLocation.longitude]}>
+                  <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
                     <Popup>Tu ubicación</Popup>
                   </Marker>
                   <Marker position={[routeDestination.lat, routeDestination.lng]}>
