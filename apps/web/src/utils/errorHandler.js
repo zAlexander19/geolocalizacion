@@ -1,3 +1,5 @@
+import { useError } from '../contexts/ErrorContext'
+
 /**
  * Utility to extract user-friendly error messages from API errors
  * @param {Error} error - The error object from API call
@@ -24,8 +26,6 @@ export const getErrorMessage = (error) => {
  * Usage: const handleError = useApiErrorHandler()
  * Then: handleError(error) in catch blocks
  */
-import { useError } from '../contexts/ErrorContext'
-
 export const useApiErrorHandler = () => {
   const { showError } = useError()
   
