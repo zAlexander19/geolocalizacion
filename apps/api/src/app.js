@@ -19,6 +19,9 @@ import auditRoutes from './routes/audit.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import { logAudit } from './services/audit.service.js'
 import { getUserFromRequest } from './utils/auth-helper.js'
+import logger from './utils/logger.js'
+import { requestLogger, errorLogger } from './middlewares/logger.middleware.js'
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -75,6 +78,9 @@ async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight)
 
 export function createApp() {
   const app = express()
+  
+  // Request logging middleware (before other middleware)
+  app.use(requestLogger)
   
   // Configuración de CORS
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -1339,6 +1345,11 @@ export function createApp() {
       })
     }
   })
+
+  // Error handling middleware (must be after all routes)
+  app.use(notFoundHandler)
+  app.use(errorLogger)
+  app.use(errorHandler)
 
   return app
 }
