@@ -90,6 +90,34 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
 
+// Componente para cerrar popup dentro del contexto del mapa
+function ClosePopupButton() {
+  const map = useMap()
+  return (
+    <IconButton
+      size="small"
+      onClick={(e) => {
+        e.stopPropagation()
+        map.closePopup()
+      }}
+      sx={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 20,
+        color: 'white',
+        bgcolor: 'rgba(255,255,255,0.15)',
+        backdropFilter: 'blur(4px)',
+        '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+        width: 28,
+        height: 28
+      }}
+    >
+      <CloseIcon fontSize="small" />
+    </IconButton>
+  )
+}
+
 // Componente para manejar la ruta en el mapa con Leaflet Routing Machine
 function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError }) {
   const map = useMap()
@@ -137,7 +165,7 @@ function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError
       routeWhileDragging: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
-      showAlternatives: true, // Permitir buscar alternativas para mejor cálculo
+      showAlternatives: false, // No buscar alternativas para evitar confusión
       createMarker: function() { return null; } // No crear marcadores adicionales
     })
     .on('routesfound', function(e) {
@@ -2246,6 +2274,9 @@ export default function HomePage() {
                                         </Box>
                                       )}
 
+                                      {/* Custom Close Button for Map Card */}
+                                      <ClosePopupButton />
+
                                       {/* 3. CONTENIDO SUPERPUESTO */}
                                       <Box sx={{ 
                                           position: 'absolute', 
@@ -2257,8 +2288,8 @@ export default function HomePage() {
                                           display: 'flex',
                                           flexDirection: 'column'
                                       }}>
-                                          {/* Tag Tipo */}
-                                          <Box sx={{ display: 'flex', mb: 1 }}>
+                                          {/* Close Button & Tag Tipo Row */}
+                                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                               <Box sx={{ 
                                                   bgcolor: bathroom.tipo === 'h' ? '#3b82f6' : bathroom.tipo === 'm' ? '#ec4899' : '#a855f7', 
                                                   color: 'white',
@@ -2272,6 +2303,11 @@ export default function HomePage() {
                                               }}>
                                                   {bathroom.tipo === 'h' ? 'Hombres' : bathroom.tipo === 'm' ? 'Mujeres' : 'Mixto'}
                                               </Box>
+                                              
+                                              {/* Close Button added here (absolute top-right style but inside flex) */}
+                                              {/* Note: In Leaflet Popups close button is handled by Leaflet, but custom content */}
+                                              {/* might be blocking it or we want a explicit one. Leaflet popup has a 'x' by default. */}
+                                              {/* However, the user asked for an 'X' on THIS card specifically. */}
                                           </Box>
 
                                           {/* Título Principal */}
@@ -2780,12 +2816,28 @@ export default function HomePage() {
                         </Typography>
                     )}
                 </Box>
-                <Chip
-                    label={selectedRoom.tipo_sala || 'Aula'}
-                    color="primary"
-                    variant="outlined"
-                    size="small"
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                        label={selectedRoom.tipo_sala || 'Aula'}
+                        color="primary"
+                        variant="outlined"
+                        size="small"
+                    />
+                    <IconButton 
+                        onClick={() => {
+                            setRoomDetailOpen(false)
+                            setSelectedRoom(null)
+                        }}
+                        sx={{ 
+                            color: 'white',
+                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                            ml: 1
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
               </Box>
             </DialogTitle>
 
@@ -3069,15 +3121,31 @@ export default function HomePage() {
                         {selectedBathroom.nombre || 'Baño'}
                     </Typography>
                  </Box>
-                 <Chip
-                    label={selectedBathroom.tipo === 'h' ? 'Hombres' : selectedBathroom.tipo === 'm' ? 'Mujeres' : 'Mixto'}
-                    size="small"
-                    sx={{ 
-                        bgcolor: selectedBathroom.tipo === 'h' ? '#1976d2' : selectedBathroom.tipo === 'm' ? '#e91e63' : '#9c27b0', // Blue/Pink/Purple
-                        color: 'white',
-                        fontWeight: 'bold'
-                    }}
-                />
+                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                     <Chip
+                        label={selectedBathroom.tipo === 'h' ? 'Hombres' : selectedBathroom.tipo === 'm' ? 'Mujeres' : 'Mixto'}
+                        size="small"
+                        sx={{ 
+                            bgcolor: selectedBathroom.tipo === 'h' ? '#1976d2' : selectedBathroom.tipo === 'm' ? '#e91e63' : '#9c27b0', // Blue/Pink/Purple
+                            color: 'white',
+                            fontWeight: 'bold'
+                        }}
+                    />
+                    <IconButton 
+                        onClick={() => {
+                            setBathroomDetailOpen(false)
+                            setSelectedBathroom(null)
+                        }}
+                        sx={{ 
+                            color: 'white',
+                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                            ml: 1
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
               </Box>
             </DialogTitle>
 
@@ -3392,10 +3460,10 @@ export default function HomePage() {
         </Box>
       </Dialog>
 
-      {/* Popup del mapa con Google Maps */}
+      {/* Popup del mapa con Google Maps - DEAD CODE */}
       <Dialog
-        open={mapOpen}
-        onClose={() => setMapOpen(false)}
+        open={false} // mapOpen unused
+        onClose={() => {}}
         maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
         PaperProps={{
@@ -3415,9 +3483,7 @@ export default function HomePage() {
             <Typography variant={isMobile ? "body1" : "h6"}>
               {isMobile ? 'Ruta' : `Ruta a ${routeDestinationName}`}
             </Typography>
-            <IconButton onClick={() => setRouteMapOpen(false)} size="small">
-              <CloseIcon />
-            </IconButton>
+            {/* DEAD ICON */}
           </Box>
         </DialogTitle>
         <DialogContent sx={{ 
@@ -3612,10 +3678,23 @@ export default function HomePage() {
             alignItems: 'center',
             fontSize: isMobile ? '0.875rem' : '1rem',
           }}>
-            <Typography variant={isMobile ? "body1" : "h6"}>
+            <Typography variant={isMobile ? "body1" : "h6"} sx={{ fontWeight: 'bold' }}>
               {isMobile ? 'Ruta' : `Ruta a ${routeDestinationName}`}
             </Typography>
-            <IconButton onClick={() => setRouteMapOpen(false)} size="small">
+            <IconButton 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setRouteMapOpen(false);
+                setRouteInfo(null);
+              }} 
+              size="small"
+              sx={{ 
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.1)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>
@@ -3863,7 +3942,15 @@ export default function HomePage() {
                     {selectedFaculty.nombre_facultad}
                   </Typography>
                 </Box>
-                <IconButton onClick={() => setFacultyDetailOpen(false)} size="large">
+                <IconButton 
+                  onClick={() => setFacultyDetailOpen(false)} 
+                  size="small"
+                  sx={{ 
+                    color: 'white',
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
+                  }}
+                >
                   <CloseIcon />
                 </IconButton>
               </Box>

@@ -123,10 +123,12 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
         <IconButton 
           onClick={handleClose}
           sx={{ 
-            bgcolor: 'rgba(0,0,0,0.05)', 
-            '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' },
+            color: 'white',
+            bgcolor: 'rgba(255,255,255,0.1)', 
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
             ml: 2,
-            mt: -0.5
+            mt: -0.5,
+            zIndex: 10
           }}
         >
           <CloseIcon />
