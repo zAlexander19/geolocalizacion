@@ -1072,7 +1072,7 @@ export default function HomePage() {
               <MapContainer
                 center={buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141]}
                 zoom={18}
-                maxZoom={19}
+                maxZoom={18}
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
@@ -2102,7 +2102,7 @@ export default function HomePage() {
                               return userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141];
                             })()}
                             zoom={18}
-                            maxZoom={19}
+                            maxZoom={18}
                             style={{ height: '100%', width: '100%' }}
                           >
                             <TileLayer
