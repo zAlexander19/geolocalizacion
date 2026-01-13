@@ -118,8 +118,16 @@ function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError
     const routingControl = L.Routing.control({
       waypoints: allWaypoints,
       router: L.Routing.osrmv1({
-        serviceUrl: 'https://router.project-osrm.org/route/v1',
-        profile: 'foot' // Rutas a pie
+        serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1',
+        profile: 'foot', // Usar el perfil 'foot' específico de OSRM
+        routingOptions: {
+          alternatives: false,
+          steps: true,
+          annotations: false,
+          geometries: 'polyline',
+          overview: 'full',
+          continue_straight: true
+        }
       }),
       lineOptions: {
         styles: [{ color: '#6FA1EC', weight: 4, opacity: 0.8 }]

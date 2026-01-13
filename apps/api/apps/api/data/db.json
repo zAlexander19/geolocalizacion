@@ -1819,6 +1819,503 @@
       },
       "created_from_osm": true,
       "imported_at": "2025-11-12T13:44:47.698Z"
+    },
+    {
+      "id_edificio": 41,
+      "osm_id": 405032514,
+      "nombre_edificio": "Edificio 405032514",
+      "acronimo": "",
+      "cord_latitud": -20.24275442,
+      "cord_longitud": -70.14199388,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2427687,
+          "lon": -70.1418762
+        },
+        {
+          "lat": -20.2426117,
+          "lon": -70.1420249
+        },
+        {
+          "lat": -20.242733,
+          "lon": -70.1421704
+        },
+        {
+          "lat": -20.24289,
+          "lon": -70.1420217
+        },
+        {
+          "lat": -20.2427687,
+          "lon": -70.1418762
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.618Z"
+    },
+    {
+      "id_edificio": 42,
+      "osm_id": 619000024,
+      "nombre_edificio": "Edificio 619000024",
+      "acronimo": "",
+      "cord_latitud": -20.24560728,
+      "cord_longitud": -70.13910566,
+      "tipo": "apartments",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2457952,
+          "lon": -70.1390755
+        },
+        {
+          "lat": -20.24569,
+          "lon": -70.1389011
+        },
+        {
+          "lat": -20.2453254,
+          "lon": -70.1391509
+        },
+        {
+          "lat": -20.2454306,
+          "lon": -70.1393253
+        },
+        {
+          "lat": -20.2457952,
+          "lon": -70.1390755
+        }
+      ],
+      "tags": {
+        "building": "apartments",
+        "building:levels": 20
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.619Z"
+    },
+    {
+      "id_edificio": 43,
+      "osm_id": 619000025,
+      "nombre_edificio": "Edificio 619000025",
+      "acronimo": "",
+      "cord_latitud": -20.2448137625,
+      "cord_longitud": -70.1390258375,
+      "tipo": "hotel",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2446984,
+          "lon": -70.1390894
+        },
+        {
+          "lat": -20.2447861,
+          "lon": -70.139015
+        },
+        {
+          "lat": -20.2447118,
+          "lon": -70.1388787
+        },
+        {
+          "lat": -20.2448604,
+          "lon": -70.1388011
+        },
+        {
+          "lat": -20.244954,
+          "lon": -70.1390118
+        },
+        {
+          "lat": -20.245009,
+          "lon": -70.1390783
+        },
+        {
+          "lat": -20.244792,
+          "lon": -70.139243
+        },
+        {
+          "lat": -20.2446984,
+          "lon": -70.1390894
+        }
+      ],
+      "tags": {
+        "building": "hotel",
+        "building:levels": 12
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.619Z"
+    },
+    {
+      "id_edificio": 44,
+      "osm_id": 619000027,
+      "nombre_edificio": "Edificio 619000027",
+      "acronimo": "",
+      "cord_latitud": -20.2446574,
+      "cord_longitud": -70.13933112,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2447434,
+          "lon": -70.1393157
+        },
+        {
+          "lat": -20.2446874,
+          "lon": -70.1392326
+        },
+        {
+          "lat": -20.2445284,
+          "lon": -70.1393543
+        },
+        {
+          "lat": -20.2445844,
+          "lon": -70.1394373
+        },
+        {
+          "lat": -20.2447434,
+          "lon": -70.1393157
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 12
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.620Z"
+    },
+    {
+      "id_edificio": 45,
+      "osm_id": 619291596,
+      "nombre_edificio": "Edificio 619291596",
+      "acronimo": "",
+      "cord_latitud": -20.244356285714282,
+      "cord_longitud": -70.13925024285713,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2444943,
+          "lon": -70.139236
+        },
+        {
+          "lat": -20.2443941,
+          "lon": -70.1390987
+        },
+        {
+          "lat": -20.2441331,
+          "lon": -70.1393151
+        },
+        {
+          "lat": -20.2441741,
+          "lon": -70.1393712
+        },
+        {
+          "lat": -20.2443724,
+          "lon": -70.1392067
+        },
+        {
+          "lat": -20.2444317,
+          "lon": -70.139288
+        },
+        {
+          "lat": -20.2444943,
+          "lon": -70.139236
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "building:levels": 10
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.620Z"
+    },
+    {
+      "id_edificio": 46,
+      "osm_id": 619291597,
+      "nombre_edificio": "Edificio 619291597",
+      "acronimo": "",
+      "cord_latitud": -20.244391384615383,
+      "cord_longitud": -70.13944359230769,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2443985,
+          "lon": -70.1393379
+        },
+        {
+          "lat": -20.2443352,
+          "lon": -70.1393892
+        },
+        {
+          "lat": -20.2443653,
+          "lon": -70.1394315
+        },
+        {
+          "lat": -20.2443287,
+          "lon": -70.1394611
+        },
+        {
+          "lat": -20.244298,
+          "lon": -70.139418
+        },
+        {
+          "lat": -20.244245,
+          "lon": -70.1394609
+        },
+        {
+          "lat": -20.2443698,
+          "lon": -70.1396359
+        },
+        {
+          "lat": -20.2445236,
+          "lon": -70.1395113
+        },
+        {
+          "lat": -20.2444824,
+          "lon": -70.1394534
+        },
+        {
+          "lat": -20.2444568,
+          "lon": -70.1394742
+        },
+        {
+          "lat": -20.2444308,
+          "lon": -70.1394377
+        },
+        {
+          "lat": -20.2444554,
+          "lon": -70.1394177
+        },
+        {
+          "lat": -20.2443985,
+          "lon": -70.1393379
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.620Z"
+    },
+    {
+      "id_edificio": 47,
+      "osm_id": 619495920,
+      "nombre_edificio": "Shell",
+      "acronimo": "",
+      "cord_latitud": -20.24218182916667,
+      "cord_longitud": -70.14271440833335,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2424205,
+          "lon": -70.1427414
+        },
+        {
+          "lat": -20.2423848,
+          "lon": -70.1427056
+        },
+        {
+          "lat": -20.242215,
+          "lon": -70.1425354
+        },
+        {
+          "lat": -20.2421078,
+          "lon": -70.1424279
+        },
+        {
+          "lat": -20.2420506,
+          "lon": -70.1424927
+        },
+        {
+          "lat": -20.2421098,
+          "lon": -70.1425521
+        },
+        {
+          "lat": -20.2422228,
+          "lon": -70.1426653
+        },
+        {
+          "lat": -20.2421874,
+          "lon": -70.1427055
+        },
+        {
+          "lat": -20.2421541,
+          "lon": -70.1427432
+        },
+        {
+          "lat": -20.2420592,
+          "lon": -70.1426481
+        },
+        {
+          "lat": -20.242024,
+          "lon": -70.1426377
+        },
+        {
+          "lat": -20.2419988,
+          "lon": -70.1426303
+        },
+        {
+          "lat": -20.2419645,
+          "lon": -70.1427627
+        },
+        {
+          "lat": -20.2419843,
+          "lon": -70.1427685
+        },
+        {
+          "lat": -20.2420104,
+          "lon": -70.1427762
+        },
+        {
+          "lat": -20.2419877,
+          "lon": -70.1428637
+        },
+        {
+          "lat": -20.2422187,
+          "lon": -70.1429315
+        },
+        {
+          "lat": -20.2422907,
+          "lon": -70.1428499
+        },
+        {
+          "lat": -20.2422628,
+          "lon": -70.1428219
+        },
+        {
+          "lat": -20.2422813,
+          "lon": -70.1428009
+        },
+        {
+          "lat": -20.2423162,
+          "lon": -70.1427614
+        },
+        {
+          "lat": -20.2423298,
+          "lon": -70.142775
+        },
+        {
+          "lat": -20.2423622,
+          "lon": -70.1428075
+        },
+        {
+          "lat": -20.2424205,
+          "lon": -70.1427414
+        }
+      ],
+      "tags": {
+        "addr:city": "Iquique",
+        "amenity": "fuel",
+        "brand": "Shell",
+        "brand:wikidata": "Q110716465",
+        "building": "yes",
+        "name": "Shell"
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.621Z"
+    },
+    {
+      "id_edificio": 48,
+      "osm_id": 1386678403,
+      "nombre_edificio": "Edificio 1386678403",
+      "acronimo": "",
+      "cord_latitud": -20.24393982,
+      "cord_longitud": -70.14218552000001,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2439259,
+          "lon": -70.1422048
+        },
+        {
+          "lat": -20.2439259,
+          "lon": -70.1421566
+        },
+        {
+          "lat": -20.2439607,
+          "lon": -70.1421566
+        },
+        {
+          "lat": -20.2439607,
+          "lon": -70.1422048
+        },
+        {
+          "lat": -20.2439259,
+          "lon": -70.1422048
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.622Z"
+    },
+    {
+      "id_edificio": 49,
+      "osm_id": 1386678404,
+      "nombre_edificio": "Edificio 1386678404",
+      "acronimo": "",
+      "cord_latitud": -20.243842220000005,
+      "cord_longitud": -70.14219317999999,
+      "tipo": "building",
+      "direccion": "",
+      "disponibilidad": "Disponible",
+      "estado": true,
+      "imagen": "",
+      "coordinates": [
+        {
+          "lat": -20.2438563,
+          "lon": -70.1422167
+        },
+        {
+          "lat": -20.2438226,
+          "lon": -70.1422176
+        },
+        {
+          "lat": -20.2438211,
+          "lon": -70.1421579
+        },
+        {
+          "lat": -20.2438548,
+          "lon": -70.142157
+        },
+        {
+          "lat": -20.2438563,
+          "lon": -70.1422167
+        }
+      ],
+      "tags": {
+        "building": "yes"
+      },
+      "created_from_osm": true,
+      "imported_at": "2026-01-13T14:48:58.623Z"
     }
   ],
   "floors": [

@@ -66,16 +66,6 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
 
   return (
     <>
-      <Backdrop
-        open={isFocused}
-        onClick={() => setIsFocused(false)}
-        sx={{
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backdropFilter: 'blur(8px)',
-          backgroundColor: 'rgba(5, 15, 30, 0.7)',
-          transition: 'all 0.5s ease-in-out'
-        }}
-      />
       
       <ClickAwayListener onClickAway={() => setIsFocused(false)}>
         <Paper
@@ -135,13 +125,23 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
                 color: 'white',
                 height: 56, // Increased height
                 px: 2,
+                '& .MuiInputBase-input': {
+                  backgroundColor: 'transparent !important',
+                  border: 'none !important',
+                  outline: 'none !important',
+                  boxShadow: 'none !important',
+                },
                 '& ::placeholder': {
                   color: 'rgba(255,255,255,0.4)',
                   opacity: 1
                 }
               }
             }}
-            sx={{ flexGrow: 1 }}
+            sx={{ 
+              flexGrow: 1,
+              backgroundColor: 'transparent !important',
+              borderRadius: '24px'
+            }}
           />
 
           {/* Separador Vertical */}
