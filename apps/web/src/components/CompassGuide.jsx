@@ -21,7 +21,19 @@ import {
   MeetingRoom as RoomIcon,
 } from '@mui/icons-material'
 
-export default function CompassGuide({ open, onClose, userLocation, destination, destinationName, destinationImage, destinationType }) {
+export default function CompassGuide({ 
+  open, 
+  onClose, 
+  userLocation, 
+  destination, 
+  destinationName, 
+  destinationImage, 
+  destinationType,
+  variant = 'dialog',
+  // New props for route integration
+  routeDistance = null, // External distance (from OSRM) in meters
+  routeNextPoint = null // External target point {lat, lng} for arrow direction
+}) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [heading, setHeading] = useState(0) // Orientación del dispositivo
@@ -89,22 +101,31 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
       const currentLat = position.coords.latitude
       const currentLng = position.coords.longitude
 
+      // Usar el siguiente punto de ruta si existe para la dirección de la flecha
+      const targetLat = routeNextPoint ? routeNextPoint.lat : destination.lat
+      const targetLng = routeNextPoint ? routeNextPoint.lng : destination.lng
+
       // Calcular bearing
       const newBearing = calculateBearing(
         currentLat,
         currentLng,
-        destination.lat,
-        destination.lng
+        targetLat,
+        targetLng
       )
       setBearing(newBearing)
 
-      // Calcular distancia
-      const dist = calculateDistance(
-        currentLat,
-        currentLng,
-        destination.lat,
-        destination.lng
-      )
+      // Calcular distancia (usar la de OSRM si está disponible)
+      let dist
+      if (routeDistance !== null && routeDistance !== undefined) {
+        dist = Math.round(routeDistance)
+      } else {
+        dist = calculateDistance(
+          currentLat,
+          currentLng,
+          destination.lat,
+          destination.lng
+        )
+      }
       setDistance(dist)
 
       // Verificar si ha llegado al destino
@@ -138,7 +159,14 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
         navigator.geolocation.clearWatch(watchIdRef.current)
       }
     }
-  }, [open, destination, hasArrived])
+  }, [open, destination, hasArrived, routeDistance, routeNextPoint])
+
+  useEffect(() => {
+    // Actualizar distancia si cambia desde props
+    if (routeDistance !== null && routeDistance !== undefined) {
+      setDistance(Math.round(routeDistance))
+    }
+  }, [routeDistance])
 
   useEffect(() => {
     if (!open || !userLocation || !destination) return
@@ -220,6 +248,105 @@ export default function CompassGuide({ open, onClose, userLocation, destination,
   }
 
   if (!userLocation || !destination) return null
+
+  if (variant === 'overlay') {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 24,
+          left: 16,
+          zIndex: 1000, 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 1,
+          pointerEvents: 'auto'
+        }}
+      >
+        {permission === 'prompt' && (
+           <Button 
+             variant="contained" 
+             size="small" 
+             color="secondary" 
+             onClick={requestOrientationPermission}
+             sx={{ 
+               whiteSpace: 'nowrap', 
+               fontSize: '0.7rem',
+               bgcolor: 'rgba(0,0,0,0.8)',
+               backdropFilter: 'blur(4px)',
+               '&:hover': { bgcolor: 'rgba(0,0,0,0.9)' }
+             }}
+           >
+             Activar Brújula
+           </Button>
+        )}
+
+        {permission === 'denied' && (
+           <Box sx={{ bgcolor: 'rgba(0,0,0,0.8)', p: 1, borderRadius: 1 }}>
+              <Typography variant="caption" sx={{ color: '#ff9800' }}>
+                 ⚠️ Sin permiso de orientación
+              </Typography>
+           </Box>
+        )}
+
+        {permission === 'granted' && (
+          <Box sx={{ 
+             bgcolor: 'rgba(0,0,0,0.8)', 
+             backdropFilter: 'blur(4px)',
+             p: 1.5, 
+             borderRadius: 3,
+             display: 'flex',
+             flexDirection: 'column',
+             alignItems: 'center',
+             border: '1px solid rgba(255,255,255,0.2)',
+             boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+          }}>
+             <Box
+               sx={{
+                 position: 'relative',
+                 width: 80,
+                 height: 80,
+                 borderRadius: '50%',
+                 border: '2px solid #444',
+                 bgcolor: '#0a0a0a',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 mb: 0.5,
+                 boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)'
+               }}
+             >
+                <Typography sx={{ position: 'absolute', top: 4, color: '#f44336', fontSize: '0.75rem', fontWeight: 900 }}>N</Typography>
+                <Typography sx={{ position: 'absolute', bottom: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>S</Typography>
+                <Typography sx={{ position: 'absolute', left: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>O</Typography>
+                <Typography sx={{ position: 'absolute', right: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>E</Typography>
+                
+                <NavigationIcon
+                  sx={{
+                    fontSize: 48,
+                    color: hasArrived ? '#FFD700' : '#4CAF50',
+                    transform: `rotate(${arrowAngle}deg)`,
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    filter: 'drop-shadow(0 0 4px rgba(76, 175, 80, 0.6))',
+                  }}
+                />
+             </Box>
+             
+             <Typography variant="caption" sx={{ color: hasArrived ? '#FFD700' : '#4CAF50', fontWeight: 'bold', fontSize: '0.9rem', mt: 0.5 }}>
+                {distance < 1000 ? `${distance}m` : `${(distance / 1000).toFixed(2)}km`}
+             </Typography>
+             
+             {hasArrived && (
+               <Typography variant="caption" sx={{ color: '#aaa', fontSize: '0.65rem' }}>
+                 ¡Llegaste!
+               </Typography>
+             )}
+          </Box>
+        )}
+      </Box>
+    )
+  }
 
   return (
     <Dialog

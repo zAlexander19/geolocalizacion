@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -91,8 +91,16 @@ L.Icon.Default.mergeOptions({
 })
 
 // Componente para manejar la ruta en el mapa con Leaflet Routing Machine
-function RouteComponent({ start, end, waypoints = [] }) {
+function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError }) {
   const map = useMap()
+  const onRouteFoundRef = useRef(onRouteFound)
+  const onRouteErrorRef = useRef(onRouteError)
+
+  // Actualizar refs cuando cambian las props
+  useEffect(() => {
+    onRouteFoundRef.current = onRouteFound
+    onRouteErrorRef.current = onRouteError
+  }, [onRouteFound, onRouteError])
 
   useEffect(() => {
     if (!map || !start || !end) return
@@ -114,24 +122,51 @@ function RouteComponent({ start, end, waypoints = [] }) {
         profile: 'foot' // Rutas a pie
       }),
       lineOptions: {
-        styles: [{ color: '#6FA1EC', weight: 4 }]
+        styles: [{ color: '#6FA1EC', weight: 4, opacity: 0.8 }]
       },
       show: false, // Ocultar el panel de instrucciones
       addWaypoints: false,
       routeWhileDragging: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
-      showAlternatives: false,
+      showAlternatives: true, // Permitir buscar alternativas para mejor cálculo
       createMarker: function() { return null; } // No crear marcadores adicionales
-    }).addTo(map)
+    })
+    .on('routesfound', function(e) {
+      if (e.routes && e.routes.length > 0) {
+        const route = e.routes[0];
+        if (onRouteFoundRef.current) {
+            onRouteFoundRef.current({
+                distance: route.summary.totalDistance, // metros
+                time: route.summary.totalTime, // segundos
+                instructions: route.instructions, // Instrucciones de navegación
+                coordinates: route.coordinates // Coordenadas de la ruta
+            });
+        }
+      }
+    })
+    .on('routingerror', function(e) {
+        console.error("Routing error:", e);
+        if (onRouteErrorRef.current) onRouteErrorRef.current(e);
+    })
+    .addTo(map)
 
     // Cleanup
     return () => {
-      if (map && routingControl) {
-        map.removeControl(routingControl)
-      }
+      // Usar setTimeout para evitar conflictos con el ciclo de renderizado de React/Leaflet
+      setTimeout(() => {
+        if (map && routingControl) {
+            try {
+                map.removeControl(routingControl)
+            } catch (e) {
+                console.warn("Error cleaning up routing control", e)
+            }
+        }
+      }, 0)
     }
-  }, [map, start, end, waypoints])
+    // Desactivar eslint para pasar start/end como dependencias si son arrays
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, start?.[0], start?.[1], end?.[0], end?.[1], JSON.stringify(waypoints)])
 
   return null
 }
@@ -167,6 +202,7 @@ export default function HomePage() {
   const [fullImageOpen, setFullImageOpen] = useState(false)
   const [fullImageSrc, setFullImageSrc] = useState('')
   const [fullImageAlt, setFullImageAlt] = useState('')
+  const [routeInfo, setRouteInfo] = useState(null) // Estado para información de navegación (tiempo, distancia)
   const [isAnyPopupOpen, setIsAnyPopupOpen] = useState(false)
 
   // Icono dinámico para el destino seleccionado
@@ -3548,7 +3584,10 @@ export default function HomePage() {
       {/* Modal de Mapa con Ruta - SIMPLIFICADO SIN LEAFLET */}
       <Dialog
         open={routeMapOpen}
-        onClose={() => setRouteMapOpen(false)}
+        onClose={() => {
+          setRouteMapOpen(false)
+          setRouteInfo(null)
+        }}
         maxWidth={isMobile ? "xs" : "lg"}
         fullWidth
         PaperProps={{
@@ -3665,17 +3704,7 @@ export default function HomePage() {
                     background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0) 100%)'
                  }}>
                      {/* Infos */}
-                     <Box sx={{ display: 'flex', gap: 2, mb: 2, color: 'rgba(255,255,255,0.9)' }}>
-                        {routeDestinationData.distance !== undefined && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <WalkIcon fontSize="small" />
-                                <Typography variant="body2" fontWeight="bold">
-                                    {routeDestinationData.distance < 1000 
-                                      ? `${routeDestinationData.distance} m` 
-                                      : `${(routeDestinationData.distance / 1000).toFixed(2)} km`}
-                                </Typography>
-                            </Box>
-                        )}
+                     <Box sx={{ display: 'flex', gap: 2, mb: 2, color: 'rgba(255,255,255,0.9)', flexWrap: 'wrap' }}>
                         {routeDestinationData.capacity && (
                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <PeopleIcon fontSize="small" />
@@ -3683,28 +3712,6 @@ export default function HomePage() {
                             </Box>
                         )}
                      </Box>
-
-                     <Button
-                         variant="contained"
-                         fullWidth
-                         onClick={() => setCompassGuideOpen(true)}
-                         size="large"
-                         sx={{ 
-                             bgcolor: 'rgba(255,255,255,0.15)',
-                             backdropFilter: 'blur(8px)',
-                             border: '1px solid rgba(255,255,255,0.3)',
-                             color: 'white',
-                             fontWeight: 800,
-                             borderRadius: 2,
-                             boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                             '&:hover': {
-                                 bgcolor: 'rgba(255,255,255,0.25)',
-                                 transform: 'translateY(-1px)'
-                             }
-                          }}
-                     >
-                         ACTIVAR GUÍA
-                     </Button>
                  </Box>
               </Card>
 
@@ -3736,8 +3743,85 @@ export default function HomePage() {
                     start={[userLocation.latitude, userLocation.longitude]}
                     end={[routeDestination.lat, routeDestination.lng]}
                     waypoints={routeWaypoints}
+                    onRouteFound={(info) => setRouteInfo(info)}
+                    onRouteError={(err) => console.log('Route error', err)}
                   />
                 </MapContainer>
+
+                {/* Floating Info Overlay */}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1000,
+                        bgcolor: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: 50,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        px: 3,
+                        py: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        border: '1px solid rgba(0,0,0,0.1)',
+                        whiteSpace: 'nowrap'
+                    }}
+                >
+                    {/* Time */}
+                    {routeInfo ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.7rem', lineHeight: 1, textTransform: 'uppercase', fontWeight: 900, marginBottom: '4px', color: '#64748b', fontFamily: '"Roboto","Helvetica","Arial",sans-serif' }}>
+                                TIEMPO
+                            </span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#16a34a', lineHeight: 1, fontFamily: '"Roboto","Helvetica","Arial",sans-serif' }}>
+                                ~{Math.ceil(routeInfo.time / 60)} min
+                            </span>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <CircularProgress size={16} sx={{ mb: 0.5, color: '#64748b' }} />
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, fontFamily: '"Roboto","Helvetica","Arial",sans-serif' }}>Calculando...</span>
+                        </Box>
+                    )}
+                    
+                    <Divider orientation="vertical" flexItem sx={{ opacity: 0.5, borderColor: '#cbd5e1', borderWidth: '1px', mx: 1 }} />
+
+                    {/* Distance */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                         <span style={{ fontSize: '0.7rem', lineHeight: 1, textTransform: 'uppercase', fontWeight: 900, marginBottom: '4px', color: '#64748b', fontFamily: '"Roboto","Helvetica","Arial",sans-serif' }}>
+                            DISTANCIA
+                        </span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <WalkIcon sx={{ fontSize: 18, color: '#2563eb' }} />
+                            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1e293b', lineHeight: 1, fontFamily: '"Roboto","Helvetica","Arial",sans-serif' }}>
+                                {routeInfo 
+                                    ? (routeInfo.distance < 1000 
+                                        ? `${Math.round(routeInfo.distance)} m` 
+                                        : `${(routeInfo.distance / 1000).toFixed(2)} km`)
+                                    : (routeDestinationData.distance < 1000 
+                                        ? `${routeDestinationData.distance} m` 
+                                        : `${(routeDestinationData.distance / 1000).toFixed(2)} km`)
+                                }
+                            </span>
+                        </Box>
+                    </Box>
+                </Box>
+
+                {/* Compass Overlay */}
+                <CompassGuide
+                  open={true}
+                  onClose={() => {}}
+                  userLocation={userLocation}
+                  destination={routeDestination}
+                  destinationName={routeDestinationName}
+                  destinationImage={routeDestinationData?.image}
+                  destinationType={routeDestinationData?.type}
+                  variant="overlay"
+                  routeDistance={routeInfo?.distance}
+                  routeNextPoint={routeInfo?.coordinates && routeInfo.coordinates.length > 5 ? routeInfo.coordinates[5] : (routeInfo?.coordinates?.[1] || null)}
+                />
               </Box>
             </>
           )}
@@ -3998,16 +4082,7 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* Compass Guide Modal */}
-      <CompassGuide
-        open={compassGuideOpen}
-        onClose={() => setCompassGuideOpen(false)}
-        userLocation={userLocation}
-        destination={routeDestination}
-        destinationName={routeDestinationName}
-        destinationImage={routeDestinationData?.image}
-        destinationType={routeDestinationData?.type}
-      />
+
     </>
   )
 }
