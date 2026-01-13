@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
@@ -167,6 +168,64 @@ export default function HomePage() {
   const [fullImageSrc, setFullImageSrc] = useState('')
   const [fullImageAlt, setFullImageAlt] = useState('')
   const [isAnyPopupOpen, setIsAnyPopupOpen] = useState(false)
+
+  // Icono dinámico para el destino seleccionado
+  const destinationIcon = useMemo(() => {
+    if (!routeDestinationData) return new L.Icon.Default();
+
+    let IconComponent = LocationIcon;
+    let bgColor = '#ef4444'; // default red
+
+    // Determinar icono y color basado en el tipo
+    const type = routeDestinationData.type || routeDestinationData.resultType;
+    
+    if (type === 'building' || type === 'edificio') {
+      IconComponent = BuildingIcon;
+      bgColor = '#2563eb'; // blue-600
+    } else if (type === 'room' || type === 'sala') {
+      IconComponent = RoomIcon;
+      bgColor = '#16a34a'; // green-600
+    } else if (type === 'bathroom' || type === 'bano') {
+      IconComponent = BathroomIcon;
+      bgColor = '#0891b2'; // cyan-600
+    }
+
+    const html = renderToStaticMarkup(
+      <div style={{
+        backgroundColor: bgColor,
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '3px solid white',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
+        position: 'relative'
+      }}>
+        <IconComponent style={{ color: 'white', fontSize: '24px' }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-6px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 0,
+          height: 0,
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderTop: `8px solid ${bgColor}`
+        }} />
+      </div>
+    );
+
+    return L.divIcon({
+      html,
+      className: '', 
+      iconSize: [40, 48],
+      iconAnchor: [20, 48],
+      popupAnchor: [0, -48]
+    });
+  }, [routeDestinationData]);
 
   // Query para obtener edificios
   const { data: buildings } = useQuery({
@@ -3424,13 +3483,13 @@ export default function HomePage() {
                   style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                   />
                   <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
                     <Popup>Tu ubicación</Popup>
                   </Marker>
-                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
+                  <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
                     <Popup>{routeDestinationName}</Popup>
                   </Marker>
                   <RouteComponent
@@ -3523,85 +3582,130 @@ export default function HomePage() {
         }}>
           {routeMapOpen && routeDestination && userLocation && routeDestinationData && (
             <>
-              {/* Tarjeta de información - Responsive */}
+              {/* Tarjeta de información - Full Image Style */}
               <Card sx={{ 
-                width: isMobile ? '100%' : 300, 
+                width: isMobile ? '100%' : 340, 
+                height: isMobile ? 300 : 'auto', // Mobile fixed height, Desktop stretches
                 flexShrink: 0, 
-                display: 'flex', 
-                flexDirection: 'column',
+                position: 'relative',
+                borderRadius: 4,
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                bgcolor: 'black',
+                display: 'flex',
+                flexDirection: 'column'
               }}>
-                {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
-                  <CardMedia
-                    component="img"
-                    height={isMobile ? "120" : "200"}
-                    image={getFullImageUrl(routeDestinationData.image)}
-                    alt={routeDestinationData.name}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      height: isMobile ? 120 : 200,
-                      bgcolor: 'grey.200',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <BuildingIcon sx={{ fontSize: 80, color: 'grey.400' }} />
-                  </Box>
-                )}
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    {routeDestinationData.name}
-                  </Typography>
-                  
-                  {routeDestinationData.acronym && (
-                    <Chip
-                      label={routeDestinationData.acronym}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ mb: 2 }}
+                 {/* Background Image - Absolute to cover everything */}
+                 {routeDestinationData.image && !/via\.placeholder\.com/.test(routeDestinationData.image) ? (
+                    <CardMedia
+                        component="img"
+                        image={getFullImageUrl(routeDestinationData.image)}
+                        alt={routeDestinationData.name}
+                        sx={{ 
+                            height: '100%', 
+                            width: '100%', 
+                            objectFit: 'cover',
+                            position: 'absolute',
+                            inset: 0,
+                            zIndex: 0
+                        }}
                     />
-                  )}
-
-                  <Divider sx={{ my: 2 }} />
-
-                  {/* Distancia */}
-                  {routeDestinationData.distance !== undefined && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <WalkIcon color="primary" fontSize="small" />
-                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
-                        A {routeDestinationData.distance < 1000 
-                          ? `${routeDestinationData.distance} metros` 
-                          : `${(routeDestinationData.distance / 1000).toFixed(2)} km`} de ti
-                      </Typography>
+                 ) : (
+                    <Box sx={{
+                        height: '100%',
+                        width: '100%',
+                        bgcolor: '#1e293b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 0
+                    }}>
+                        <BuildingIcon sx={{ fontSize: 100, color: '#334155' }} />
                     </Box>
-                  )}
+                 )}
 
-                  {/* Capacidad si aplica */}
-                  {routeDestinationData.capacity && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <PeopleIcon fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Capacidad: {routeDestinationData.capacity} personas
-                      </Typography>
-                    </Box>
-                  )}
+                 {/* Top Content (Title) - Overlay */}
+                 <Box sx={{ 
+                    position: 'relative',
+                    zIndex: 2,
+                    p: 3,
+                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)'
+                 }}>
+                     <Typography 
+                        variant="h5" 
+                        sx={{ 
+                            fontWeight: 800, 
+                            color: 'white', 
+                            textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                            lineHeight: 1.1,
+                            letterSpacing: '-0.01em',
+                            mb: 0.5
+                        }}
+                    >
+                        {routeDestinationData.name}
+                     </Typography>
+                     {routeDestinationData.acronym && (
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                            {routeDestinationData.acronym}
+                        </Typography>
+                     )}
+                 </Box>
 
-                  {/* Botón de Guía con Brújula */}
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    color="success"
-                    startIcon={<NavigationIcon />}
-                    onClick={() => setCompassGuideOpen(true)}
-                    sx={{ mt: 2 }}
-                  >
-                    Activar Guía
-                  </Button>
-                </CardContent>
+                 {/* Spacer to push content down */}
+                 <Box sx={{ flexGrow: 1 }} />
+
+                 {/* Bottom Content (Button & Info) - Overlay */}
+                 <Box sx={{ 
+                    position: 'relative',
+                    zIndex: 2,
+                    p: 3,
+                    pt: 6,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0) 100%)'
+                 }}>
+                     {/* Infos */}
+                     <Box sx={{ display: 'flex', gap: 2, mb: 2, color: 'rgba(255,255,255,0.9)' }}>
+                        {routeDestinationData.distance !== undefined && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <WalkIcon fontSize="small" />
+                                <Typography variant="body2" fontWeight="bold">
+                                    {routeDestinationData.distance < 1000 
+                                      ? `${routeDestinationData.distance} m` 
+                                      : `${(routeDestinationData.distance / 1000).toFixed(2)} km`}
+                                </Typography>
+                            </Box>
+                        )}
+                        {routeDestinationData.capacity && (
+                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <PeopleIcon fontSize="small" />
+                                <Typography variant="body2">{routeDestinationData.capacity} pers.</Typography>
+                            </Box>
+                        )}
+                     </Box>
+
+                     <Button
+                         variant="contained"
+                         fullWidth
+                         onClick={() => setCompassGuideOpen(true)}
+                         size="large"
+                         sx={{ 
+                             bgcolor: 'rgba(255,255,255,0.15)',
+                             backdropFilter: 'blur(8px)',
+                             border: '1px solid rgba(255,255,255,0.3)',
+                             color: 'white',
+                             fontWeight: 800,
+                             borderRadius: 2,
+                             boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                             '&:hover': {
+                                 bgcolor: 'rgba(255,255,255,0.25)',
+                                 transform: 'translateY(-1px)'
+                             }
+                          }}
+                     >
+                         ACTIVAR GUÍA
+                     </Button>
+                 </Box>
               </Card>
 
               {/* Mapa con OpenStreetMap y Leaflet Routing */}
@@ -3619,13 +3723,13 @@ export default function HomePage() {
                   style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                   />
                   <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
                     <Popup>Tu ubicación</Popup>
                   </Marker>
-                  <Marker position={[routeDestination.lat, routeDestination.lng]}>
+                  <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
                     <Popup>{routeDestinationName}</Popup>
                   </Marker>
                   <RouteComponent
