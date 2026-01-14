@@ -2,8 +2,38 @@ import pool from '../config/database.js'
 
 // Buildings Repository
 export const buildingsRepo = {
-  async findAll() {
-    const result = await pool.query('SELECT * FROM buildings ORDER BY id_edificio')
+  async findAll({ limit, offset, search, estado } = {}) {
+    let query = 'SELECT * FROM buildings'
+    const where = []
+    const params = []
+
+    if (estado !== undefined) {
+      where.push(`estado = $${params.length + 1}`)
+      params.push(estado)
+    }
+
+    if (search) {
+      where.push(`(nombre_edificio ILIKE $${params.length + 1} OR acronimo ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY id_edificio'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
     return result.rows
   },
 
@@ -66,8 +96,42 @@ export const buildingsRepo = {
 
 // Floors Repository
 export const floorsRepo = {
-  async findAll() {
-    const result = await pool.query('SELECT * FROM floors ORDER BY id_piso')
+  async findAll({ limit, offset, search, estado, id_edificio } = {}) {
+    let query = 'SELECT * FROM floors'
+    const where = []
+    const params = []
+
+    if (estado !== undefined) {
+      where.push(`estado = $${params.length + 1}`)
+      params.push(estado)
+    }
+
+    if (id_edificio) {
+      where.push(`id_edificio = $${params.length + 1}`)
+      params.push(id_edificio)
+    }
+
+    if (search) {
+      where.push(`nombre_piso ILIKE $${params.length + 1}`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY id_piso'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
     return result.rows
   },
 
@@ -105,11 +169,11 @@ export const floorsRepo = {
   async update(id, floor) {
     const result = await pool.query(`
       UPDATE floors SET
-        nombre_piso = $1,
-        numero_piso = $2,
-        imagen = $3,
-        estado = $4,
-        disponibilidad = $5
+        nombre_piso = COALESCE($1, nombre_piso),
+        numero_piso = COALESCE($2, numero_piso),
+        imagen = COALESCE($3, imagen),
+        estado = COALESCE($4, estado),
+        disponibilidad = COALESCE($5, disponibilidad)
       WHERE id_piso = $6
       RETURNING *
     `, [
@@ -128,27 +192,55 @@ export const floorsRepo = {
   },
 
   async updateEstado(id, estado) {
-    console.log(`📝 updateEstado - ID: ${id}, Estado: ${estado}`)
     const result = await pool.query(`
       UPDATE floors SET estado = $1
       WHERE id_piso = $2
       RETURNING *
     `, [estado, id])
-    console.log(`📝 Resultado update:`, result.rows[0])
     return result.rows[0]
   }
 }
 
 // Rooms Repository
 export const roomsRepo = {
-  async findAll() {
-    const result = await pool.query('SELECT * FROM rooms WHERE estado = true ORDER BY id_sala')
+  async findAll({ limit, offset, search, estado = true } = {}) {
+    let query = 'SELECT * FROM rooms'
+    const where = []
+    const params = []
+
+    if (estado !== null && estado !== undefined) {
+      where.push(`estado = $${params.length + 1}`)
+      params.push(estado)
+    }
+
+    if (search) {
+      where.push(`(nombre_sala ILIKE $${params.length + 1} OR acronimo ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY id_sala'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
     return result.rows
   },
 
-  async findAllIncludingDeleted() {
-    const result = await pool.query('SELECT * FROM rooms ORDER BY id_sala')
-    return result.rows
+  async findAllIncludingDeleted(options = {}) {
+    // Override default estado=true
+    return this.findAll({ ...options, estado: null })
   },
 
   async findById(id) {
@@ -225,26 +317,52 @@ export const roomsRepo = {
   },
 
   async updateEstado(id, estado) {
-    console.log('roomsRepo.updateEstado - actualizando sala:', { id, estado })
     const result = await pool.query(
       'UPDATE rooms SET estado = $1 WHERE id_sala = $2 RETURNING *',
       [estado, id]
     )
-    console.log('roomsRepo.updateEstado - resultado:', result.rows[0])
     return result.rows[0]
   }
 }
 
 // Bathrooms Repository
 export const bathroomsRepo = {
-  async findAll() {
-    const result = await pool.query('SELECT * FROM bathrooms WHERE estado = true ORDER BY id_bano')
+  async findAll({ limit, offset, search, estado = true } = {}) {
+    let query = 'SELECT * FROM bathrooms'
+    const where = []
+    const params = []
+
+    if (estado !== null && estado !== undefined) {
+      where.push(`estado = $${params.length + 1}`)
+      params.push(estado)
+    }
+
+    if (search) {
+      where.push(`(nombre ILIKE $${params.length + 1} OR identificador ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY id_bano'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
     return result.rows
   },
 
-  async findAllIncludingDeleted() {
-    const result = await pool.query('SELECT * FROM bathrooms ORDER BY id_bano')
-    return result.rows
+  async findAllIncludingDeleted(options = {}) {
+    return this.findAll({ ...options, estado: null })
   },
 
   async findById(id) {
@@ -314,20 +432,47 @@ export const bathroomsRepo = {
   },
 
   async updateEstado(id, estado) {
-    console.log('bathroomsRepo.updateEstado - actualizando baño:', { id, estado })
     const result = await pool.query(
       'UPDATE bathrooms SET estado = $1 WHERE id_bano = $2 RETURNING *',
       [estado, id]
     )
-    console.log('bathroomsRepo.updateEstado - resultado:', result.rows[0])
     return result.rows[0]
   }
 }
 
 // Faculties Repository
 export const facultiesRepo = {
-  async findAll() {
-    const result = await pool.query('SELECT * FROM faculties WHERE estado = true ORDER BY nombre_facultad')
+  async findAll({ limit, offset, search, estado = true } = {}) {
+    let query = 'SELECT * FROM faculties'
+    const where = []
+    const params = []
+
+    if (estado !== null && estado !== undefined) {
+      where.push(`estado = $${params.length + 1}`)
+      params.push(estado)
+    }
+
+    if (search) {
+      where.push(`(nombre_facultad ILIKE $${params.length + 1} OR codigo_facultad ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY nombre_facultad'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
     return result.rows
   },
 
@@ -380,17 +525,14 @@ export const facultiesRepo = {
   },
 
   async updateEstado(codigo, estado) {
-    console.log('facultiesRepo.updateEstado - actualizando facultad:', { codigo, estado })
     const result = await pool.query(
       'UPDATE faculties SET estado = $1 WHERE codigo_facultad = $2 RETURNING *',
       [estado, codigo]
     )
-    console.log('facultiesRepo.updateEstado - resultado:', result.rows[0])
     return result.rows[0]
   },
 
-  async findAllIncludingDeleted() {
-    const result = await pool.query('SELECT * FROM faculties ORDER BY nombre_facultad')
-    return result.rows
+  async findAllIncludingDeleted(options = {}) {
+    return this.findAll({ ...options, estado: null })
   }
 }
