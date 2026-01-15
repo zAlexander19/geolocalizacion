@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { ErrorProvider } from './contexts/ErrorContext.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import HomePage from './features/public/HomePage.jsx'
 import LoginPage from './features/auth/LoginPage.jsx'
@@ -34,34 +36,38 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/facultades" element={<PublicFacultiesPage />} />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Navigate to="/admin/estadisticas" replace />} />
-              <Route path="estadisticas" element={<StatisticsPage />} />
-              <Route path="edificios" element={<BuildingsPage />} />
-              <Route path="pisos" element={<FloorsPage />} />
-              <Route path="salas" element={<RoomsPage />} />
-              <Route path="facultades" element={<FacultiesPage />} />
-              <Route path="mapa" element={<MapViewPage />} />
-              <Route path="osm-import" element={<OSMImportPage />} />
-              <Route path="usuarios" element={<UsersPage />} />
-              <Route path="borrados" element={<DeletedPage />} />
-              <Route path="historial" element={<AuditLogPage />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </QueryClientProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <ErrorProvider>
+            <QueryClientProvider client={queryClient}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/facultades" element={<PublicFacultiesPage />} />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Navigate to="/admin/estadisticas" replace />} />
+                  <Route path="estadisticas" element={<StatisticsPage />} />
+                  <Route path="edificios" element={<BuildingsPage />} />
+                  <Route path="pisos" element={<FloorsPage />} />
+                  <Route path="salas" element={<RoomsPage />} />
+                  <Route path="facultades" element={<FacultiesPage />} />
+                  <Route path="mapa" element={<MapViewPage />} />
+                  <Route path="osm-import" element={<OSMImportPage />} />
+                  <Route path="usuarios" element={<UsersPage />} />
+                  <Route path="borrados" element={<DeletedPage />} />
+                  <Route path="historial" element={<AuditLogPage />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </QueryClientProvider>
+          </ErrorProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 )
