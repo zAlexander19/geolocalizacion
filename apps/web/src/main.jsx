@@ -1,8 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { NotificationProvider } from './contexts/NotificationContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import HomePage from './features/public/HomePage.jsx'
 import LoginPage from './features/auth/LoginPage.jsx'
@@ -20,23 +20,11 @@ import DeletedPage from './features/admin/deleted/DeletedPage.jsx'
 import AuditLogPage from './features/admin/audit/AuditLogPage.jsx'
 import './index.css'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 0, // Los datos se consideran obsoletos inmediatamente
-      cacheTime: 5 * 60 * 1000, // 5 minutos - mantener en caché
-      refetchOnWindowFocus: true, // Refetch al cambiar de pestaña
-      refetchOnMount: true, // Siempre refetch al montar
-      retry: 1, // Solo 1 reintento en caso de error
-    },
-  },
-})
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
+        <NotificationProvider>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -60,7 +48,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </QueryClientProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

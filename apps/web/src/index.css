@@ -37,6 +37,59 @@ body, html {
   padding: 0 !important;
 }
 
+.homepage-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding-inline: min(3rem, 5vw);
+}
+
+.homepage-hero,
+.homepage-search-area,
+.homepage-map {
+  width: 100%;
+}
+
+.homepage-search-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  padding-inline: min(2rem, 6vw);
+}
+
+.homepage-search-area .MuiPaper-root {
+  width: min(100%, 520px);
+  max-width: 920px;
+  overflow: visible;
+}
+
+@media (max-width: 900px) {
+  .homepage-hero {
+    padding: 0 1rem;
+  }
+
+  .homepage-map {
+    border-radius: 24px !important;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 600px) {
+  .homepage-hero {
+    padding: 0 0.75rem;
+  }
+
+  .homepage-search-area .MuiPaper-root,
+  .homepage-search-area .MuiInputBase-root {
+    width: 100% !important;
+  }
+
+  .homepage-map {
+    border: none !important;
+  }
+}
+
 /* Títulos y texto en páginas de admin */
 h1, h2, h3, h4, h5, h6 {
   color: white !important;
@@ -398,6 +451,79 @@ input[type="search"] {
 
 .marker-content.bathroom-men {
   border-color: #4caf50; /* Green */
+}
+
+/* Notifications */
+.notification-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 0;
+  width: min(92vw, 500px);
+  pointer-events: none;
+}
+
+.notification-banner__content {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  background: #00309c;
+  border: 1px solid #000000;
+  color: #ffffff;
+  font-weight: 600;
+  backdrop-filter: blur(22px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.notification-banner__icon {
+  font-size: 1.3rem;
+  margin-right: 0.75rem;
+}
+
+.notification-banner__copy {
+  flex: 1;
+}
+
+.notification-banner__headline {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.notification-banner__detail {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.notification-banner__close {
+  background: transparent;
+  border: none;
+  color: #f0f4ff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+
+.offline-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #00309c, #000000);
+  color: #ffffff;
+  font-weight: 600;
+  border: 1px solid #000000;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  animation: fadeInUp 0.35s ease-out;
+  z-index: 190;
 }
 .marker-content.bathroom-men .marker-icon {
   color: #388e3c;

@@ -81,6 +81,7 @@ import api from '../../lib/api'
 import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
 import CompassGuide from '../../components/CompassGuide'
+import { useNotification } from '../../contexts/NotificationContext.jsx'
 
 // Fix para los iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -187,6 +188,12 @@ export default function HomePage() {
   const [searchType, setSearchType] = useState('todo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
+  const { offline } = useNotification()
+  const [cachedSearch, setCachedSearch] = useState({
+    type: 'todo',
+    query: '',
+    results: [],
+  })
   const [userLocation, setUserLocation] = useState(null)
   const [locationError, setLocationError] = useState(null)
   const [locationDialog, setLocationDialog] = useState(true)
@@ -545,7 +552,23 @@ export default function HomePage() {
       return filtered
     },
     enabled: searchTriggered,
+    keepPreviousData: true,
+    onSuccess: (data) => {
+      setCachedSearch({
+        type: searchType,
+        query: searchQuery,
+        results: Array.isArray(data) ? data : []
+      })
+    },
   })
+
+  const cachedSearchResults = cachedSearch.results ?? []
+  const hasCachedSearchResults = cachedSearchResults.length > 0
+  const shouldUseCachedResults = offline && !Array.isArray(searchResults) && cachedSearchResults.length > 0
+  const displayedSearchResults = shouldUseCachedResults ? cachedSearchResults : (searchResults ?? [])
+  const displayedSearchType = shouldUseCachedResults ? cachedSearch.type : searchType
+  const displayedSearchQuery = shouldUseCachedResults ? cachedSearch.query : searchQuery
+  const offlineCacheLabel = displayedSearchQuery ? `"${displayedSearchQuery}"` : 'tu última búsqueda'
 
   // Query para obtener todas las salas
   const { data: allRooms } = useQuery({
@@ -723,6 +746,12 @@ export default function HomePage() {
       console.log(`Mostrando todos los ${searchData.type} en orden alfabético`)
     } else if (searchData.query.trim()) {
       console.log(`Buscando ${searchData.type}: ${searchData.query}`)
+    }
+  }
+
+  const handleRetryConnection = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload()
     }
   }
 
@@ -952,9 +981,20 @@ export default function HomePage() {
       </AppBar>
 
       {/* Main Content - Con efectos 3D y glassmorphism */}
-      <Container maxWidth="lg" sx={{ py: isMobile ? 4 : 8, pt: { xs: 12, md: 16 }, position: 'relative', zIndex: 1 }}>
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: isMobile ? 4 : 8,
+          pt: { xs: 12, md: 16 },
+          position: 'relative',
+          zIndex: 1,
+          px: { xs: 2, md: 3 },
+        }}
+      >
         {/* Hero Section con efecto 3D */}
-        <Box sx={{ 
+        <Box
+          className="homepage-hero"
+          sx={{ 
           textAlign: 'center', 
           mb: isMobile ? 4 : 8,
           animation: 'fadeInUp 0.8s ease-out',
@@ -1032,9 +1072,35 @@ export default function HomePage() {
           </Typography>
 
           {/* Search Bar con efecto glassmorphism mejorado */}
-          <Box sx={{ maxWidth: 900, mx: 'auto', px: 2, position: 'relative', zIndex: 10 }}>
+          <Box className="homepage-search-area" sx={{ maxWidth: 900, mx: 'auto', px: 2, position: 'relative', zIndex: 10 }}>
             <SearchBar onSearch={handleSearch} initialType="todo" />
           </Box>
+          {offline && (
+            <Alert
+              severity="warning"
+              variant="filled"
+              action={
+                <Button color="inherit" size="small" onClick={handleRetryConnection}>
+                  Reintentar
+                </Button>
+              }
+              sx={{
+                mt: 3,
+                borderRadius: 4,
+                maxWidth: 900,
+                mx: 'auto',
+                background: 'rgba(255, 202, 40, 0.15)',
+                color: '#000',
+                border: '1px solid rgba(255, 202, 40, 0.6)',
+                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.35)'
+              }}
+            >
+              {hasCachedSearchResults
+                ? `Estás sin conexión. Mostrando en caché ${offlineCacheLabel}.`
+                : 'Estás sin conexión y aún no hay datos guardados en caché. Reconéctate para buscar o actualizar la información.'
+              }
+            </Alert>
+          )}
         </Box>
 
         {/* Mapa de Edificios - Visible solo cuando el tipo es 'todo' y no hay búsqueda activa */}
@@ -1068,6 +1134,7 @@ export default function HomePage() {
 
             <Paper 
               elevation={6} 
+              className="homepage-map"
               sx={{ 
                 height: isMobile ? 400 : 600, 
                 overflow: 'hidden',
@@ -1305,7 +1372,7 @@ export default function HomePage() {
               '100%': { opacity: 1 },
             },
           }}>
-            {(searchResults?.length > 0 || searchQuery) && (searchType !== 'bano' || searchQuery) && (
+            {(displayedSearchResults.length > 0 || displayedSearchQuery) && (displayedSearchType !== 'bano' || displayedSearchQuery) && (
               <Typography 
                 variant="h5" 
                 sx={{ 
@@ -1318,8 +1385,8 @@ export default function HomePage() {
                   gap: 1,
                 }}
               >
-                {searchQuery ? 'Resultados de búsqueda' : (searchType === 'edificio' ? 'Todos los Edificios' : searchType === 'sala' ? 'Todas las Salas' : searchType === 'bano' ? 'Todos los Baños' : searchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
-                {searchQuery && searchType !== 'todo' && ` - ${searchType === 'edificio' ? 'Edificios' : searchType === 'sala' ? 'Salas' : searchType === 'bano' ? 'Baños' : 'Facultades'}`}
+                {displayedSearchQuery ? 'Resultados de búsqueda' : (displayedSearchType === 'edificio' ? 'Todos los Edificios' : displayedSearchType === 'sala' ? 'Todas las Salas' : displayedSearchType === 'bano' ? 'Todos los Baños' : displayedSearchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
+                {displayedSearchQuery && displayedSearchType !== 'todo' && ` - ${displayedSearchType === 'edificio' ? 'Edificios' : displayedSearchType === 'sala' ? 'Salas' : displayedSearchType === 'bano' ? 'Baños' : 'Facultades'}`}
               </Typography>
             )}
 
@@ -1327,10 +1394,10 @@ export default function HomePage() {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress />
               </Box>
-            ) : searchResults?.length > 0 ? (
+            ) : displayedSearchResults.length > 0 ? (
               <Box>
                 {/* Edificios */}
-                {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).length > 0 && (
+                {displayedSearchResults.filter(r => displayedSearchType === 'edificio' || (displayedSearchType === 'todo' && r.resultType === 'edificio')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
                       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
@@ -1340,7 +1407,7 @@ export default function HomePage() {
                     )}
                     <Grid container spacing={3}>
                       {/* Resultados para EDIFICIOS */}
-                      {searchResults.filter(r => searchType === 'edificio' || (searchType === 'todo' && r.resultType === 'edificio')).map((building) => (
+                      {displayedSearchResults.filter(r => displayedSearchType === 'edificio' || (displayedSearchType === 'todo' && r.resultType === 'edificio')).map((building) => (
                   <Grid item xs={12} md={6} lg={4} key={building.id_edificio}>
                     <Box sx={{
                       position: 'relative',
@@ -1562,7 +1629,7 @@ export default function HomePage() {
                 )}
 
                 {/* Salas */}
-                {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).length > 0 && (
+                {displayedSearchResults.filter(r => displayedSearchType === 'sala' || (displayedSearchType === 'todo' && r.resultType === 'sala')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
                       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
@@ -1572,7 +1639,7 @@ export default function HomePage() {
                     )}
                     <Grid container spacing={3}>
                       {/* Resultados para SALAS */}
-                      {searchResults.filter(r => searchType === 'sala' || (searchType === 'todo' && r.resultType === 'sala')).map((room) => (
+                      {displayedSearchResults.filter(r => displayedSearchType === 'sala' || (displayedSearchType === 'todo' && r.resultType === 'sala')).map((room) => (
                   <Grid item xs={12} md={6} lg={4} key={room.id_sala}>
                     <Card 
                       sx={{ 
@@ -1904,7 +1971,7 @@ export default function HomePage() {
                 )}
 
                 {/* Facultades */}
-                {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).length > 0 && (
+                {displayedSearchResults.filter(r => displayedSearchType === 'facultad' || (displayedSearchType === 'todo' && r.resultType === 'facultad')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
                       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
@@ -1914,7 +1981,7 @@ export default function HomePage() {
                     )}
                     <Grid container spacing={3}>
                       {/* Resultados para FACULTADES */}
-                      {searchResults.filter(r => searchType === 'facultad' || (searchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
+                      {displayedSearchResults.filter(r => displayedSearchType === 'facultad' || (displayedSearchType === 'todo' && r.resultType === 'facultad')).map((faculty) => {
                   const associatedBuildings = faculty.edificios && faculty.edificios.length > 0
                     ? faculty.edificios
                     : (faculty.id_edificio 
@@ -2061,7 +2128,7 @@ export default function HomePage() {
                 )}
 
                 {/* Baños */}
-                {searchResults.filter(r => searchType === 'bano' || (searchType === 'todo' && r.resultType === 'bano')).length > 0 && (
+                {displayedSearchResults.filter(r => displayedSearchType === 'bano' || (displayedSearchType === 'todo' && r.resultType === 'bano')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
                     {searchType === 'todo' && (
                       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
@@ -2103,7 +2170,7 @@ export default function HomePage() {
                         >
                           <MapContainer
                             center={(() => {
-                              const bathrooms = searchResults.filter(r => r.resultType === 'bano');
+                              const bathrooms = displayedSearchResults.filter(r => r.resultType === 'bano');
                               if (bathrooms.length > 0 && bathrooms[0].cord_latitud && bathrooms[0].cord_longitud) {
                                 return [bathrooms[0].cord_latitud, bathrooms[0].cord_longitud];
                               }
@@ -2131,7 +2198,7 @@ export default function HomePage() {
                             )}
 
                             {/* Marcadores para cada baño */}
-                            {searchResults.filter(r => r.resultType === 'bano').map((bathroom) => {
+                            {displayedSearchResults.filter(r => r.resultType === 'bano').map((bathroom) => {
                               if (!bathroom.cord_latitud || !bathroom.cord_longitud) return null
                               
                               // Color y clase del marcador según el tipo de baño
@@ -2398,7 +2465,7 @@ export default function HomePage() {
 
                     <Grid container spacing={3}>
                       {/* Resultados para BAÑOS */}
-                      {searchResults.filter(r => (searchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
+                      {displayedSearchResults.filter(r => (displayedSearchType === 'todo' && r.resultType === 'bano')).map((bathroom) => (
                   <Grid item xs={12} md={6} lg={4} key={bathroom.id_bano}>
                     <Card 
                       sx={{ 
