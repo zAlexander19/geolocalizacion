@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -209,15 +209,24 @@ function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  
+  // Totem state detection
+  const isTotemMode = location.state?.isTotem
+  const totemLocation = location.state?.totemLocation
   
   const [searchType, setSearchType] = useState('todo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchTriggered, setSearchTriggered] = useState(false)
-  const [userLocation, setUserLocation] = useState(null)
+  const [userLocation, setUserLocation] = useState(
+    isTotemMode && totemLocation 
+      ? { latitude: parseFloat(totemLocation.cord_latitud), longitude: parseFloat(totemLocation.cord_longitud) }
+      : null
+  )
   const [locationError, setLocationError] = useState(null)
-  const [locationDialog, setLocationDialog] = useState(true)
+  const [locationDialog, setLocationDialog] = useState(!isTotemMode) // Disable dialog for totem
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' })
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [roomDetailOpen, setRoomDetailOpen] = useState(false)
@@ -618,10 +627,27 @@ export default function HomePage() {
 
   // Solicitar ubicación al cargar la página
   useEffect(() => {
-    setLocationDialog(true)
-  }, [])
+    // Solo si NO es mode totem
+    if (!isTotemMode) {
+      setLocationDialog(true)
+    }
+  }, [isTotemMode])
 
   const requestUserLocation = () => {
+    // Si es modo totem, no usar geolocación del navegador
+    if (isTotemMode) {
+      if (totemLocation) {
+        // Formato esperado: objeto { latitude, longitude, accuracy }
+        setUserLocation({
+          latitude: parseFloat(totemLocation.cord_latitud),
+          longitude: parseFloat(totemLocation.cord_longitud),
+          accuracy: 0,
+          timestamp: Date.now()
+        })
+      }
+      return
+    }
+
     if (!navigator.geolocation) {
       setLocationError('Tu navegador no soporta geolocalización')
       return
@@ -700,6 +726,18 @@ export default function HomePage() {
   }
 
   const handleRetryLocation = () => {
+    // Modo tótem: resetear a la ubicación fija
+    if (isTotemMode && totemLocation) {
+      setUserLocation({
+        latitude: parseFloat(totemLocation.cord_latitud),
+        longitude: parseFloat(totemLocation.cord_longitud),
+        accuracy: 0,
+        timestamp: Date.now()
+      })
+      setLocationError(null)
+      return
+    }
+
     setLocationError(null)
     setTimeout(() => {
       requestUserLocation()
@@ -930,9 +968,9 @@ export default function HomePage() {
           {/* Elemento Derecho (Acciones) */}
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
             {/* Botón GPS (Icono Cuadrado) */}
-            <Tooltip title={userLocation ? `GPS Activo (${Math.round(locationAccuracy || 0)}m)` : 'Activar GPS'}>
+            <Tooltip title={isTotemMode ? 'Centrar en Tótem' : (userLocation ? `GPS Activo (${Math.round(locationAccuracy || 0)}m)` : 'Activar GPS')}>
                <IconButton
-                 onClick={!userLocation ? handleRetryLocation : undefined}
+                 onClick={handleRetryLocation}
                  sx={{ 
                    bgcolor: userLocation ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.1)', // Verde sutil si está activo, sino oscuro translúcido
                    color: userLocation ? '#10b981' : 'white',
@@ -1029,6 +1067,23 @@ export default function HomePage() {
               />
             </Box>
           </Box>
+
+          {isTotemMode && (
+            <Chip 
+              icon={<LocationIcon style={{ color: 'white' }} />}
+              label={`Tótem: ${location.state?.totemName || 'Campus'}`} 
+              sx={{ 
+                mb: 2, 
+                bgcolor: 'rgba(0, 80, 150, 0.8)', 
+                color: 'white',
+                backdropFilter: 'blur(4px)',
+                fontWeight: 'bold',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                '& .MuiChip-icon': { color: 'white' }
+              }} 
+            />
+          )}
 
           <Typography 
             variant={isMobile ? "h4" : "h2"} 

@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import multer from 'multer'
 import sharp from 'sharp'
+import bcrypt from 'bcrypt'
 import { fileURLToPath } from 'url'
 import cloudinary from './config/cloudinary.js'
 import { pool } from './config/database.js'
@@ -12,7 +13,8 @@ import {
   floorsRepo, 
   roomsRepo, 
   bathroomsRepo, 
-  facultiesRepo 
+  facultiesRepo,
+  totemsRepo
 } from './db/repositories.js'
 import statisticsRoutes from './routes/statistics.routes.js'
 import auditRoutes from './routes/audit.routes.js'
@@ -1337,6 +1339,150 @@ export function createApp() {
         message: 'Failed to preview OSM data', 
         error: error.message 
       })
+    }
+  })
+
+  // ==================== TOTEMS ====================
+  
+  app.get('/totems', async (req, res) => {
+    try {
+      const totems = await totemsRepo.findAll({
+        search: req.query.search,
+        limit: req.query.limit,
+        offset: req.query.offset
+      })
+      res.json({ data: totems })
+    } catch (error) {
+      console.error('Error fetching totems:', error)
+      res.status(500).json({ message: 'Error al obtener tótems' })
+    }
+  })
+
+  app.post('/totems', upload.single('imagen'), async (req, res) => {
+    const client = await pool.connect()
+    try {
+      const b = req.body || {}
+      
+      // Validaciones básicas
+      if (!b.email || !b.password) {
+        return res.status(400).json({ message: 'Email y contraseña son requeridos' })
+      }
+
+      await client.query('BEGIN')
+
+      // 1. Crear usuario para el tótem
+      // Verificar si el email existe
+      const userCheck = await client.query('SELECT id_usuario FROM usuarios WHERE email = $1', [b.email])
+      if (userCheck.rows.length > 0) {
+        await client.query('ROLLBACK')
+        return res.status(400).json({ message: 'El email ya está registrado' })
+      }
+
+      const hashedPassword = await bcrypt.hash(b.password, 10)
+      const userResult = await client.query(`
+        INSERT INTO usuarios (nombre, email, password_hash, rol, estado)
+        VALUES ($1, $2, $3, 'totem', true)
+        RETURNING id_usuario
+      `, [b.nombre_totem, b.email, hashedPassword])
+      
+      const idUsuario = userResult.rows[0].id_usuario
+
+      // 2. Crear el tótem
+      let imagenUrl = b.imagen || ''
+      if (req.file) {
+        imagenUrl = await uploadToCloudinary(req.file.buffer, 'totems', 1600, 1200)
+      }
+      
+      const totemResult = await client.query(`
+        INSERT INTO totems (
+          nombre_totem, descripcion, imagen,
+          cord_latitud, cord_longitud, id_usuario
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [
+        String(b.nombre_totem || '').trim(),
+        b.descripcion ? String(b.descripcion).trim() : '',
+        imagenUrl,
+        Number(b.cord_latitud) || 0,
+        Number(b.cord_longitud) || 0,
+        idUsuario
+      ])
+
+      await client.query('COMMIT')
+      
+      res.status(201).json({ data: totemResult.rows[0] })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      console.error('Error creating totem:', error)
+      res.status(400).json({ message: error.message || 'Error al crear tótem' })
+    } finally {
+      client.release()
+    }
+  })
+
+  app.put('/totems/:id', upload.single('imagen'), async (req, res) => {
+    try {
+      const id = Number(req.params.id)
+      const prev = await totemsRepo.findById(id)
+      if (!prev) return res.status(404).json({ message: 'Not found' })
+      
+      const b = req.body || {}
+      
+      let imagenUrl = b.imagen
+      if (req.file) {
+        imagenUrl = await uploadToCloudinary(req.file.buffer, 'totems', 1600, 1200)
+      }
+
+      // Si se proporciona email o password, también actualizar usuario (si aplica)
+      // Por simplicidad, aquí solo actualizamos datos del tótem, 
+      // para actualizar credenciales se debería usar endpoints de usuario o expandir esto.
+
+      const totem = await totemsRepo.update(id, {
+        nombre_totem: b.nombre_totem,
+        descripcion: b.descripcion,
+        imagen: imagenUrl,
+        cord_latitud: b.cord_latitud ? Number(b.cord_latitud) : undefined,
+        cord_longitud: b.cord_longitud ? Number(b.cord_longitud) : undefined
+      })
+      
+      res.json({ data: totem })
+    } catch (error) {
+      console.error('Error updating totem:', error)
+      res.status(400).json({ message: error.message || 'Error al actualizar tótem' })
+    }
+  })
+
+  app.delete('/totems/:id', async (req, res) => {
+    const client = await pool.connect()
+    try {
+      const id = Number(req.params.id)
+      
+      // Obtener el totem para saber cual es su usuario
+      const totemCheck = await client.query('SELECT id_usuario FROM totems WHERE id_totem = $1', [id])
+      if (totemCheck.rows.length === 0) {
+        return res.status(404).json({ message: 'Tótem no encontrado' })
+      }
+
+      const idUsuario = totemCheck.rows[0].id_usuario
+
+      await client.query('BEGIN')
+      
+      // Eliminar el usuario (trigger CASCADE eliminará el tótem)
+      if (idUsuario) {
+        await client.query('DELETE FROM usuarios WHERE id_usuario = $1', [idUsuario])
+      } else {
+        // Fallback si no tiene usuario (legacy o error)
+        await client.query('DELETE FROM totems WHERE id_totem = $1', [id])
+      }
+      
+      await client.query('COMMIT')
+      res.json({ message: 'Tótem y usuario asociado eliminados' })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      console.error('Error deleting totem:', error)
+      res.status(500).json({ message: 'Error al eliminar tótem' })
+    } finally {
+      client.release()
     }
   })
 

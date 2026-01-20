@@ -24,6 +24,7 @@ import {
   Assessment as AssessmentIcon,
   Delete as DeleteIcon,
   History as HistoryIcon,
+  Signpost as SignpostIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -55,6 +56,8 @@ export default function AdminLayout() {
     { label: 'Edificios', icon: <BuildingIcon />, path: '/admin/edificios' },
     { label: 'Pisos', icon: <LayersIcon />, path: '/admin/pisos' },
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },
+    { label: 'Tótems', icon: <SignpostIcon />, path: '/admin/totems' },
+
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
     { label: 'Borrados', icon: <DeleteIcon />, path: '/admin/borrados' },

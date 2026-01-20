@@ -83,7 +83,9 @@ export const authService = {
         id: usuario.id.toString(),
         email: usuario.email,
         name: usuario.nombre,
-        role: usuario.rol === 'admin_primario' ? 'super-admin' : 'admin'
+        rol: usuario.rol,
+        role: usuario.rol === 'admin_primario' ? 'super-admin' : (usuario.rol === 'totem' ? 'totem' : 'admin'),
+        totem: usuario.totem
       }
       
       this.setToken(token)

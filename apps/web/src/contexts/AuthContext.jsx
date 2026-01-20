@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { token, user: userData } = await authService.login(email, password)
       setUser(userData)
-      return { success: true }
+      return { success: true, data: { usuario: userData } }
     } catch (error) {
       return { success: false, error: error.message }
     }

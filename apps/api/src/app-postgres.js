@@ -11,7 +11,8 @@ import {
   floorsRepo, 
   roomsRepo, 
   bathroomsRepo, 
-  facultiesRepo 
+  facultiesRepo,
+  totemsRepo
 } from './db/repositories.js'
 import statisticsRoutes from './routes/statistics.routes.js'
 
@@ -645,6 +646,85 @@ export function createApp() {
         message: 'Failed to preview OSM data', 
         error: error.message 
       })
+    }
+  })
+
+  // ==================== TOTEMS ====================
+  
+  app.get('/totems', async (req, res) => {
+    try {
+      const totems = await totemsRepo.findAll({
+        search: req.query.search,
+        limit: req.query.limit,
+        offset: req.query.offset
+      })
+      res.json({ data: totems })
+    } catch (error) {
+      console.error('Error fetching totems:', error)
+      res.status(500).json({ message: 'Error al obtener tótems' })
+    }
+  })
+
+  app.post('/totems', upload.single('imagen'), async (req, res) => {
+    try {
+      const b = req.body || {}
+      
+      let imagenUrl = b.imagen || ''
+      if (req.file) {
+        imagenUrl = await uploadToCloudinary(req.file.buffer, 'totems', 1600, 1200)
+      }
+      
+      const totem = await totemsRepo.create({
+        nombre_totem: String(b.nombre_totem || '').trim(),
+        descripcion: b.descripcion ? String(b.descripcion).trim() : '',
+        imagen: imagenUrl,
+        cord_latitud: Number(b.cord_latitud) || 0,
+        cord_longitud: Number(b.cord_longitud) || 0
+      })
+      
+      res.status(201).json({ data: totem })
+    } catch (error) {
+      console.error('Error creating totem:', error)
+      res.status(400).json({ message: error.message || 'Error al crear tótem' })
+    }
+  })
+
+  app.put('/totems/:id', upload.single('imagen'), async (req, res) => {
+    try {
+      const id = Number(req.params.id)
+      const prev = await totemsRepo.findById(id)
+      if (!prev) return res.status(404).json({ message: 'Not found' })
+      
+      const b = req.body || {}
+      
+      let imagenUrl = b.imagen
+      if (req.file) {
+        imagenUrl = await uploadToCloudinary(req.file.buffer, 'totems', 1600, 1200)
+      }
+
+      const totem = await totemsRepo.update(id, {
+        nombre_totem: b.nombre_totem,
+        descripcion: b.descripcion,
+        imagen: imagenUrl,
+        cord_latitud: b.cord_latitud ? Number(b.cord_latitud) : undefined,
+        cord_longitud: b.cord_longitud ? Number(b.cord_longitud) : undefined
+      })
+      
+      res.json({ data: totem })
+    } catch (error) {
+      console.error('Error updating totem:', error)
+      res.status(400).json({ message: error.message || 'Error al actualizar tótem' })
+    }
+  })
+
+  app.delete('/totems/:id', async (req, res) => {
+    try {
+      const id = Number(req.params.id)
+      await totemsRepo.delete(id)
+      res.json({ message: 'Tótem eliminado' })
+    } catch (error) {
+      console.error('Error deleting totem:', error)
+      res.status(500).json({ message: 'Error al eliminar tótem' })
     }
   })
 

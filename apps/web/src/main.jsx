@@ -18,6 +18,8 @@ import UsersPage from './features/admin/users/UsersPage.jsx'
 import StatisticsPage from './features/admin/statistics/StatisticsPage.jsx'
 import DeletedPage from './features/admin/deleted/DeletedPage.jsx'
 import AuditLogPage from './features/admin/audit/AuditLogPage.jsx'
+import TotemsPage from './features/admin/totems/TotemsPage.jsx'
+
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -57,6 +59,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="usuarios" element={<UsersPage />} />
               <Route path="borrados" element={<DeletedPage />} />
               <Route path="historial" element={<AuditLogPage />} />
+              <Route path="totems" element={<TotemsPage />} />
+
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

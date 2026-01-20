@@ -35,9 +35,23 @@ export default function LoginPage() {
     const result = await login(email, password)
 
     if (result.success) {
-      // Redirigir a la página que intentaba acceder o al admin
-      const from = location.state?.from?.pathname || '/admin'
-      navigate(from, { replace: true })
+      const user = result.data.usuario
+      
+      if (user.rol === 'totem') {
+        // Redirigir a la home pública con el estado del totem
+        navigate('/', { 
+          replace: true, 
+          state: { 
+            isTotem: true, 
+            totemLocation: user.totem,
+            totemName: user.totem?.nombre_totem 
+          } 
+        })
+      } else {
+        // Redirigir a admin si no es totem
+        const from = location.state?.from?.pathname || '/admin'
+        navigate(from, { replace: true })
+      }
     } else {
       setError(result.error || 'Error al iniciar sesión')
     }

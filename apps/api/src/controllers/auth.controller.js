@@ -52,6 +52,15 @@ export const login = async (req, res) => {
       [usuario.id_usuario]
     )
 
+    // Obtener información adicional según el rol
+    let extraData = {}
+    if (usuario.rol === 'totem') {
+      const totemResult = await client.query('SELECT cord_latitud, cord_longitud, nombre_totem FROM totems WHERE id_usuario = $1', [usuario.id_usuario])
+      if (totemResult.rows.length > 0) {
+        extraData.totem = totemResult.rows[0]
+      }
+    }
+
     // Generar token JWT
     const token = jwt.sign(
       { 
@@ -72,7 +81,8 @@ export const login = async (req, res) => {
           id: usuario.id_usuario,
           nombre: usuario.nombre,
           email: usuario.email,
-          rol: usuario.rol
+          rol: usuario.rol,
+          ...extraData
         }
       }
     })

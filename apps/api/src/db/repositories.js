@@ -536,3 +536,93 @@ export const facultiesRepo = {
     return this.findAll({ ...options, estado: null })
   }
 }
+
+// Totems Repository
+export const totemsRepo = {
+  async findAll({ limit, offset, search } = {}) {
+    let query = `
+      SELECT t.*, u.email 
+      FROM totems t
+      LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+    `
+    const where = []
+    const params = []
+
+    if (search) {
+      where.push(`(t.nombre_totem ILIKE $${params.length + 1} OR u.email ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ')
+    }
+
+    query += ' ORDER BY t.id_totem'
+
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`
+      params.push(limit)
+    }
+
+    if (offset) {
+      query += ` OFFSET $${params.length + 1}`
+      params.push(offset)
+    }
+
+    const result = await pool.query(query, params)
+    return result.rows
+  },
+
+  async findById(id) {
+    const result = await pool.query(`
+      SELECT t.*, u.email 
+      FROM totems t
+      LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+      WHERE t.id_totem = $1
+    `, [id])
+    return result.rows[0]
+  },
+
+  async create(totem) {
+    const result = await pool.query(`
+      INSERT INTO totems (
+        nombre_totem, descripcion, imagen,
+        cord_latitud, cord_longitud, id_usuario
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `, [
+      totem.nombre_totem,
+      totem.descripcion || '',
+      totem.imagen || '',
+      totem.cord_latitud || 0,
+      totem.cord_longitud || 0,
+      totem.id_usuario || null
+    ])
+    return result.rows[0]
+  },
+
+  async update(id, totem) {
+    const result = await pool.query(`
+      UPDATE totems SET
+        nombre_totem = COALESCE($1, nombre_totem),
+        descripcion = COALESCE($2, descripcion),
+        imagen = COALESCE($3, imagen),
+        cord_latitud = COALESCE($4, cord_latitud),
+        cord_longitud = COALESCE($5, cord_longitud)
+      WHERE id_totem = $6
+      RETURNING *
+    `, [
+      totem.nombre_totem,
+      totem.descripcion,
+      totem.imagen,
+      totem.cord_latitud,
+      totem.cord_longitud,
+      id
+    ])
+    return result.rows[0]
+  },
+
+  async delete(id) {
+    await pool.query('DELETE FROM totems WHERE id_totem = $1', [id])
+  }
+}
