@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -81,6 +81,7 @@ import api from '../../lib/api'
 import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
 import CompassGuide from '../../components/CompassGuide'
+import ShareLocationButton from '../../components/ShareLocationButton'
 import { useNotification } from '../../contexts/NotificationContext.jsx'
 
 // Fix para los iconos de Leaflet
@@ -182,6 +183,7 @@ function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   
@@ -219,6 +221,9 @@ export default function HomePage() {
   const [fullImageAlt, setFullImageAlt] = useState('')
   const [routeInfo, setRouteInfo] = useState(null) // Estado para información de navegación (tiempo, distancia)
   const [isAnyPopupOpen, setIsAnyPopupOpen] = useState(false)
+  const [mapCenter, setMapCenter] = useState(null) // Centro del mapa para enlaces compartidos
+  const [sharedResourceId, setSharedResourceId] = useState(null) // ID del recurso compartido para filtrar marcadores
+  const [sharedResourceType, setSharedResourceType] = useState(null) // Tipo del recurso compartido
 
   // Icono dinámico para el destino seleccionado
   const destinationIcon = useMemo(() => {
@@ -615,6 +620,145 @@ export default function HomePage() {
   useEffect(() => {
     setLocationDialog(true)
   }, [])
+
+  // Manejar parámetros compartidos en la URL
+  useEffect(() => {
+    const sharedId = searchParams.get('id')
+    const sharedType = searchParams.get('type')
+    const sharedLat = searchParams.get('lat')
+    const sharedLng = searchParams.get('lng')
+
+    // Solo procesar si hay parámetros válidos
+    if (!sharedId || !sharedType || !sharedLat || !sharedLng) {
+      // Limpiar los estados si no hay parámetros
+      setSharedResourceId(null)
+      setSharedResourceType(null)
+      return
+    }
+
+    const lat = parseFloat(sharedLat)
+    const lng = parseFloat(sharedLng)
+
+    // Validar que las coordenadas sean válidas
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.error('Coordenadas inválidas en enlace compartido')
+      return
+    }
+
+    console.log('📍 Enlace compartido detectado:', { sharedId, sharedType, lat, lng })
+
+    // Establecer el centro del mapa
+    setMapCenter([lat, lng])
+    
+    // Establecer el ID y tipo del recurso compartido para filtrar marcadores
+    setSharedResourceId(sharedId)
+    setSharedResourceType(sharedType)
+    
+    // Solicitar ubicación automáticamente si no la tiene
+    if (!userLocation && navigator.geolocation) {
+      console.log('📍 Solicitando ubicación automáticamente para enlace compartido...')
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy, timestamp } = position.coords
+          
+          // Validar que las coordenadas sean válidas
+          if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            setLocationError('Coordenadas inválidas')
+            return
+          }
+
+          setUserLocation({ 
+            latitude, 
+            longitude,
+            timestamp,
+            accuracy 
+          })
+          setLocationAccuracy(accuracy)
+          setLocationDialog(false)
+          setLocationError(null)
+          console.log('✓ Ubicación obtenida automáticamente')
+        },
+        (error) => {
+          console.warn('No se pudo obtener ubicación automáticamente:', error)
+          // Continuar sin ubicación
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      )
+    }
+
+    // Cargar el recurso compartido según su tipo
+    const loadSharedResource = async () => {
+      try {
+        if (sharedType === 'building') {
+          // Buscar el edificio
+          if (buildings) {
+            const building = buildings.find(b => String(b.id_edificio) === String(sharedId))
+            if (building) {
+              console.log('🏢 Edificio encontrado:', building.nombre_edificio)
+              setSelectedBuilding(building)
+              setBuildingDetailOpen(true)
+            } else {
+              console.warn('Edificio no encontrado con ID:', sharedId)
+            }
+          }
+        } else if (sharedType === 'room') {
+          // Obtener todas las salas y buscar la que coincida
+          const roomsRes = await api.get('/rooms')
+          if (roomsRes.data.data) {
+            const rooms = roomsRes.data.data
+            const room = rooms.find(r => String(r.id_sala) === String(sharedId))
+            if (room) {
+              console.log('🚪 Sala encontrada:', room.nombre_sala)
+              // Obtener información del piso y edificio
+              if (allFloors && buildings) {
+                const floor = allFloors.find(f => f.id_piso === room.id_piso)
+                const building = buildings.find(b => b.id_edificio === floor?.id_edificio)
+                setSelectedRoom({ ...room, floor, building })
+                setRoomDetailOpen(true)
+              }
+            } else {
+              console.warn('Sala no encontrada con ID:', sharedId)
+            }
+          }
+        } else if (sharedType === 'bathroom') {
+          // Obtener todos los baños y buscar el que coincida
+          const bathroomsRes = await api.get('/bathrooms')
+          if (bathroomsRes.data.data) {
+            const bathrooms = bathroomsRes.data.data
+            const bathroom = bathrooms.find(b => String(b.id_bano) === String(sharedId))
+            if (bathroom) {
+              console.log('🚽 Baño encontrado:', bathroom.nombre)
+              // Obtener información del piso y edificio
+              if (allFloors && buildings) {
+                const floor = allFloors.find(f => f.id_piso === bathroom.id_piso)
+                const building = buildings.find(b => b.id_edificio === bathroom.id_edificio)
+                setSelectedBathroom({ ...bathroom, floor, building })
+                setBathroomDetailOpen(true)
+              }
+            } else {
+              console.warn('Baño no encontrado con ID:', sharedId)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading shared resource:', error)
+        setSnackbar({
+          open: true,
+          message: 'No se pudo cargar el recurso compartido',
+          severity: 'error'
+        })
+      }
+    }
+
+    // Llamar cuando los datos estén listos
+    if (buildings && allFloors) {
+      loadSharedResource()
+    }
+  }, [searchParams, buildings, allFloors, userLocation])
 
   const requestUserLocation = () => {
     if (!navigator.geolocation) {
@@ -1145,7 +1289,7 @@ export default function HomePage() {
               }}
             >
               <MapContainer
-                center={buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141]}
+                center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
                 zoom={18}
                 maxZoom={18}
                 style={{ height: '100%', width: '100%' }}
@@ -1170,6 +1314,11 @@ export default function HomePage() {
                 {/* Marcadores para cada edificio */}
                 {buildings.map((building) => {
                   if (!building.cord_latitud || !building.cord_longitud) return null
+                  
+                  // Si estamos en vista compartida y este no es el edificio compartido, no renderizar
+                  if (sharedResourceType === 'building' && String(building.id_edificio) !== String(sharedResourceId)) {
+                    return null
+                  }
                   
                   return (
                     <Marker
@@ -1538,59 +1687,8 @@ export default function HomePage() {
                             bottom: 20,
                             left: 20,
                             right: 20,
-                            display: 'flex',
-                            gap: 1.5,
-                            alignItems: 'center',
                             zIndex: 2
                           }}>
-                            {/* Ver Ruta */}
-                            <Button
-                              fullWidth
-                              variant="contained"
-                              startIcon={<LocationIcon />}
-                              onClick={() => {
-                                if (!userLocation) {
-                                  setSnackbar({
-                                    open: true,
-                                    message: 'Por favor, activa tu ubicación para ver la ruta',
-                                    severity: 'warning'
-                                  })
-                                  return
-                                }
-                                setRouteDestination({
-                                  lat: building.cord_latitud,
-                                  lng: building.cord_longitud
-                                })
-                                setRouteDestinationName(building.nombre_edificio)
-                                setRouteDestinationData({
-                                  type: 'building',
-                                  name: building.nombre_edificio,
-                                  acronym: building.acronimo,
-                                  image: building.imagen,
-                                  distance: building.distance,
-                                  latitude: building.cord_latitud,
-                                  longitude: building.cord_longitud
-                                })
-                                setRouteWaypoints([]) // Sin waypoints para edificios
-                                setRouteMapOpen(true)
-                              }}
-                              sx={{
-                                borderRadius: 2,
-                                background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
-                                color: 'white',
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.875rem',
-                                height: 44,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                '&:hover': {
-                                  background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
-                                }
-                              }}
-                            >
-                              VER RUTA
-                            </Button>
-
                              {/* Ver Más */}
                              <Button
                                fullWidth
@@ -1603,16 +1701,15 @@ export default function HomePage() {
                                }}
                                sx={{
                                  borderRadius: 2,
-                                 background: 'rgba(255,255,255,0.2)', // Más visible sobre oscuro
+                                 background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
                                  color: 'white',
                                  textTransform: 'none',
                                  fontWeight: 700,
                                  fontSize: '0.875rem',
                                  height: 44,
-                                 border: '1px solid rgba(255,255,255,0.4)',
-                                 backdropFilter: 'blur(4px)',
+                                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                                  '&:hover': {
-                                   background: 'rgba(255,255,255,0.3)',
+                                   background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
                                  }
                                }}
                              >
@@ -1648,7 +1745,7 @@ export default function HomePage() {
                         overflow: 'hidden',
                         position: 'relative',
                         transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                        cursor: 'default', // Changed from pointer since we have specific buttons
+                        cursor: 'default',
                         background: '#0a1929', 
                         '&:hover': {
                           transform: 'translateY(-8px)',
@@ -1874,70 +1971,8 @@ export default function HomePage() {
                             bottom: 20,
                             left: 20,
                             right: 20,
-                            display: 'flex',
-                            gap: 1.5,
                             zIndex: 10 // Encima del overlay
                         }}>
-                              <Button
-                                fullWidth
-                                variant="contained"
-                                startIcon={<LocationIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Evitar click en card si hubiera
-                                  if (!userLocation) {
-                                    setSnackbar({
-                                      open: true,
-                                      message: 'Por favor, activa tu ubicación para ver la ruta',
-                                      severity: 'warning'
-                                    })
-                                    return
-                                  }
-                                  
-                                  let routeDestLat, routeDestLng, compassDestLat, compassDestLng
-                                  
-                                  if (room.building && room.building.cord_latitud && room.building.cord_longitud) {
-                                    routeDestLat = room.building.cord_latitud
-                                    routeDestLng = room.building.cord_longitud
-                                    compassDestLat = room.cord_latitud
-                                    compassDestLng = room.cord_longitud
-                                  } else {
-                                    routeDestLat = room.cord_latitud
-                                    routeDestLng = room.cord_longitud
-                                    compassDestLat = room.cord_latitud
-                                    compassDestLng = room.cord_longitud
-                                  }
-                                  
-                                  setRouteDestination({
-                                    lat: routeDestLat,
-                                    lng: routeDestLng
-                                  })
-                                  setRouteDestinationName(`Sala ${room.nombre_sala}`)
-                                  setRouteDestinationData({
-                                    type: 'room',
-                                    name: `Sala ${room.nombre_sala}`,
-                                    acronym: room.nombre_edificio,
-                                    image: room.imagen,
-                                    distance: room.distance,
-                                    latitude: compassDestLat,
-                                    longitude: compassDestLng,
-                                    capacity: room.capacidad_personas
-                                  })
-                                  setRouteWaypoints([])
-                                  setRouteMapOpen(true)
-                                }}
-                                sx={{
-                                   borderRadius: 2,
-                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
-                                   textTransform: 'none',
-                                   fontWeight: 'bold',
-                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                   '&:hover': {
-                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
-                                   }
-                                }}
-                              >
-                                VER RUTA
-                              </Button>
                               <Button
                                 fullWidth
                                 variant="contained"
@@ -1949,13 +1984,14 @@ export default function HomePage() {
                                 }}
                                 sx={{
                                    borderRadius: 2,
-                                   background: 'rgba(255,255,255,0.2)', // Estilo "Building"
-                                   backdropFilter: 'blur(4px)',
-                                   border: '1px solid rgba(255,255,255,0.4)',
-                                   color: 'white',
+                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
                                    textTransform: 'none',
                                    fontWeight: 'bold',
-                                   '&:hover': { background: 'rgba(255,255,255,0.3)' }
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                   height: 44,
+                                   '&:hover': {
+                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                   }
                                 }}
                               >
                                 VER MÁS
@@ -2681,72 +2717,8 @@ export default function HomePage() {
                             bottom: 20,
                             left: 20,
                             right: 20,
-                            display: 'flex',
-                            gap: 1.5,
                             zIndex: 10 
                         }}>
-                              <Button
-                                fullWidth
-                                variant="contained"
-                                startIcon={<LocationIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (!userLocation) {
-                                    setSnackbar({
-                                      open: true,
-                                      message: 'Por favor, activa tu ubicación para ver la ruta',
-                                      severity: 'warning'
-                                    })
-                                    return
-                                  }
-                                  
-                                  // Lógica de ruta (adaptada de salas)
-                                  let routeDestLat, routeDestLng, compassDestLat, compassDestLng
-                                  
-                                  if (bathroom.building && bathroom.building.cord_latitud && bathroom.building.cord_longitud) {
-                                    routeDestLat = bathroom.building.cord_latitud
-                                    routeDestLng = bathroom.building.cord_longitud
-                                    compassDestLat = bathroom.cord_latitud
-                                    compassDestLng = bathroom.cord_longitud
-                                  } else {
-                                    routeDestLat = bathroom.cord_latitud
-                                    routeDestLng = bathroom.cord_longitud
-                                    compassDestLat = bathroom.cord_latitud
-                                    compassDestLng = bathroom.cord_longitud
-                                  }
-                                  
-                                  setRouteDestination({
-                                    lat: routeDestLat,
-                                    lng: routeDestLng
-                                  })
-                                  setRouteDestinationName(`Baño ${bathroom.nombre || ''}`)
-                                  setRouteDestinationData({
-                                    type: 'bathroom',
-                                    name: bathroom.nombre || 'Baño',
-                                    image: bathroom.imagen,
-                                    distance: bathroom.distance,
-                                    latitude: compassDestLat,
-                                    longitude: compassDestLng,
-                                    building: bathroom.building?.nombre_edificio,
-                                    floor: bathroom.floor?.nombre_piso,
-                                    tipo: bathroom.tipo
-                                  })
-                                  setRouteWaypoints([])
-                                  setRouteMapOpen(true)
-                                }}
-                                sx={{
-                                   borderRadius: 2,
-                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
-                                   textTransform: 'none',
-                                   fontWeight: 'bold',
-                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                   '&:hover': {
-                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
-                                   }
-                                }}
-                              >
-                                VER RUTA
-                              </Button>
                               <Button
                                 fullWidth
                                 variant="contained"
@@ -2758,13 +2730,14 @@ export default function HomePage() {
                                 }}
                                 sx={{
                                    borderRadius: 2,
-                                   background: 'rgba(255,255,255,0.2)',
-                                   backdropFilter: 'blur(4px)',
-                                   border: '1px solid rgba(255,255,255,0.4)',
-                                   color: 'white',
+                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)',
                                    textTransform: 'none',
                                    fontWeight: 'bold',
-                                   '&:hover': { background: 'rgba(255,255,255,0.3)' }
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                   height: 44,
+                                   '&:hover': {
+                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                   }
                                 }}
                               >
                                 VER MÁS
@@ -3031,7 +3004,7 @@ export default function HomePage() {
                     {/* Botones Fijos Abajo en Columna Derecha */}
                     <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
                          <Grid container spacing={2}>
-                            <Grid item xs={4}>
+                            <Grid item xs={3}>
                                 <Button
                                     variant="outlined"
                                     onClick={() => setRoomDetailOpen(false)}
@@ -3047,7 +3020,7 @@ export default function HomePage() {
                                     Cerrar
                                 </Button>
                             </Grid>
-                            <Grid item xs={8}>
+                            <Grid item xs={5}>
                                 <Button
                                     variant="contained"
                                     fullWidth
@@ -3085,6 +3058,17 @@ export default function HomePage() {
                                 >
                                     IR AHORA
                                 </Button>
+                            </Grid>
+                            <Grid item xs={4}>
+                                <ShareLocationButton
+                                    latitude={selectedRoom.cord_latitud}
+                                    longitude={selectedRoom.cord_longitud}
+                                    type="room"
+                                    id={selectedRoom.id_sala}
+                                    name={selectedRoom.nombre_sala}
+                                    size="large"
+                                    fullWidth
+                                />
                             </Grid>
                          </Grid>
                     </Box>
@@ -3328,7 +3312,7 @@ export default function HomePage() {
                      {/* Botones Fijos Abajo en Columna Derecha */}
                      <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
                         <Grid container spacing={2}>
-                            <Grid item xs={4}>
+                            <Grid item xs={3}>
                                 <Button
                                     variant="outlined"
                                     onClick={() => {
@@ -3346,7 +3330,7 @@ export default function HomePage() {
                                     Cerrar
                                 </Button>
                             </Grid>
-                            <Grid item xs={8}>
+                            <Grid item xs={5}>
                                 <Button
                                     variant="contained"
                                     fullWidth
@@ -3399,6 +3383,17 @@ export default function HomePage() {
                                 >
                                     IR AHORA
                                 </Button>
+                            </Grid>
+                            <Grid item xs={4}>
+                                <ShareLocationButton
+                                    latitude={selectedBathroom.cord_latitud}
+                                    longitude={selectedBathroom.cord_longitud}
+                                    type="bathroom"
+                                    id={selectedBathroom.id_bano}
+                                    name={selectedBathroom.nombre || 'Baño'}
+                                    size="large"
+                                    fullWidth
+                                />
                             </Grid>
                         </Grid>
                      </Box>
