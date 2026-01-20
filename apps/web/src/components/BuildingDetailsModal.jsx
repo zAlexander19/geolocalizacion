@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getFullImageUrl } from '../utils/imageUrl'
+import ShareLocationButton from './ShareLocationButton'
 import {
   Box,
   Button,
@@ -225,35 +226,46 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
               </Box>
 
               {/* Botón Acción Principal */}
-              {isPublic && onViewRoute && (
-                <Button
-                  variant="contained"
-                  fullWidth
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                {isPublic && onViewRoute && (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    startIcon={<LocationOnIcon />}
+                    onClick={() => {
+                      onViewRoute({
+                        type: 'building',
+                        name: building.nombre_edificio,
+                        acronym: building.acronimo,
+                        image: building.imagen,
+                        distance: building.distance,
+                        latitude: building.cord_latitud,
+                        longitude: building.cord_longitud
+                      })
+                    }}
+                    sx={{ 
+                      py: 1.5,
+                      borderRadius: 3,
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
+                      textTransform: 'none'
+                    }}
+                  >
+                    Ver Ruta
+                  </Button>
+                )}
+                <ShareLocationButton
+                  latitude={building.cord_latitud}
+                  longitude={building.cord_longitud}
+                  type="building"
+                  id={building.id_edificio}
+                  name={building.nombre_edificio}
                   size="large"
-                  startIcon={<LocationOnIcon />}
-                  onClick={() => {
-                    onViewRoute({
-                      type: 'building',
-                      name: building.nombre_edificio,
-                      acronym: building.acronimo,
-                      image: building.imagen,
-                      distance: building.distance,
-                      latitude: building.cord_latitud,
-                      longitude: building.cord_longitud
-                    })
-                  }}
-                  sx={{ 
-                    py: 1.5,
-                    borderRadius: 3,
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
-                    textTransform: 'none'
-                  }}
-                >
-                  Ver Ruta
-                </Button>
-              )}
+                  fullWidth={!isPublic}
+                />
+              </Box>
 
               <Divider sx={{ my: 4 }} />
 
@@ -481,18 +493,20 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                           {/* Estado y Disponibilidad - ELIMINADO */}
                         </Box>
 
-                        <Button
-                          variant="contained"
-                          size="small"
-                          onClick={() => {
-                            if (onRoomClick) {
-                              onRoomClick(room)
-                            }
-                          }}
-                          sx={{ minWidth: isMobile ? '100%' : 100 }}
-                        >
-                          Ver más
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1, width: isMobile ? '100%' : 'auto' }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => {
+                              if (onRoomClick) {
+                                onRoomClick(room)
+                              }
+                            }}
+                            sx={{ minWidth: isMobile ? '100%' : 100 }}
+                          >
+                            Ver más
+                          </Button>
+                        </Box>
                       </CardContent>
                     </Card>
                   ))}

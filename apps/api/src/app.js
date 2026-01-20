@@ -6,8 +6,10 @@ import multer from 'multer'
 import sharp from 'sharp'
 import bcrypt from 'bcrypt'
 import { fileURLToPath } from 'url'
+import morgan from 'morgan'
 import cloudinary from './config/cloudinary.js'
 import { pool } from './config/database.js'
+import logger from './utils/logger.js'
 import { 
   buildingsRepo, 
   floorsRepo, 
@@ -19,8 +21,10 @@ import {
 import statisticsRoutes from './routes/statistics.routes.js'
 import auditRoutes from './routes/audit.routes.js'
 import authRoutes from './routes/auth.routes.js'
+import logsRoutes from './routes/logs.routes.js'
 import { logAudit } from './services/audit.service.js'
 import { getUserFromRequest } from './utils/auth-helper.js'
+import { errorLogger } from './middlewares/error-logger.middleware.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -77,6 +81,8 @@ async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight)
 
 export function createApp() {
   const app = express()
+  logger.bindConsole()
+  app.use(morgan('combined', { stream: logger.stream }))
   
   // Configuración de CORS
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -114,6 +120,9 @@ export function createApp() {
 
   // ==================== AUDIT LOGS ====================
   app.use('/audit-logs', auditRoutes)
+
+  // ==================== APPLICATION LOGS ====================
+  app.use('/logs', logsRoutes)
 
   // DEBUG endpoint
   app.get('/debug/floor/:id', async (req, res) => {
@@ -1486,6 +1495,7 @@ export function createApp() {
     }
   })
 
+  app.use(errorLogger)
   return app
 }
 

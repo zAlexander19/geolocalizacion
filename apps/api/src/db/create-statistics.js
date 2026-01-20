@@ -1,11 +1,12 @@
 import pool from '../config/database.js'
+import logger from '../utils/logger.js'
 
 /**
  * Script para crear la tabla de estadísticas si no existe
  */
 async function createStatisticsTable() {
   try {
-    console.log('🔍 Verificando tabla de estadísticas...')
+    logger.info('🔍 Verificando tabla de estadísticas...')
     
     // Verificar si la tabla existe
     const checkTable = await pool.query(`
@@ -17,11 +18,11 @@ async function createStatisticsTable() {
     `)
     
     if (checkTable.rows[0].exists) {
-      console.log('✅ Tabla search_logs ya existe')
+      logger.info('✅ Tabla search_logs ya existe')
       return
     }
     
-    console.log('📝 Creando tabla search_logs...')
+    logger.info('📝 Creando tabla search_logs...')
     
     // Crear tabla
     await pool.query(`
@@ -40,7 +41,7 @@ async function createStatisticsTable() {
       );
     `)
     
-    console.log('📊 Creando índices...')
+    logger.info('📊 Creando índices...')
     
     // Crear índices
     await pool.query(`
@@ -59,9 +60,9 @@ async function createStatisticsTable() {
       CREATE INDEX idx_search_logs_created_at ON search_logs(created_at);
     `)
     
-    console.log('✅ Tabla de estadísticas creada exitosamente')
+    logger.info('✅ Tabla de estadísticas creada exitosamente')
   } catch (error) {
-    console.error('❌ Error al crear tabla de estadísticas:', error.message)
+    logger.error('❌ Error al crear tabla de estadísticas:', error)
     throw error
   }
 }
