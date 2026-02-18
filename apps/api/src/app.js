@@ -1419,6 +1419,18 @@ export function createApp() {
 
       await client.query('COMMIT')
       
+      // Registrar auditoría
+      const user = getUserFromRequest(req)
+      await logAudit({
+        userId: user.userId,
+        userEmail: user.email,
+        action: 'crear',
+        entityType: 'totem',
+        entityId: String(totemResult.rows[0].id_totem),
+        entityName: totemResult.rows[0].nombre_totem,
+        changes: totemResult.rows[0]
+      })
+
       res.status(201).json({ data: totemResult.rows[0] })
     } catch (error) {
       await client.query('ROLLBACK')
@@ -1454,6 +1466,21 @@ export function createApp() {
         cord_longitud: b.cord_longitud ? Number(b.cord_longitud) : undefined
       })
       
+      // Registrar auditoría
+      const user = getUserFromRequest(req)
+      await logAudit({
+        userId: user.userId,
+        userEmail: user.email,
+        action: 'modificar',
+        entityType: 'totem',
+        entityId: String(totem.id_totem),
+        entityName: totem.nombre_totem,
+        changes: {
+          prev: prev,
+          new: totem
+        }
+      })
+
       res.json({ data: totem })
     } catch (error) {
       console.error('Error updating totem:', error)
@@ -1485,6 +1512,19 @@ export function createApp() {
       }
       
       await client.query('COMMIT')
+
+      // Registrar auditoría
+      const user = getUserFromRequest(req)
+      await logAudit({
+        userId: user.userId,
+        userEmail: user.email,
+        action: 'eliminar',
+        entityType: 'totem',
+        entityId: String(id),
+        entityName: 'Tótem #' + id,
+        changes: { deleted: true }
+      })
+
       res.json({ message: 'Tótem y usuario asociado eliminados' })
     } catch (error) {
       await client.query('ROLLBACK')

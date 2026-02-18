@@ -230,7 +230,6 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 {isPublic && onViewRoute && (
                   <Button
                     variant="contained"
-                    fullWidth
                     size="large"
                     startIcon={<LocationOnIcon />}
                     onClick={() => {
@@ -245,6 +244,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                       })
                     }}
                     sx={{ 
+                      flex: 1,
                       py: 1.5,
                       borderRadius: 3,
                       fontWeight: 700,
@@ -263,7 +263,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                   id={building.id_edificio}
                   name={building.nombre_edificio}
                   size="large"
-                  fullWidth={!isPublic}
+                  sx={{ flex: 1 }}
                 />
               </Box>
 

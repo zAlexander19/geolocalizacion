@@ -1313,7 +1313,14 @@ export default function HomePage() {
           </Typography>
 
           {/* Search Bar con efecto glassmorphism mejorado */}
-          <Box className="homepage-search-area" sx={{ maxWidth: 900, mx: 'auto', px: 2, position: 'relative', zIndex: 10 }}>
+          <Box className="homepage-search-area" sx={{ 
+            width: '100%', 
+            maxWidth: '1000px', // Aumentado ligeramente para mejor proporción
+            mx: 'auto', 
+            display: 'flex', 
+            justifyContent: 'center',
+            px: { xs: 0, sm: 2 } // Eliminar padding extra en móviles muy pequeños si Container ya tiene
+          }}>
             <SearchBar onSearch={handleSearch} initialType="todo" />
           </Box>
           {offline && (
@@ -2949,23 +2956,7 @@ export default function HomePage() {
                     {/* Botones Fijos Abajo en Columna Derecha */}
                     <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
                          <Grid container spacing={2}>
-                            <Grid item xs={3}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => setRoomDetailOpen(false)}
-                                    title="Cerrar"
-                                    fullWidth
-                                    size="large"
-                                    sx={{ 
-                                        color: '#cbd5e1', 
-                                        borderColor: 'rgba(255,255,255,0.2)',
-                                        '&:hover': { borderColor: 'white', color: 'white', bgcolor: 'rgba(255,255,255,0.05)' } 
-                                    }}
-                                >
-                                    Cerrar
-                                </Button>
-                            </Grid>
-                            <Grid item xs={5}>
+                            <Grid item xs={6}>
                                 <Button
                                     variant="contained"
                                     fullWidth
@@ -3004,7 +2995,7 @@ export default function HomePage() {
                                     IR AHORA
                                 </Button>
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={6}>
                                 <ShareLocationButton
                                     latitude={selectedRoom.cord_latitud}
                                     longitude={selectedRoom.cord_longitud}
@@ -3273,25 +3264,7 @@ export default function HomePage() {
                      {/* Botones Fijos Abajo en Columna Derecha */}
                      <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
                         <Grid container spacing={2}>
-                            <Grid item xs={3}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => {
-                                      setBathroomDetailOpen(false)
-                                      setSelectedBathroom(null)
-                                    }}
-                                    fullWidth
-                                    size="large"
-                                    sx={{ 
-                                        color: '#cbd5e1', 
-                                        borderColor: 'rgba(255,255,255,0.2)',
-                                        '&:hover': { borderColor: 'white', color: 'white', bgcolor: 'rgba(255,255,255,0.05)' } 
-                                    }}
-                                >
-                                    Cerrar
-                                </Button>
-                            </Grid>
-                            <Grid item xs={5}>
+                            <Grid item xs={6}>
                                 <Button
                                     variant="contained"
                                     fullWidth
@@ -3345,7 +3318,7 @@ export default function HomePage() {
                                     IR AHORA
                                 </Button>
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={6}>
                                 <ShareLocationButton
                                     latitude={selectedBathroom.cord_latitud}
                                     longitude={selectedBathroom.cord_longitud}

@@ -3,7 +3,7 @@ import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Box, Button, Chip, Typography } from '@mui/material';
 import { Business as BuildingIcon } from '@mui/icons-material';
-import { getFullImageUrl } from '../../../../utils/imageUrl';
+import { getFullImageUrl } from '../../../utils/imageUrl';
 
 // Define the icon outside the component to keep it static
 const createBuildingIcon = () => L.divIcon({

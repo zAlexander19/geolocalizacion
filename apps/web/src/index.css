@@ -42,7 +42,8 @@ body, html {
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  padding-inline: min(3rem, 5vw);
+  width: 100%;
+  padding-inline: 0;
 }
 
 .homepage-hero,
@@ -52,21 +53,20 @@ body, html {
 }
 
 .homepage-search-area {
-  display: flex;
-  justify-content: center;
+  /* Layout handled by React component */
+  position: relative;
+  z-index: 10;
   margin-top: 1rem;
-  padding-inline: min(2rem, 6vw);
 }
 
 .homepage-search-area .MuiPaper-root {
-  width: min(100%, 520px);
-  max-width: 920px;
   overflow: visible;
 }
 
+
 @media (max-width: 900px) {
   .homepage-hero {
-    padding: 0 1rem;
+    padding: 0;
   }
 
   .homepage-map {
@@ -77,11 +77,10 @@ body, html {
 
 @media (max-width: 600px) {
   .homepage-hero {
-    padding: 0 0.75rem;
+    padding: 0;
   }
 
-  .homepage-search-area .MuiPaper-root,
-  .homepage-search-area .MuiInputBase-root {
+  .homepage-search-area .MuiPaper-root {
     width: 100% !important;
   }
 

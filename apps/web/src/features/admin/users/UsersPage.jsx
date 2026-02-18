@@ -251,8 +251,12 @@ export default function UsersPage() {
     })
   }
 
+  // Filtrar usuarios
+  const adminUsers = usuarios?.filter(u => u.rol !== 'totem') || []
+  const totemUsers = usuarios?.filter(u => u.rol === 'totem') || []
+
   // Mapear usuarios para la tabla
-  const rows = usuarios?.map(u => ({
+  const mapUsersToRows = (usersList) => usersList.map(u => ({
     id: u.id_usuario,
     id_usuario: u.id_usuario,
     nombre: u.nombre,
@@ -261,7 +265,10 @@ export default function UsersPage() {
     estado: u.estado,
     created_at: new Date(u.created_at).toLocaleDateString(),
     ultimo_acceso: u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString() : 'Nunca',
-  })) || []
+  }))
+
+  const adminRows = mapUsersToRows(adminUsers)
+  const totemRows = mapUsersToRows(totemUsers)
 
   const columns = [
     {
@@ -278,13 +285,26 @@ export default function UsersPage() {
       field: 'rol',
       headerName: 'Rol',
       width: 180,
-      renderCell: (params) => (
-        <Chip
-          label={params.value === 'admin_primario' ? 'Super Admin' : 'Admin Secundario'}
-          color={params.value === 'admin_primario' ? 'primary' : 'warning'}
-          size="small"
-        />
-      ),
+      renderCell: (params) => {
+        let label = 'Admin Secundario'
+        let color = 'warning'
+        
+        if (params.value === 'admin_primario') {
+          label = 'Super Admin'
+          color = 'primary'
+        } else if (params.value === 'totem') {
+          label = 'Tótem'
+          color = 'info'
+        }
+
+        return (
+          <Chip
+            label={label}
+            color={color}
+            size="small"
+          />
+        )
+      },
     },
     {
       field: 'estado',
@@ -378,8 +398,11 @@ export default function UsersPage() {
         </Alert>
       )}
 
-      <Card>
+      <Card sx={{ mb: 4 }}>
         <CardContent>
+          <Typography variant="h6" display="block" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Listado de Administradores
+          </Typography>
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
               <strong>Información sobre roles:</strong>
@@ -392,7 +415,21 @@ export default function UsersPage() {
             </Typography>
           </Alert>
 
-          <DataTable rows={rows} columns={columns} />
+          <DataTable rows={adminRows} columns={columns} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Typography variant="h6" display="block" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Lista de Totems
+          </Typography>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              Estos usuarios son generados automáticamente al crear Tótems en el apartado correspondiente.
+            </Typography>
+          </Alert>
+          <DataTable rows={totemRows} columns={columns} />
         </CardContent>
       </Card>
 
@@ -508,41 +545,6 @@ export default function UsersPage() {
               disabled={updateUserMutation.isLoading}
             >
               {updateUserMutation.isLoading ? 'Actualizando...' : 'Guardar Cambios'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-
-      {/* Dialog para cambiar contraseña */}
-      <Dialog open={openPasswordDialog} onClose={handleClosePasswordDialog} maxWidth="sm" fullWidth>
-        <form onSubmit={handleResetPassword}>
-          <DialogTitle>Cambiar Contraseña de Usuario</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Alert severity="warning">
-                Estás cambiando la contraseña de: <strong>{resetPasswordUser?.nombre}</strong>
-              </Alert>
-
-              <TextField
-                label="Nueva Contraseña"
-                type="password"
-                fullWidth
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                helperText="Mínimo 6 caracteres"
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClosePasswordDialog}>Cancelar</Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary"
-              disabled={resetPasswordMutation.isLoading}
-            >
-              {resetPasswordMutation.isLoading ? 'Actualizando...' : 'Cambiar Contraseña'}
             </Button>
           </DialogActions>
         </form>
