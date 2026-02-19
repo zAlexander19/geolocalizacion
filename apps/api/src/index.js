@@ -1,3 +1,10 @@
+// Carga redundante de dotenv por seguridad si se ejecuta index.js directamente
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: path.resolve(__dirname, '../.env') })
+
 import { createApp } from './app.js'
 import createStatisticsTable from './db/create-statistics.js'
 import logger from './utils/logger.js'

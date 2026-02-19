@@ -6,6 +6,9 @@ import logger from '../utils/logger.js'
  */
 async function createStatisticsTable() {
   try {
+    // Debug de conexión
+    console.log(`🔍 [create-statistics] Verificando tabla en DB Host: ${process.env.DB_HOST || 'INDEFINIDO'} (Port: ${process.env.DB_PORT})`)
+    
     logger.info('🔍 Verificando tabla de estadísticas...')
     
     // Verificar si la tabla existe
