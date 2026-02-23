@@ -1,16 +1,17 @@
 module.exports = {
   apps: [{
-    name: "geocampus-api",
+    name: "api-geocampus",
     script: "./src/start.js",
-    instances: "max",
-    exec_mode: "cluster",
+    instances: 1,
+    exec_mode: "fork",
     env: {
       NODE_ENV: "production",
-      PORT: 3000
+      PORT: 4000
     },
     env_production: {
       NODE_ENV: "production",
-      PORT: 3000
+      PORT: 4000,
+      DB_HOST: "172.19.82.207"
     }
   }]
 }

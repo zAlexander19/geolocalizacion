@@ -1,5 +1,12 @@
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import pkg from 'pg'
 import logger from '../utils/logger.js'
+
+// Asegurar carga de variables de entorno AQUÍ mismo por si se importa directamente
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 const { Pool } = pkg
 

@@ -7,7 +7,9 @@ import logger from '../utils/logger.js'
 async function createStatisticsTable() {
   try {
     // Debug de conexión
-    console.log(`🔍 [create-statistics] Verificando tabla en DB Host: ${process.env.DB_HOST || 'INDEFINIDO'} (Port: ${process.env.DB_PORT})`)
+    const client = await pool.connect()
+    console.log(`🔍 [create-statistics] Conexión obtenida exitosamente del pool. Host: ${client.connectionParameters.host}`)
+    client.release()
     
     logger.info('🔍 Verificando tabla de estadísticas...')
     

@@ -134,9 +134,7 @@ export default function FacultiesPage() {
                         height="200"
                         image={
                           associatedBuilding.imagen && !/via\.placeholder\.com/.test(associatedBuilding.imagen)
-                            ? associatedBuilding.imagen.startsWith('http')
-                              ? associatedBuilding.imagen
-                              : `http://localhost:4000${associatedBuilding.imagen}`
+                            ? getFullImageUrl(associatedBuilding.imagen)
                             : 'https://via.placeholder.com/300x200?text=Sin+imagen'
                         }
                         alt={associatedBuilding.nombre_edificio}
