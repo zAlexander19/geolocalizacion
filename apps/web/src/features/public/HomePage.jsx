@@ -82,6 +82,7 @@ import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
 import CompassGuide from '../../components/CompassGuide'
 import ShareLocationButton from '../../components/ShareLocationButton'
+import QRCodeButton from '../../components/QRCodeButton'
 import { useNotification } from '../../contexts/NotificationContext.jsx'
 import BuildingMarkers from './components/BuildingMarkers'
 
@@ -2995,8 +2996,19 @@ export default function HomePage() {
                                     IR AHORA
                                 </Button>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid item xs={3}>
                                 <ShareLocationButton
+                                    latitude={selectedRoom.cord_latitud}
+                                    longitude={selectedRoom.cord_longitud}
+                                    type="room"
+                                    id={selectedRoom.id_sala}
+                                    name={selectedRoom.nombre_sala}
+                                    size="large"
+                                    fullWidth
+                                />
+                            </Grid>
+                            <Grid item xs={3}>
+                                <QRCodeButton
                                     latitude={selectedRoom.cord_latitud}
                                     longitude={selectedRoom.cord_longitud}
                                     type="room"

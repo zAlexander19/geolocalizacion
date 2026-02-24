@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getFullImageUrl } from '../utils/imageUrl'
 import ShareLocationButton from './ShareLocationButton'
+import QRCodeButton from './QRCodeButton'
 import {
   Box,
   Button,
@@ -257,6 +258,15 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                   </Button>
                 )}
                 <ShareLocationButton
+                  latitude={building.cord_latitud}
+                  longitude={building.cord_longitud}
+                  type="building"
+                  id={building.id_edificio}
+                  name={building.nombre_edificio}
+                  size="large"
+                  sx={{ flex: 1 }}
+                />
+                <QRCodeButton
                   latitude={building.cord_latitud}
                   longitude={building.cord_longitud}
                   type="building"
