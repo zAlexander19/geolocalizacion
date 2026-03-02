@@ -20,6 +20,7 @@ import {
   Wc as BathroomIcon,
   ExitToApp as LogoutIcon,
   CloudUpload as UploadIcon,
+  TableChart as TableChartIcon,
   People as PeopleIcon,
   Assessment as AssessmentIcon,
   Delete as DeleteIcon,
@@ -62,6 +63,7 @@ export default function AdminLayout() {
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },
     { label: 'Borrados', icon: <DeleteIcon />, path: '/admin/borrados' },
     { label: 'Historial de Cambios', icon: <HistoryIcon />, path: '/admin/historial' },
+    { label: 'Carga Masiva', icon: <TableChartIcon />, path: '/admin/carga-masiva' },
     { label: 'Importar OSM', icon: <UploadIcon />, path: '/admin/osm-import' },
     ...(isSuperAdmin ? [{ label: 'Usuarios', icon: <PeopleIcon />, path: '/admin/usuarios' }] : []),
   ]

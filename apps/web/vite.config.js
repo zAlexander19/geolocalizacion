@@ -48,7 +48,22 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    // HTTPS deshabilitado para desarrollo local
-    // En producción en servidor de universidad, NGINX/Apache maneja HTTPS
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Librerías de mapas (las más pesadas)
+          'vendor-map': ['leaflet', 'react-leaflet'],
+          // UI de Material
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          // React core
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Utilidades
+          'vendor-utils': ['axios', '@tanstack/react-query', 'react-hook-form', 'zod'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600,
   }
 })

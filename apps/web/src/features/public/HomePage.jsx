@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -75,6 +75,8 @@ import {
   Info as InfoIcon,
   Map as MapIcon,
   Stairs as StairsIcon,
+  Login as LoginIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -82,6 +84,7 @@ import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
 import CompassGuide from '../../components/CompassGuide'
 import ShareLocationButton from '../../components/ShareLocationButton'
+import QRCodeButton from '../../components/QRCodeButton'
 import { useNotification } from '../../contexts/NotificationContext.jsx'
 import BuildingMarkers from './components/BuildingMarkers'
 
@@ -110,7 +113,6 @@ function ClosePopupButton() {
         zIndex: 20,
         color: 'white',
         bgcolor: 'rgba(255,255,255,0.15)',
-        backdropFilter: 'blur(4px)',
         '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
         width: 28,
         height: 28
@@ -121,8 +123,12 @@ function ClosePopupButton() {
   )
 }
 
+// Constante de módulo para evitar crear nuevo array en cada render
+const EMPTY_WAYPOINTS = [];
+
 // Componente para manejar la ruta en el mapa con Leaflet Routing Machine
-function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError }) {
+// Envuelto en memo: no se re-renderiza si sus props no cambian
+const RouteComponent = memo(function RouteComponent({ start, end, waypoints = EMPTY_WAYPOINTS, onRouteFound, onRouteError }) {
   const map = useMap()
   const onRouteFoundRef = useRef(onRouteFound)
   const onRouteErrorRef = useRef(onRouteError)
@@ -208,7 +214,39 @@ function RouteComponent({ start, end, waypoints = [], onRouteFound, onRouteError
   }, [map, start?.[0], start?.[1], end?.[0], end?.[1], JSON.stringify(waypoints)])
 
   return null
-}
+})
+
+// Mapa de ruta aislado en memo: no se re-renderiza cuando cambia routeInfo en el padre
+const RouteLeafletMap = memo(function RouteLeafletMap({
+  center, userLocation, routeDestination, routeDestinationName,
+  routeWaypoints, destinationIcon, onRouteFound, onRouteError, isMobile
+}) {
+  return (
+    <MapContainer
+      center={center}
+      zoom={17}
+      style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+      />
+      <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
+        <Popup>Tu ubicación</Popup>
+      </Marker>
+      <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
+        <Popup>{routeDestinationName}</Popup>
+      </Marker>
+      <RouteComponent
+        start={[userLocation.latitude, userLocation.longitude]}
+        end={[routeDestination.lat, routeDestination.lng]}
+        waypoints={routeWaypoints}
+        onRouteFound={onRouteFound}
+        onRouteError={onRouteError}
+      />
+    </MapContainer>
+  )
+})
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -250,7 +288,6 @@ export default function HomePage() {
   const [routeDestinationName, setRouteDestinationName] = useState('')
   const [routeDestinationData, setRouteDestinationData] = useState(null)
   const [routeWaypoints, setRouteWaypoints] = useState([])
-  const [locationAccuracy, setLocationAccuracy] = useState(null)
   const [selectedFaculty, setSelectedFaculty] = useState(null)
   const [facultyDetailOpen, setFacultyDetailOpen] = useState(false)
   const [compassGuideOpen, setCompassGuideOpen] = useState(false)
@@ -262,6 +299,20 @@ export default function HomePage() {
   const [mapCenter, setMapCenter] = useState(null) // Centro del mapa para enlaces compartidos
   const [sharedResourceId, setSharedResourceId] = useState(null) // ID del recurso compartido para filtrar marcadores
   const [sharedResourceType, setSharedResourceType] = useState(null) // Tipo del recurso compartido
+
+  // Callbacks estables para el mapa de ruta — identidad fija evita recrear RouteComponent
+  const handleRouteFound = useCallback((info) => setRouteInfo(info), [])
+  const handleRouteError = useCallback((err) => console.warn('Route error', err), [])
+
+  // Congela Leaflet cuando hay cualquier modal abierto — elimina el render loop del mapa de fondo
+  const isAnyModalOpen = buildingDetailOpen || routeMapOpen || roomDetailOpen || bathroomDetailOpen || fullImageOpen || facultyDetailOpen || compassGuideOpen
+
+  // Centro estable para MapContainer de ruta — evita nuevo array en cada render
+  const routeMapCenter = useMemo(() =>
+    userLocation ? [userLocation.latitude, userLocation.longitude] : [0, 0],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userLocation?.latitude, userLocation?.longitude]
+  )
 
   // Ref para mantener el estado de búsquedas sin causar re-renders dependientes en callbacks
   const searchInfoRef = useRef({ type: 'todo', query: '', location: null });
@@ -720,7 +771,6 @@ export default function HomePage() {
             timestamp,
             accuracy 
           })
-          setLocationAccuracy(accuracy)
           setLocationDialog(false)
           setLocationError(null)
           console.log('✓ Ubicación obtenida automáticamente')
@@ -853,7 +903,6 @@ export default function HomePage() {
           timestamp,  // Útil para saber si es "fresca"
           accuracy 
         })
-        setLocationAccuracy(accuracy)
         setLocationDialog(false)
         setLocationError(null)
         setSnackbar({
@@ -1027,7 +1076,6 @@ export default function HomePage() {
           right: 0,
           bottom: 0,
           background: 'linear-gradient(180deg, rgba(10, 37, 64, 0.4) 0%, rgba(13, 51, 90, 0.6) 50%, rgba(10, 37, 64, 0.7) 100%)',
-          backdropFilter: 'blur(2px)',
           zIndex: -1,
         }}
       />
@@ -1100,9 +1148,7 @@ export default function HomePage() {
         position="fixed" 
         elevation={0} 
         sx={{ 
-          background: 'rgba(12, 36, 68, 0.7)', // Azul institucional translúcido
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)', 
+          background: 'rgba(12, 36, 68, 0.97)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           height: { xs: 60, md: 70 },
           justifyContent: 'center',
@@ -1155,7 +1201,7 @@ export default function HomePage() {
           {/* Elemento Derecho (Acciones) */}
           <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
             {/* Botón GPS (Icono Cuadrado) */}
-            <Tooltip title={isTotemMode ? 'Centrar en Tótem' : (userLocation ? `GPS Activo (${Math.round(locationAccuracy || 0)}m)` : 'Activar GPS')}>
+            <Tooltip title={isTotemMode ? 'Centrar en Tótem' : (userLocation ? `GPS Activo (${Math.round(userLocation.accuracy || 0)}m)` : 'Activar GPS')}>
                <IconButton
                  onClick={handleRetryLocation}
                  sx={{ 
@@ -1165,7 +1211,7 @@ export default function HomePage() {
                    width: { xs: 36, md: 40 }, 
                    height: { xs: 36, md: 40 },
                    border: '1px solid rgba(255,255,255,0.1)',
-                   transition: 'all 0.2s',
+                   transition: 'background-color 0.2s, transform 0.2s',
                    '&:hover': { 
                       bgcolor: userLocation ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.2)',
                       transform: 'translateY(-1px)'
@@ -1197,8 +1243,9 @@ export default function HomePage() {
                   transform: 'translateY(-1px)',
                 }
               }}
+            startIcon={<LoginIcon />}
             >
-              Login
+              Iniciar sesión
             </Button>
           </Box>
         </Toolbar>
@@ -1244,7 +1291,7 @@ export default function HomePage() {
           >
             <Box
               sx={{
-                width: isMobile ? 120 : 180,
+                width: isMobile ? 160 : 240,
                 height: 'auto',
                 filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4))',
                 '& img': {
@@ -1255,12 +1302,11 @@ export default function HomePage() {
             >
               <Box
                 component="img"
-                src="/unap-logo.svg"
+                src="/unap-logo-new.png"
                 alt="UNAP Logo"
                 sx={{
                   width: '100%',
                   height: 'auto',
-                  filter: 'brightness(0) invert(1)', // Convertir a blanco
                 }}
               />
             </Box>
@@ -1274,7 +1320,6 @@ export default function HomePage() {
                 mb: 2, 
                 bgcolor: 'rgba(0, 80, 150, 0.8)', 
                 color: 'white',
-                backdropFilter: 'blur(4px)',
                 fontWeight: 'bold',
                 border: '1px solid rgba(255,255,255,0.3)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
@@ -1384,20 +1429,56 @@ export default function HomePage() {
               elevation={6} 
               className="homepage-map"
               sx={{ 
+                position: 'relative',
                 height: isMobile ? 400 : 600, 
                 overflow: 'hidden',
                 borderRadius: 3,
-                background: 'rgba(0, 0, 0, 0.7)',
-                backdropFilter: 'blur(20px)',
+                background: 'rgba(0, 0, 0, 0.85)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
               }}
             >
-              <MapContainer
-                center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
-                zoom={18}
-                maxZoom={18}
-                style={{ height: '100%', width: '100%' }}
-              >
+              {isAnyModalOpen ? (
+                <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }} />
+              ) : (
+                <>
+                  {sharedResourceType && (
+                    <Box sx={{ 
+                      position: 'absolute', 
+                      top: 12, 
+                      right: 12, 
+                      zIndex: 1000,
+                    }}>
+                      <Tooltip title="Ver todos los edificios">
+                        <IconButton
+                          onClick={() => {
+                            window.history.replaceState({}, document.title, window.location.pathname)
+                            setSharedResourceId(null)
+                            setSharedResourceType(null)
+                            setMapCenter(null)
+                          }}
+                          size="small"
+                          sx={{
+                            background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                            color: 'white',
+                            boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              boxShadow: '0 6px 16px rgba(33, 150, 243, 0.5)',
+                              transform: 'scale(1.1)',
+                            }
+                          }}
+                        >
+                          <HomeIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  )}
+                  <MapContainer
+                    center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
+                    zoom={18}
+                    maxZoom={18}
+                    style={{ height: '100%', width: '100%' }}
+                  >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -1422,7 +1503,9 @@ export default function HomePage() {
                   sharedResourceId={sharedResourceId}
                   onMarkerClick={handleBuildingMarkerClick}
                 />
-              </MapContainer>
+                  </MapContainer>
+                </>
+              )}
             </Paper>
           </Box>
           ) : (
@@ -1494,7 +1577,7 @@ export default function HomePage() {
                       '&:hover': {
                         transform: 'translateY(-4px)'
                       },
-                      transition: 'all 0.3s ease-in-out'
+                      transition: 'transform 0.3s ease-in-out'
                     }}>
                        {/* Contenedor de Imagen y Contenido */}
                        <Box sx={{ 
@@ -1786,7 +1869,6 @@ export default function HomePage() {
                                         color: '#42a5f5', 
                                         fontSize: '0.75rem',
                                         fontWeight: 'bold',
-                                        backdropFilter: 'blur(4px)',
                                         bgcolor: 'rgba(13, 71, 161, 0.2)'
                                     }}>
                                         {room.acronimo}
@@ -1801,7 +1883,6 @@ export default function HomePage() {
                                         color: '#e1bee7', 
                                         fontSize: '0.75rem',
                                         fontWeight: 'bold',
-                                        backdropFilter: 'blur(4px)',
                                         bgcolor: 'rgba(171, 71, 188, 0.2)'
                                     }}>
                                         {room.tipo_sala}
@@ -1829,11 +1910,10 @@ export default function HomePage() {
                             sx={{
                                 position: 'absolute',
                                 inset: 0,
-                                bgcolor: 'rgba(0, 5, 16, 0.85)', 
-                                backdropFilter: 'blur(8px)',
+                                bgcolor: 'rgba(0, 5, 16, 0.92)', 
                                 opacity: 0,
                                 transform: 'translateY(20px)',
-                                transition: 'all 0.3s ease-in-out',
+                                transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
                                 zIndex: 3,
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -1959,7 +2039,7 @@ export default function HomePage() {
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          transition: 'all 0.3s',
+                          transition: 'transform 0.3s, box-shadow 0.3s',
                           '&:hover': {
                             boxShadow: 6,
                             transform: 'translateY(-4px)'
@@ -2060,8 +2140,8 @@ export default function HomePage() {
                                 </Typography>
                               </Box>
                               <Box sx={{ pl: 3.5 }}>
-                                {associatedBuildings.map((b, idx) => (
-                                  <Typography key={idx} variant="body2" color="text.secondary" sx={{ display: 'block' }}>
+                                {associatedBuildings.map((b) => (
+                                  <Typography key={b.id_edificio} variant="body2" color="text.secondary" sx={{ display: 'block' }}>
                                     {b.nombre_edificio}
                                   </Typography>
                                 ))}
@@ -2126,12 +2206,14 @@ export default function HomePage() {
                             height: isMobile ? 400 : 600, 
                             overflow: 'hidden',
                             borderRadius: 3,
-                            background: 'rgba(0, 0, 0, 0.7)',
-                            backdropFilter: 'blur(20px)',
+                            background: 'rgba(0, 0, 0, 0.85)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            position: 'relative' // Necesario para posicionar la leyenda absoluta
+                            position: 'relative',
                           }}
                         >
+                          {isAnyModalOpen ? (
+                            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }} />
+                          ) : (
                           <MapContainer
                             center={(() => {
                               const bathrooms = displayedSearchResults.filter(r => r.resultType === 'bano');
@@ -2364,8 +2446,7 @@ export default function HomePage() {
                                               size="small"
                                               sx={{
                                                   mt: 2,
-                                                  bgcolor: 'rgba(0, 0, 0, 0.6)', 
-                                                  backdropFilter: 'blur(4px)',
+                                                  bgcolor: 'rgba(0, 0, 0, 0.75)', 
                                                   border: '1px solid rgba(255, 255, 255, 0.3)',
                                                   color: 'white',
                                                   textTransform: 'none',
@@ -2387,6 +2468,7 @@ export default function HomePage() {
                               )
                             })}
                           </MapContainer>
+                          )}
 
                           {/* Leyenda Flotante Superpuesta */}
                           <Box sx={{ 
@@ -2394,15 +2476,14 @@ export default function HomePage() {
                               top: 20, 
                               right: 20, 
                               zIndex: 1000, // Leaflet tiene z-index altos, aseguramos que esté encima
-                              bgcolor: 'rgba(0, 5, 16, 0.85)',
-                              backdropFilter: 'blur(12px)',
+                              bgcolor: 'rgba(0, 5, 16, 0.92)',
                               borderRadius: 2,
                               border: '1px solid rgba(255, 255, 255, 0.1)',
                               p: 1.5,
                               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                               display: 'flex',
                               flexDirection: 'column',
-                              transition: 'all 0.3s ease-in-out',
+                              transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
                               opacity: isAnyPopupOpen ? 0 : 1,
                               pointerEvents: isAnyPopupOpen ? 'none' : 'auto',
                               transform: isAnyPopupOpen ? 'translateY(-10px)' : 'translateY(0)'
@@ -2552,7 +2633,6 @@ export default function HomePage() {
                                     color: '#42a5f5', 
                                     fontSize: '0.75rem',
                                     fontWeight: 'bold',
-                                    backdropFilter: 'blur(4px)',
                                     bgcolor: 'rgba(33, 150, 243, 0.2)'
                                 }}>
                                     {bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
@@ -2566,7 +2646,6 @@ export default function HomePage() {
                                         color: '#81c784', 
                                         fontSize: '0.75rem',
                                         fontWeight: 'bold',
-                                        backdropFilter: 'blur(4px)',
                                         bgcolor: 'rgba(102, 187, 106, 0.2)'
                                     }}>
                                         ♿
@@ -2594,11 +2673,10 @@ export default function HomePage() {
                             sx={{
                                 position: 'absolute',
                                 inset: 0,
-                                bgcolor: 'rgba(0, 5, 16, 0.85)', 
-                                backdropFilter: 'blur(8px)',
+                                bgcolor: 'rgba(0, 5, 16, 0.92)', 
                                 opacity: 0,
                                 transform: 'translateY(20px)',
-                                transition: 'all 0.3s ease-in-out',
+                                transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
                                 zIndex: 3,
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -2615,7 +2693,6 @@ export default function HomePage() {
                                     color: '#42a5f5', 
                                     fontSize: '0.75rem',
                                     fontWeight: 'bold',
-                                    backdropFilter: 'blur(4px)',
                                     bgcolor: 'rgba(33, 150, 243, 0.2)'
                                 }}>
                                     {bathroom.tipo === 'h' ? 'Hombre' : bathroom.tipo === 'm' ? 'Mujer' : 'Mixto'}
@@ -2692,8 +2769,7 @@ export default function HomePage() {
               <Paper sx={{ 
                 p: 6, 
                 textAlign: 'center',
-                background: 'rgba(0, 0, 0, 0.7) !important',
-                backdropFilter: 'blur(20px) saturate(180%)',
+                background: 'rgba(12, 36, 68, 0.95) !important',
                 boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
               }}>
@@ -2717,7 +2793,7 @@ export default function HomePage() {
           setRoomDetailOpen(false)
           setSelectedRoom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -2725,6 +2801,13 @@ export default function HomePage() {
             borderRadius: isMobile ? 2 : 3,
             maxHeight: '90vh',
             overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -2893,7 +2976,7 @@ export default function HomePage() {
                                                 overflow: 'hidden', 
                                                 height: 120, 
                                                 bgcolor: '#1e293b',
-                                                transition: 'all 0.2s',
+                                                transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                                                 '&:hover': {
                                                     borderColor: selectedRoom.floor.imagen ? 'white' : 'rgba(255,255,255,0.1)',
                                                     transform: selectedRoom.floor.imagen ? 'translateY(-2px)' : 'none',
@@ -2930,7 +3013,7 @@ export default function HomePage() {
                                                 overflow: 'hidden', 
                                                 height: 120, 
                                                 bgcolor: '#1e293b',
-                                                transition: 'all 0.2s',
+                                                transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                                                 '&:hover': {
                                                     borderColor: selectedRoom.building.imagen ? 'white' : 'rgba(255,255,255,0.1)',
                                                     transform: selectedRoom.building.imagen ? 'translateY(-2px)' : 'none',
@@ -2995,8 +3078,19 @@ export default function HomePage() {
                                     IR AHORA
                                 </Button>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid item xs={3}>
                                 <ShareLocationButton
+                                    latitude={selectedRoom.cord_latitud}
+                                    longitude={selectedRoom.cord_longitud}
+                                    type="room"
+                                    id={selectedRoom.id_sala}
+                                    name={selectedRoom.nombre_sala}
+                                    size="large"
+                                    fullWidth
+                                />
+                            </Grid>
+                            <Grid item xs={3}>
+                                <QRCodeButton
                                     latitude={selectedRoom.cord_latitud}
                                     longitude={selectedRoom.cord_longitud}
                                     type="room"
@@ -3022,7 +3116,7 @@ export default function HomePage() {
           setBathroomDetailOpen(false)
           setSelectedBathroom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -3030,6 +3124,13 @@ export default function HomePage() {
              m: isMobile ? 2 : 3,
              borderRadius: isMobile ? 2 : 3,
              overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -3201,7 +3302,7 @@ export default function HomePage() {
                                                 overflow: 'hidden', 
                                                 height: 120, 
                                                 bgcolor: '#1e293b',
-                                                transition: 'all 0.2s',
+                                                transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                                                 '&:hover': {
                                                     borderColor: selectedBathroom.floor.imagen ? 'white' : 'rgba(255,255,255,0.1)',
                                                     transform: selectedBathroom.floor.imagen ? 'translateY(-2px)' : 'none',
@@ -3238,7 +3339,7 @@ export default function HomePage() {
                                                 overflow: 'hidden', 
                                                 height: 120, 
                                                 bgcolor: '#1e293b',
-                                                transition: 'all 0.2s',
+                                                transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
                                                 '&:hover': {
                                                     borderColor: selectedBathroom.building.imagen ? 'white' : 'rgba(255,255,255,0.1)',
                                                     transform: selectedBathroom.building.imagen ? 'translateY(-2px)' : 'none',
@@ -3361,7 +3462,6 @@ export default function HomePage() {
                     right: -20,
                     color: 'white',
                     bgcolor: 'rgba(0,0,0,0.5)',
-                    backdropFilter: 'blur(4px)',
                     zIndex: 10,
                     '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }
                 }}
@@ -3515,27 +3615,17 @@ export default function HomePage() {
                 minHeight: isMobile ? 300 : 'auto',
                 height: '100%',
               }}>
-                <MapContainer
-                  center={[userLocation.latitude, userLocation.longitude]}
-                  zoom={17}
-                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                  />
-                  <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
-                    <Popup>Tu ubicación</Popup>
-                  </Marker>
-                  <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
-                    <Popup>{routeDestinationName}</Popup>
-                  </Marker>
-                  <RouteComponent
-                    start={[userLocation.latitude, userLocation.longitude]}
-                    end={[routeDestination.lat, routeDestination.lng]}
-                    waypoints={routeWaypoints}
-                  />
-                </MapContainer>
+                <RouteLeafletMap
+                  center={routeMapCenter}
+                  userLocation={userLocation}
+                  routeDestination={routeDestination}
+                  routeDestinationName={routeDestinationName}
+                  routeWaypoints={routeWaypoints}
+                  destinationIcon={destinationIcon}
+                  onRouteFound={handleRouteFound}
+                  onRouteError={handleRouteError}
+                  isMobile={isMobile}
+                />
               </Box>
             </>
           )}
@@ -3558,6 +3648,14 @@ export default function HomePage() {
           setSelectedBuilding(null)
         }}
         isPublic={true}
+        onClearSharedParams={() => {
+          // Limpiar parámetros compartidos de la URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+          setSharedResourceId(null)
+          setSharedResourceType(null)
+          setMapCenter(null)
+          // NO cerrar el modal, solo limpiar los parámetros
+        }}
         onViewRoute={(destination) => {
           setRouteDestination({
             lat: destination.latitude,
@@ -3739,29 +3837,17 @@ export default function HomePage() {
                 minHeight: isMobile ? 300 : 'auto',
                 height: '100%',
               }}>
-                <MapContainer
-                  center={[userLocation.latitude, userLocation.longitude]}
-                  zoom={17}
-                  style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                  />
-                  <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
-                    <Popup>Tu ubicación</Popup>
-                  </Marker>
-                  <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
-                    <Popup>{routeDestinationName}</Popup>
-                  </Marker>
-                  <RouteComponent
-                    start={[userLocation.latitude, userLocation.longitude]}
-                    end={[routeDestination.lat, routeDestination.lng]}
-                    waypoints={routeWaypoints}
-                    onRouteFound={(info) => setRouteInfo(info)}
-                    onRouteError={(err) => console.log('Route error', err)}
-                  />
-                </MapContainer>
+                <RouteLeafletMap
+                  center={routeMapCenter}
+                  userLocation={userLocation}
+                  routeDestination={routeDestination}
+                  routeDestinationName={routeDestinationName}
+                  routeWaypoints={routeWaypoints}
+                  destinationIcon={destinationIcon}
+                  onRouteFound={handleRouteFound}
+                  onRouteError={handleRouteError}
+                  isMobile={isMobile}
+                />
 
                 {/* Floating Info Overlay */}
                 <Box
@@ -3771,8 +3857,7 @@ export default function HomePage() {
                         left: '50%',
                         transform: 'translateX(-50%)',
                         zIndex: 1000,
-                        bgcolor: 'rgba(255, 255, 255, 0.95)',
-                        backdropFilter: 'blur(8px)',
+                        bgcolor: 'rgba(255, 255, 255, 0.97)',
                         borderRadius: 50,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                         px: 3,
@@ -3858,6 +3943,13 @@ export default function HomePage() {
         fullWidth
         PaperProps={{
           sx: { maxHeight: '90vh' }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
+          }
         }}
       >
         {selectedFaculty && (

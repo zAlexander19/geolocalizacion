@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getFullImageUrl } from '../utils/imageUrl'
 import ShareLocationButton from './ShareLocationButton'
+import QRCodeButton from './QRCodeButton'
 import {
   Box,
   Button,
@@ -21,6 +22,7 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme,
+  Tooltip,
 } from '@mui/material'
 import {
   Close as CloseIcon,
@@ -29,12 +31,14 @@ import {
   People as PeopleIcon,
   MeetingRoom as RoomIcon,
   LocationOn as LocationOnIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material'
 import api from '../lib/api'
 
-export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute, onRoomClick }) {
+export default function BuildingDetailsModal({ building, open, onClose, isPublic = false, onViewRoute, onRoomClick, onClearSharedParams }) {
   const [selectedFloor, setSelectedFloor] = useState(null)
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0)
+  const [shareQRDialogOpen, setShareQRDialogOpen] = useState(false)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -99,41 +103,46 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
   const maxCarouselPositions = rooms ? Math.max(1, rooms.length - (roomsPerPage - 1)) : 1
 
   return (
-    <Dialog 
-      open={open && !!building} 
-      onClose={handleClose} 
-      maxWidth="md"
-      fullWidth
-      keepMounted={false}
-      PaperProps={{
-        sx: {
-          borderRadius: 4,
-          m: 2,
-          width: 'calc(100% - 32px)',
-          maxHeight: '85vh',
-          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)',
-        }
-      }}
-    >
+    <>
+      <Dialog 
+        open={open && !!building} 
+        onClose={handleClose} 
+        maxWidth="md"
+        fullWidth
+        keepMounted={false}
+        disableEscapeKeyDown
+        disableBackdrop
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            m: 2,
+            width: 'calc(100% - 32px)',
+            maxHeight: '85vh',
+            boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0d1117 100%)',
+            color: 'white',
+            backdropFilter: 'blur(0px)',
+          }
+        }}
+      >
       {building && (
         <>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', p: 3, pb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: 'sans-serif', lineHeight: 1.2 }}>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3, pb: 2, color: 'white' }}>
+        <Typography variant="h5" component="div" sx={{ fontWeight: 800, fontFamily: 'sans-serif', lineHeight: 1.2, flex: 1, color: 'white' }}>
           {selectedFloor ? `${selectedFloor.nombre_piso} - ${building.nombre_edificio}` : building.nombre_edificio}
         </Typography>
-        <IconButton 
-          onClick={handleClose}
-          sx={{ 
-            color: 'white',
-            bgcolor: 'rgba(255,255,255,0.1)', 
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
-            ml: 2,
-            mt: -0.5,
-            zIndex: 10
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <IconButton 
+            onClick={handleClose}
+            sx={{ 
+              color: 'white',
+              bgcolor: 'rgba(255,255,255,0.1)', 
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent sx={{ p: 0, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}>
@@ -225,8 +234,8 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 )}
               </Box>
 
-              {/* Botón Acción Principal */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              {/* Botones Acción Principal */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
                 {isPublic && onViewRoute && (
                   <Button
                     variant="contained"
@@ -245,26 +254,49 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                     }}
                     sx={{ 
                       flex: 1,
-                      py: 1.5,
-                      borderRadius: 3,
+                      py: 1.8,
+                      px: 2,
+                      borderRadius: 2.5,
                       fontWeight: 700,
-                      fontSize: '1rem',
-                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
-                      textTransform: 'none'
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                      boxShadow: '0 6px 16px rgba(25, 118, 210, 0.35)',
+                      textTransform: 'none',
+                      background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: '0 8px 22px rgba(25, 118, 210, 0.5)',
+                        transform: 'translateY(-2px)',
+                      }
                     }}
                   >
                     Ver Ruta
                   </Button>
                 )}
-                <ShareLocationButton
-                  latitude={building.cord_latitud}
-                  longitude={building.cord_longitud}
-                  type="building"
-                  id={building.id_edificio}
-                  name={building.nombre_edificio}
+                <Button
+                  variant="contained"
+                  startIcon={<ShareIcon />}
+                  onClick={() => setShareQRDialogOpen(true)}
                   size="large"
-                  sx={{ flex: 1 }}
-                />
+                  sx={{
+                    flex: 1,
+                    py: 1.8,
+                    px: 2,
+                    borderRadius: 2.5,
+                    textTransform: 'none',
+                    fontSize: { xs: '0.95rem', sm: '1rem' },
+                    background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                    color: 'white',
+                    fontWeight: 700,
+                    boxShadow: '0 6px 16px rgba(33, 150, 243, 0.35)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 8px 22px rgba(33, 150, 243, 0.5)',
+                      transform: 'translateY(-2px)',
+                    }
+                  }}
+                >
+                  Compartir
+                </Button>
               </Box>
 
               <Divider sx={{ my: 4 }} />
@@ -305,19 +337,23 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                         />
                         <Button
                           variant="contained"
-                          size="small"
                           onClick={() => handleFloorClick(floor)}
                           sx={{ 
-                            borderRadius: 2, 
+                            borderRadius: 2,
                             fontWeight: 700,
-                            bgcolor: 'white',
-                            color: 'primary.dark',
+                            py: 0.8,
+                            px: 2,
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                            background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                            color: 'white',
+                            boxShadow: '0 3px 8px rgba(33, 150, 243, 0.3)',
+                            transition: 'all 0.3s ease',
                             '&:hover': {
-                              bgcolor: 'grey.200',
+                              boxShadow: '0 5px 12px rgba(33, 150, 243, 0.4)',
+                              transform: 'translateY(-1px)',
                             },
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            minWidth: 100,
-                            ml: 2
+                            minWidth: 110,
+                            ml: { xs: 0.5, sm: 2 }
                           }}
                         >
                           VER PISO
@@ -522,8 +558,76 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
           </Box>
         )}
       </DialogContent>
-        </>
+      </>
       )}
     </Dialog>
+
+    {/* Modal de Compartir + QR */}
+    <Dialog 
+      open={shareQRDialogOpen}
+      onClose={() => setShareQRDialogOpen(false)}
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+          color: 'white',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Compartir ubicacion</Typography>
+        <IconButton 
+          onClick={() => setShareQRDialogOpen(false)}
+          size="small"
+          sx={{ color: 'white' }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ py: 4, px: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {building && (
+          <>
+            {/* Sección de QR */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Código QR</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <QRCodeButton
+                  latitude={building.cord_latitud}
+                  longitude={building.cord_longitud}
+                  type="building"
+                  id={building.id_edificio}
+                  name={building.nombre_edificio}
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Escanea con tu celular para compartir la ubicación</Typography>
+            </Box>
+
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2 }} />
+
+            {/* Sección de Compartir */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Compartir Enlace</Typography>
+              <ShareLocationButton
+                latitude={building.cord_latitud}
+                longitude={building.cord_longitud}
+                type="building"
+                id={building.id_edificio}
+                name={building.nombre_edificio}
+                size="small"
+                fullWidth
+              />
+              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Copia el enlace y comparte con tus amigos</Typography>
+            </Box>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

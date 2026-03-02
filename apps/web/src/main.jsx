@@ -19,6 +19,8 @@ import StatisticsPage from './features/admin/statistics/StatisticsPage.jsx'
 import DeletedPage from './features/admin/deleted/DeletedPage.jsx'
 import AuditLogPage from './features/admin/audit/AuditLogPage.jsx'
 import TotemsPage from './features/admin/totems/TotemsPage.jsx'
+import BulkUploadPage from './features/admin/bulk-upload/BulkUploadPage.jsx'
+import FPSCounter from './components/FPSCounter.jsx'
 
 import './index.css'
 
@@ -27,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
+          <FPSCounter />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -48,6 +51,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="borrados" element={<DeletedPage />} />
               <Route path="historial" element={<AuditLogPage />} />
               <Route path="totems" element={<TotemsPage />} />
+              <Route path="carga-masiva" element={<BulkUploadPage />} />
 
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -81,22 +81,26 @@ async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight)
 
 export function createApp() {
   const app = express()
+  
+  // Configuración para proxy reverso (Nginx)
+  app.set('trust proxy', 1)
+
   logger.bindConsole()
   app.use(morgan('combined', { stream: logger.stream }))
   
   // Configuración de CORS
-  const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:5173', 'http://localhost:3000']
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000').split(',').map(o => o.trim())
   
   app.use(cors({
     origin: (origin, callback) => {
+      // Permitir solicitudes sin origen (curl, Postman, llamadas servidor-servidor, etc.)
       if (!origin) return callback(null, true)
       
-      if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true)
       } else {
-        callback(new Error('Not allowed by CORS'))
+        logger.warn(`Bloqueado por CORS: ${origin}`)
+        callback(new Error('No permitido por CORS'))
       }
     },
     credentials: true

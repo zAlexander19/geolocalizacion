@@ -6,6 +6,11 @@ import logger from '../utils/logger.js'
  */
 async function createStatisticsTable() {
   try {
+    // Debug de conexión
+    const client = await pool.connect()
+    console.log(`🔍 [create-statistics] Conexión obtenida exitosamente del pool. Host: ${client.connectionParameters.host}`)
+    client.release()
+    
     logger.info('🔍 Verificando tabla de estadísticas...')
     
     // Verificar si la tabla existe
