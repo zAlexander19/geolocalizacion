@@ -94,15 +94,12 @@ h1, h2, h3, h4, h5, h6 {
   color: white !important;
 }
 
-/* Glassmorphism cards */
+/* Cards */
 .MuiCard-root {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   border-radius: 16px !important;
   overflow: hidden !important;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
 }
 
 .MuiCard-root:hover {
@@ -110,10 +107,9 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.35) !important;
 }
 
-/* Dialog glassmorphism */
+/* Dialog */
 .MuiDialog-paper {
   background: linear-gradient(135deg, #0a2540 0%, #0d335a 50%, #164e85 100%) !important;
-  backdrop-filter: blur(30px) saturate(180%) !important;
   box-shadow: 0 20px 60px 0 rgba(0, 0, 0, 0.5) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
@@ -185,10 +181,9 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Paper glassmorphism - Excluir AppBar */
+/* Paper */
 .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper) {
   background: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: white !important;
@@ -279,7 +274,6 @@ h1, h2, h3, h4, h5, h6 {
 .MuiPopover-paper,
 .MuiMenu-paper {
   background: rgba(13, 51, 90, 0.98) !important;
-  backdrop-filter: blur(20px) !important;
 }
 
 /* Tablas en modo oscuro - Admin */
@@ -287,7 +281,6 @@ h1, h2, h3, h4, h5, h6 {
 .MuiTable-root,
 table {
   background: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
   color: white !important;
 }
 
@@ -411,13 +404,13 @@ input[type="search"] {
   background: white;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  box-shadow: 0px 4px 12px rgba(0,0,0,0.4), inset 0px -4px 4px rgba(0,0,0,0.1);
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
   align-items: center;
   border: 2px solid #ff9800; /* Orange border */
   position: relative;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .marker-content:hover {
@@ -541,23 +534,7 @@ input[type="search"] {
   box-shadow: 5px 5px 15px rgba(156, 39, 176, 0.4);
 }
 
-/* Pulsing effect */
-.marker-content::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50% 50% 50% 0;
-  background: inherit;
-  opacity: 0.6;
-  z-index: -1;
-  animation: pulse-ring 2s infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.5; }
-  100% { transform: scale(1.4); opacity: 0; }
-}
+/* Pulse ring removed — was animating on every marker simultaneously causing FPS drops */
 
 /* User Location Pulse Marker */
 .user-location-marker {
@@ -591,6 +568,7 @@ input[type="search"] {
   border-radius: 50%;
   animation: pulse 2s infinite;
   z-index: 1;
+  will-change: transform, opacity;
 }
 
 @keyframes pulse {
