@@ -76,6 +76,7 @@ import {
   Map as MapIcon,
   Stairs as StairsIcon,
   Login as LoginIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -1428,6 +1429,7 @@ export default function HomePage() {
               elevation={6} 
               className="homepage-map"
               sx={{ 
+                position: 'relative',
                 height: isMobile ? 400 : 600, 
                 overflow: 'hidden',
                 borderRadius: 3,
@@ -1438,12 +1440,45 @@ export default function HomePage() {
               {isAnyModalOpen ? (
                 <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)' }} />
               ) : (
-              <MapContainer
-                center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
-                zoom={18}
-                maxZoom={18}
-                style={{ height: '100%', width: '100%' }}
-              >
+                <>
+                  {sharedResourceType && (
+                    <Box sx={{ 
+                      position: 'absolute', 
+                      top: 12, 
+                      right: 12, 
+                      zIndex: 1000,
+                    }}>
+                      <Tooltip title="Ver todos los edificios">
+                        <IconButton
+                          onClick={() => {
+                            window.history.replaceState({}, document.title, window.location.pathname)
+                            setSharedResourceId(null)
+                            setSharedResourceType(null)
+                            setMapCenter(null)
+                          }}
+                          size="small"
+                          sx={{
+                            background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                            color: 'white',
+                            boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              boxShadow: '0 6px 16px rgba(33, 150, 243, 0.5)',
+                              transform: 'scale(1.1)',
+                            }
+                          }}
+                        >
+                          <HomeIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  )}
+                  <MapContainer
+                    center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
+                    zoom={18}
+                    maxZoom={18}
+                    style={{ height: '100%', width: '100%' }}
+                  >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -1468,7 +1503,8 @@ export default function HomePage() {
                   sharedResourceId={sharedResourceId}
                   onMarkerClick={handleBuildingMarkerClick}
                 />
-              </MapContainer>
+                  </MapContainer>
+                </>
               )}
             </Paper>
           </Box>
@@ -2757,7 +2793,7 @@ export default function HomePage() {
           setRoomDetailOpen(false)
           setSelectedRoom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -2765,6 +2801,13 @@ export default function HomePage() {
             borderRadius: isMobile ? 2 : 3,
             maxHeight: '90vh',
             overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -3073,7 +3116,7 @@ export default function HomePage() {
           setBathroomDetailOpen(false)
           setSelectedBathroom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -3081,6 +3124,13 @@ export default function HomePage() {
              m: isMobile ? 2 : 3,
              borderRadius: isMobile ? 2 : 3,
              overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -3598,6 +3648,14 @@ export default function HomePage() {
           setSelectedBuilding(null)
         }}
         isPublic={true}
+        onClearSharedParams={() => {
+          // Limpiar parámetros compartidos de la URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+          setSharedResourceId(null)
+          setSharedResourceType(null)
+          setMapCenter(null)
+          // NO cerrar el modal, solo limpiar los parámetros
+        }}
         onViewRoute={(destination) => {
           setRouteDestination({
             lat: destination.latitude,
@@ -3885,6 +3943,13 @@ export default function HomePage() {
         fullWidth
         PaperProps={{
           sx: { maxHeight: '90vh' }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
+          }
         }}
       >
         {selectedFaculty && (
