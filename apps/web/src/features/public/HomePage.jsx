@@ -1245,7 +1245,7 @@ export default function HomePage() {
           >
             <Box
               sx={{
-                width: isMobile ? 120 : 180,
+                width: isMobile ? 160 : 240,
                 height: 'auto',
                 filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4))',
                 '& img': {
@@ -1256,12 +1256,11 @@ export default function HomePage() {
             >
               <Box
                 component="img"
-                src="/unap-logo.svg"
+                src="/unap-logo-new.png"
                 alt="UNAP Logo"
                 sx={{
                   width: '100%',
                   height: 'auto',
-                  filter: 'brightness(0) invert(1)', // Convertir a blanco
                 }}
               />
             </Box>

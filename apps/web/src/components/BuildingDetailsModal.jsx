@@ -119,7 +119,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
       {building && (
         <>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', p: 3, pb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: 'sans-serif', lineHeight: 1.2 }}>
+        <Typography variant="h5" component="div" sx={{ fontWeight: 800, fontFamily: 'sans-serif', lineHeight: 1.2 }}>
           {selectedFloor ? `${selectedFloor.nombre_piso} - ${building.nombre_edificio}` : building.nombre_edificio}
         </Typography>
         <IconButton 
