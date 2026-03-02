@@ -75,6 +75,7 @@ import {
   Info as InfoIcon,
   Map as MapIcon,
   Stairs as StairsIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -1384,6 +1385,7 @@ export default function HomePage() {
               elevation={6} 
               className="homepage-map"
               sx={{ 
+                position: 'relative',
                 height: isMobile ? 400 : 600, 
                 overflow: 'hidden',
                 borderRadius: 3,
@@ -1392,6 +1394,38 @@ export default function HomePage() {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
               }}
             >
+              {sharedResourceType && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 12, 
+                  right: 12, 
+                  zIndex: 1000,
+                }}>
+                  <Tooltip title="Ver todos los edificios">
+                    <IconButton
+                      onClick={() => {
+                        window.history.replaceState({}, document.title, window.location.pathname)
+                        setSharedResourceId(null)
+                        setSharedResourceType(null)
+                        setMapCenter(null)
+                      }}
+                      size="small"
+                      sx={{
+                        background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                        color: 'white',
+                        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 6px 16px rgba(33, 150, 243, 0.5)',
+                          transform: 'scale(1.1)',
+                        }
+                      }}
+                    >
+                      <HomeIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
               <MapContainer
                 center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
                 zoom={18}
@@ -2717,7 +2751,7 @@ export default function HomePage() {
           setRoomDetailOpen(false)
           setSelectedRoom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -2725,6 +2759,13 @@ export default function HomePage() {
             borderRadius: isMobile ? 2 : 3,
             maxHeight: '90vh',
             overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -3033,7 +3074,7 @@ export default function HomePage() {
           setBathroomDetailOpen(false)
           setSelectedBathroom(null)
         }}
-        maxWidth={isMobile ? "xs" : "lg"}
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: { 
@@ -3041,6 +3082,13 @@ export default function HomePage() {
              m: isMobile ? 2 : 3,
              borderRadius: isMobile ? 2 : 3,
              overflow: 'hidden'
+          }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
           }
         }}
       >
@@ -3569,6 +3617,14 @@ export default function HomePage() {
           setSelectedBuilding(null)
         }}
         isPublic={true}
+        onClearSharedParams={() => {
+          // Limpiar parámetros compartidos de la URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+          setSharedResourceId(null)
+          setSharedResourceType(null)
+          setMapCenter(null)
+          // NO cerrar el modal, solo limpiar los parámetros
+        }}
         onViewRoute={(destination) => {
           setRouteDestination({
             lat: destination.latitude,
@@ -3869,6 +3925,13 @@ export default function HomePage() {
         fullWidth
         PaperProps={{
           sx: { maxHeight: '90vh' }
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'transparent',
+            }
+          }
         }}
       >
         {selectedFaculty && (

@@ -29,11 +29,14 @@ export default function QRCodeButton({
       })
       
       const qrDataUrl = await QRCode.toDataURL(url, {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: 'M',
         type: 'image/png',
-        quality: 0.95,
-        margin: 1,
-        width: 300
+        margin: 3,
+        width: 400,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
       })
       
       setQrImageUrl(qrDataUrl)
