@@ -151,6 +151,70 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
           <Box>
             {/* Imagen Principal - Full Width */}
             <Box sx={{ width: '100%', height: 280, position: 'relative', bgcolor: 'grey.100' }}>
+
+              {/* Botón Compartir - esquina superior derecha */}
+              <Tooltip title="Compartir">
+                <IconButton
+                  onClick={() => setShareQRDialogOpen(true)}
+                  sx={{
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    zIndex: 20,
+                    bgcolor: 'rgba(33,150,243,0.85)',
+                    color: 'white',
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    '&:hover': { bgcolor: 'rgba(25,118,210,0.95)' },
+                  }}
+                >
+                  <ShareIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
+              {/* Botón Ver Ruta sobre imagen - solo móvil */}
+              {isPublic && onViewRoute && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<LocationOnIcon />}
+                  onClick={() => {
+                    onViewRoute({
+                      type: 'building',
+                      name: building.nombre_edificio,
+                      acronym: building.acronimo,
+                      image: building.imagen,
+                      distance: building.distance,
+                      latitude: building.cord_latitud,
+                      longitude: building.cord_longitud
+                    })
+                  }}
+                  sx={{
+                    display: { xs: 'inline-flex', md: 'none' },
+                    position: 'absolute',
+                    bottom: 10,
+                    right: 10,
+                    left: 10,
+                    zIndex: 20,
+                    borderRadius: 2,
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    textTransform: 'none',
+                    bgcolor: 'rgba(0,0,0,0.55)',
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                    '&:hover': {
+                      bgcolor: 'rgba(25,118,210,0.85)',
+                      boxShadow: '0 6px 16px rgba(25,118,210,0.5)',
+                    },
+                  }}
+                >
+                  Ver Ruta
+                </Button>
+              )}
+
               {building.imagen && !/via\.placeholder\.com/.test(building.imagen) ? (
                 <>
                   <Box
@@ -222,7 +286,7 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
               )}
 
               {/* Descripción */}
-              <Box sx={{ mb: 4 }}>
+              <Box sx={{ mb: 3 }}>
                 {building.descripcion ? (
                   <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, fontSize: '1.05rem' }}>
                     {building.descripcion}
@@ -234,72 +298,45 @@ export default function BuildingDetailsModal({ building, open, onClose, isPublic
                 )}
               </Box>
 
-              {/* Botones Acción Principal */}
-              <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-                {isPublic && onViewRoute && (
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<LocationOnIcon />}
-                    onClick={() => {
-                      onViewRoute({
-                        type: 'building',
-                        name: building.nombre_edificio,
-                        acronym: building.acronimo,
-                        image: building.imagen,
-                        distance: building.distance,
-                        latitude: building.cord_latitud,
-                        longitude: building.cord_longitud
-                      })
-                    }}
-                    sx={{ 
-                      flex: 1,
-                      py: 1.8,
-                      px: 2,
-                      borderRadius: 2.5,
-                      fontWeight: 700,
-                      fontSize: { xs: '0.95rem', sm: '1rem' },
-                      boxShadow: '0 6px 16px rgba(25, 118, 210, 0.35)',
-                      textTransform: 'none',
-                      background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: '0 8px 22px rgba(25, 118, 210, 0.5)',
-                        transform: 'translateY(-2px)',
-                      }
-                    }}
-                  >
-                    Ver Ruta
-                  </Button>
-                )}
+              {/* Botón Ver Ruta - solo desktop, debajo de descripción */}
+              {isPublic && onViewRoute && (
                 <Button
                   variant="contained"
-                  startIcon={<ShareIcon />}
-                  onClick={() => setShareQRDialogOpen(true)}
+                  fullWidth
                   size="large"
+                  startIcon={<LocationOnIcon />}
+                  onClick={() => {
+                    onViewRoute({
+                      type: 'building',
+                      name: building.nombre_edificio,
+                      acronym: building.acronimo,
+                      image: building.imagen,
+                      distance: building.distance,
+                      latitude: building.cord_latitud,
+                      longitude: building.cord_longitud
+                    })
+                  }}
                   sx={{
-                    flex: 1,
-                    py: 1.8,
-                    px: 2,
+                    display: { xs: 'none', md: 'inline-flex' },
+                    mb: 3,
+                    py: 1.5,
                     borderRadius: 2.5,
-                    textTransform: 'none',
-                    fontSize: { xs: '0.95rem', sm: '1rem' },
-                    background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                    color: 'white',
                     fontWeight: 700,
-                    boxShadow: '0 6px 16px rgba(33, 150, 243, 0.35)',
-                    transition: 'all 0.3s ease',
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
+                    boxShadow: '0 6px 16px rgba(25,118,210,0.35)',
                     '&:hover': {
-                      boxShadow: '0 8px 22px rgba(33, 150, 243, 0.5)',
+                      boxShadow: '0 8px 22px rgba(25,118,210,0.5)',
                       transform: 'translateY(-2px)',
-                    }
+                    },
                   }}
                 >
-                  Compartir
+                  Ver Ruta
                 </Button>
-              </Box>
+              )}
 
-              <Divider sx={{ my: 4 }} />
+              <Divider sx={{ my: 3 }} />
 
               {/* Sección Pisos */}
               <Box>

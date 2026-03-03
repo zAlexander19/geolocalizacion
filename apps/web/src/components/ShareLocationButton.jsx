@@ -14,6 +14,7 @@ import { generateShareUrl, copyToClipboard } from '../utils/shareLocation'
  * @param {string} [props.variant='contained'] - Variante del botón
  * @param {string} [props.size='medium'] - Tamaño del botón
  * @param {boolean} [props.fullWidth=false] - Ancho completo
+ * @param {boolean} [props.iconOnly=false] - Renderiza solo el ícono (IconButton circular)
  * @param {Object} [props.sx] - Estilos adicionales
  */
 export default function ShareLocationButton({
@@ -25,6 +26,7 @@ export default function ShareLocationButton({
   variant = 'contained',
   size = 'medium',
   fullWidth = false,
+  iconOnly = false,
   sx = {}
 }) {
   const [copying, setCopying] = useState(false)
@@ -80,29 +82,47 @@ export default function ShareLocationButton({
 
   return (
     <>
-      <Button
-        startIcon={<ShareIcon />}
-        onClick={handleShare}
-        disabled={!latitude || !longitude}
-        variant={variant}
-        size={size}
-        fullWidth={fullWidth}
-        sx={{
-          textTransform: 'none',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          fontWeight: 'bold',
-          '&:hover': {
-            backgroundColor: '#45a049',
-          },
-          '&:disabled': {
-            backgroundColor: '#cccccc',
-          },
-          ...sx
-        }}
-      >
-        Compartir
-      </Button>
+      {iconOnly ? (
+        <Tooltip title="Compartir">
+          <span>
+            <IconButton
+              onClick={handleShare}
+              disabled={!latitude || !longitude}
+              size="small"
+              sx={{
+                color: 'white',
+                ...sx
+              }}
+            >
+              <ShareIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      ) : (
+        <Button
+          startIcon={<ShareIcon />}
+          onClick={handleShare}
+          disabled={!latitude || !longitude}
+          variant={variant}
+          size={size}
+          fullWidth={fullWidth}
+          sx={{
+            textTransform: 'none',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            fontWeight: 'bold',
+            '&:hover': {
+              backgroundColor: '#45a049',
+            },
+            '&:disabled': {
+              backgroundColor: '#cccccc',
+            },
+            ...sx
+          }}
+        >
+          Compartir
+        </Button>
+      )}
 
       {/* Diálogo para mostrar el enlace */}
       <Dialog

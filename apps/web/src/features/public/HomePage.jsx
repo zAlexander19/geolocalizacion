@@ -77,6 +77,7 @@ import {
   Stairs as StairsIcon,
   Login as LoginIcon,
   Home as HomeIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material'
 
 import api from '../../lib/api'
@@ -283,6 +284,8 @@ export default function HomePage() {
   const [buildingDetailOpen, setBuildingDetailOpen] = useState(false)
   const [selectedBathroom, setSelectedBathroom] = useState(null)
   const [bathroomDetailOpen, setBathroomDetailOpen] = useState(false)
+  const [roomShareDialogOpen, setRoomShareDialogOpen] = useState(false)
+  const [bathroomShareDialogOpen, setBathroomShareDialogOpen] = useState(false)
   const [routeMapOpen, setRouteMapOpen] = useState(false)
   const [routeDestination, setRouteDestination] = useState(null)
   const [routeDestinationName, setRouteDestinationName] = useState('')
@@ -1227,13 +1230,15 @@ export default function HomePage() {
               variant="contained"
               onClick={() => navigate('/login')}
               sx={{ 
-                bgcolor: '#007bff', // Azul eléctrico brillante
+                bgcolor: '#007bff',
                 color: 'white',
-                borderRadius: '20px', // Bordes redondeados estilo 'pill'
+                borderRadius: '20px',
                 textTransform: 'none',
                 fontWeight: 600,
                 fontFamily: '"Poppins", sans-serif',
-                px: { xs: 2.5, md: 3 },
+                px: { xs: 0, md: 3 },
+                minWidth: { xs: 36, md: 'auto' },
+                width: { xs: 36, md: 'auto' },
                 height: { xs: 36, md: 40 },
                 boxShadow: '0 4px 14px rgba(0, 123, 255, 0.3)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -1241,11 +1246,16 @@ export default function HomePage() {
                   bgcolor: '#0069d9',
                   boxShadow: '0 6px 20px rgba(0, 123, 255, 0.5)',
                   transform: 'translateY(-1px)',
-                }
+                },
+                '& .MuiButton-startIcon': { 
+                  margin: { xs: 0, md: undefined },
+                },
               }}
-            startIcon={<LoginIcon />}
+              startIcon={<LoginIcon />}
             >
-              Iniciar sesión
+              <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                Iniciar sesión
+              </Box>
             </Button>
           </Box>
         </Toolbar>
@@ -2874,6 +2884,25 @@ export default function HomePage() {
                     height: isMobile ? 250 : '100%',
                     order: isMobile ? 1 : 1 
                 }}>
+
+                    {/* Botón Compartir - esquina superior derecha */}
+                    <Tooltip title="Compartir">
+                      <IconButton
+                        onClick={() => setRoomShareDialogOpen(true)}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 10, right: 10, zIndex: 20,
+                          bgcolor: 'rgba(33,150,243,0.85)',
+                          color: 'white',
+                          border: '1px solid rgba(255,255,255,0.25)',
+                          '&:hover': { bgcolor: 'rgba(25,118,210,0.95)' },
+                        }}
+                      >
+                        <ShareIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
                     {selectedRoom.imagen && !/via\.placeholder\.com/.test(selectedRoom.imagen) ? (
                         <Box
                         component="img"
@@ -2935,7 +2964,7 @@ export default function HomePage() {
                     display: 'flex', 
                     flexDirection: 'column',
                     order: isMobile ? 2 : 2,
-                    bgcolor: '#0f172a', /* Dark slate background */
+                    bgcolor: '#0f172a',
                     color: 'white'
                 }}>
                     <Box sx={{ p: 3, overflowY: 'auto', flexGrow: 1 }}>
@@ -3034,73 +3063,53 @@ export default function HomePage() {
                                 )}
                             </Grid>
                         </Box>
-                    </Box>
 
-                    {/* Botones Fijos Abajo en Columna Derecha */}
-                    <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
-                         <Grid container spacing={2}>
-                            <Grid item xs={6}>
-                                <Button
-                                    variant="contained"
-                                    fullWidth
-                                    size="large"
-                                    startIcon={<LocationIcon />}
-                                    onClick={() => {
-                                      // Lógica de Ruta
-                                      if (!userLocation) {
-                                        setSnackbar({ open: true, message: 'Activa tu ubicación', severity: 'warning' })
-                                        return
-                                      }
-                                      const distance = Math.round(Math.sqrt(Math.pow((selectedRoom.cord_latitud - userLocation.latitude) * 111320, 2) + Math.pow((selectedRoom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)))
-                                      
-                                      setRouteDestination({ lat: selectedRoom.cord_latitud, lng: selectedRoom.cord_longitud })
-                                      setRouteDestinationName(`Sala ${selectedRoom.nombre_sala}`)
-                                      setRouteDestinationData({
-                                        type: 'room',
-                                        name: `Sala ${selectedRoom.nombre_sala}`,
-                                        acronym: selectedRoom.acronimo,
-                                        image: selectedRoom.imagen,
-                                        distance: distance,
-                                        latitude: selectedRoom.cord_latitud,
-                                        longitude: selectedRoom.cord_longitud,
-                                        building: selectedRoom.building?.nombre_edificio,
-                                        floor: selectedRoom.floor?.nombre_piso
-                                      })
-                                      setRouteWaypoints([])
-                                      setRouteMapOpen(true)
-                                      setRoomDetailOpen(false)
-                                    }}
-                                    sx={{ 
-                                        bgcolor: '#2563eb',
-                                        '&:hover': { bgcolor: '#1d4ed8' }
-                                    }}
-                                >
-                                    IR AHORA
-                                </Button>
-                            </Grid>
-                            <Grid item xs={3}>
-                                <ShareLocationButton
-                                    latitude={selectedRoom.cord_latitud}
-                                    longitude={selectedRoom.cord_longitud}
-                                    type="room"
-                                    id={selectedRoom.id_sala}
-                                    name={selectedRoom.nombre_sala}
-                                    size="large"
-                                    fullWidth
-                                />
-                            </Grid>
-                            <Grid item xs={3}>
-                                <QRCodeButton
-                                    latitude={selectedRoom.cord_latitud}
-                                    longitude={selectedRoom.cord_longitud}
-                                    type="room"
-                                    id={selectedRoom.id_sala}
-                                    name={selectedRoom.nombre_sala}
-                                    size="large"
-                                    fullWidth
-                                />
-                            </Grid>
-                         </Grid>
+                        {/* Botón Ver Ruta - al fondo del panel */}
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            size="large"
+                            startIcon={<LocationIcon />}
+                            onClick={() => {
+                              if (!userLocation) {
+                                setSnackbar({ open: true, message: 'Activa tu ubicación', severity: 'warning' })
+                                return
+                              }
+                              const distance = Math.round(Math.sqrt(Math.pow((selectedRoom.cord_latitud - userLocation.latitude) * 111320, 2) + Math.pow((selectedRoom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)))
+                              setRouteDestination({ lat: selectedRoom.cord_latitud, lng: selectedRoom.cord_longitud })
+                              setRouteDestinationName(`Sala ${selectedRoom.nombre_sala}`)
+                              setRouteDestinationData({
+                                type: 'room',
+                                name: `Sala ${selectedRoom.nombre_sala}`,
+                                acronym: selectedRoom.acronimo,
+                                image: selectedRoom.imagen,
+                                distance: distance,
+                                latitude: selectedRoom.cord_latitud,
+                                longitude: selectedRoom.cord_longitud,
+                                building: selectedRoom.building?.nombre_edificio,
+                                floor: selectedRoom.floor?.nombre_piso
+                              })
+                              setRouteWaypoints([])
+                              setRouteMapOpen(true)
+                              setRoomDetailOpen(false)
+                            }}
+                            sx={{
+                              mt: 3,
+                              py: 1.5,
+                              borderRadius: 2.5,
+                              fontWeight: 700,
+                              textTransform: 'none',
+                              fontSize: '1rem',
+                              background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
+                              boxShadow: '0 6px 16px rgba(25,118,210,0.35)',
+                              '&:hover': {
+                                boxShadow: '0 8px 22px rgba(25,118,210,0.5)',
+                                transform: 'translateY(-2px)',
+                              },
+                            }}
+                        >
+                            Ver Ruta
+                        </Button>
                     </Box>
                 </Grid>
               </Grid>
@@ -3109,7 +3118,65 @@ export default function HomePage() {
         )}
       </Dialog>
 
-      {/* Modal de Detalle del Baño */}
+      {/* Diálogo Compartir Sala (QR + Link) */}
+      <Dialog
+        open={roomShareDialogOpen}
+        onClose={() => setRoomShareDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Compartir ubicación</Typography>
+          <IconButton onClick={() => setRoomShareDialogOpen(false)} size="small" sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ py: 4, px: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {selectedRoom && (
+            <>
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Código QR</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <QRCodeButton
+                    latitude={selectedRoom.cord_latitud}
+                    longitude={selectedRoom.cord_longitud}
+                    type="room"
+                    id={selectedRoom.id_sala}
+                    name={selectedRoom.nombre_sala}
+                    size="small"
+                    fullWidth
+                  />
+                </Box>
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Escanea con tu celular para compartir la ubicación</Typography>
+              </Box>
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2 }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Compartir Enlace</Typography>
+                <ShareLocationButton
+                  latitude={selectedRoom.cord_latitud}
+                  longitude={selectedRoom.cord_longitud}
+                  type="room"
+                  id={selectedRoom.id_sala}
+                  name={selectedRoom.nombre_sala}
+                  size="small"
+                  fullWidth
+                />
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Copia el enlace y comparte con tus amigos</Typography>
+              </Box>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalle del Baño */}}
       <Dialog
         open={bathroomDetailOpen}
         onClose={() => {
@@ -3194,6 +3261,25 @@ export default function HomePage() {
                     height: isMobile ? 250 : '100%',
                     order: isMobile ? 1 : 1 
                 }}>
+
+                    {/* Botón Compartir - esquina superior derecha */}
+                    <Tooltip title="Compartir">
+                      <IconButton
+                        onClick={() => setBathroomShareDialogOpen(true)}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 10, right: 10, zIndex: 20,
+                          bgcolor: 'rgba(33,150,243,0.85)',
+                          color: 'white',
+                          border: '1px solid rgba(255,255,255,0.25)',
+                          '&:hover': { bgcolor: 'rgba(25,118,210,0.95)' },
+                        }}
+                      >
+                        <ShareIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
                     {selectedBathroom.imagen && !/via\.placeholder\.com/.test(selectedBathroom.imagen) ? (
                         <Box
                             component="img"
@@ -3360,83 +3446,117 @@ export default function HomePage() {
                                 )}
                             </Grid>
                         </Box>
-                     </Box>
 
-                     {/* Botones Fijos Abajo en Columna Derecha */}
-                     <Box sx={{ p: 2, borderTop: 1, borderColor: 'rgba(255,255,255,0.15)', bgcolor: '#0f172a' }}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={6}>
-                                <Button
-                                    variant="contained"
-                                    fullWidth
-                                    size="large"
-                                    startIcon={<LocationIcon />}
-                                    onClick={() => {
-                                      if (!userLocation) {
-                                        setSnackbar({
-                                          open: true,
-                                          message: 'Por favor, activa tu ubicación para ver la ruta',
-                                          severity: 'warning'
-                                        })
-                                        return
-                                      }
-
-                                      // Calcular distancia
-                                      const distance = userLocation ? 
-                                        Math.round(
-                                          Math.sqrt(
-                                            Math.pow((selectedBathroom.cord_latitud - userLocation.latitude) * 111320, 2) +
-                                            Math.pow((selectedBathroom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)
-                                          )
-                                        ) : undefined
-
-                                      setRouteDestination({
-                                        lat: selectedBathroom.cord_latitud,
-                                        lng: selectedBathroom.cord_longitud
-                                      })
-                                      setRouteDestinationName(selectedBathroom.nombre || 'Baño')
-                                      setRouteDestinationData({
-                                        type: 'bathroom',
-                                        name: selectedBathroom.nombre || 'Baño',
-                                        image: selectedBathroom.imagen,
-                                        distance: distance,
-                                        latitude: selectedBathroom.cord_latitud,
-                                        longitude: selectedBathroom.cord_longitud,
-                                        building: selectedBathroom.building?.nombre_edificio,
-                                        floor: selectedBathroom.floor?.nombre_piso,
-                                        tipo: selectedBathroom.tipo
-                                      })
-                                      setRouteWaypoints([])
-                                      setRouteMapOpen(true)
-                                      setBathroomDetailOpen(false)
-                                    }}
-                                    sx={{ 
-                                        bgcolor: '#2563eb',
-                                        '&:hover': { bgcolor: '#1d4ed8' },
-                                        fontWeight: 700
-                                    }}
-                                >
-                                    IR AHORA
-                                </Button>
-                            </Grid>
-                            <Grid item xs={6}>
-                                <ShareLocationButton
-                                    latitude={selectedBathroom.cord_latitud}
-                                    longitude={selectedBathroom.cord_longitud}
-                                    type="bathroom"
-                                    id={selectedBathroom.id_bano}
-                                    name={selectedBathroom.nombre || 'Baño'}
-                                    size="large"
-                                    fullWidth
-                                />
-                            </Grid>
-                        </Grid>
+                        {/* Botón Ver Ruta - al fondo del panel */}
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            size="large"
+                            startIcon={<LocationIcon />}
+                            onClick={() => {
+                              if (!userLocation) {
+                                setSnackbar({ open: true, message: 'Por favor, activa tu ubicación para ver la ruta', severity: 'warning' })
+                                return
+                              }
+                              const distance = Math.round(Math.sqrt(Math.pow((selectedBathroom.cord_latitud - userLocation.latitude) * 111320, 2) + Math.pow((selectedBathroom.cord_longitud - userLocation.longitude) * 111320 * Math.cos(userLocation.latitude * Math.PI / 180), 2)))
+                              setRouteDestination({ lat: selectedBathroom.cord_latitud, lng: selectedBathroom.cord_longitud })
+                              setRouteDestinationName(selectedBathroom.nombre || 'Baño')
+                              setRouteDestinationData({
+                                type: 'bathroom',
+                                name: selectedBathroom.nombre || 'Baño',
+                                image: selectedBathroom.imagen,
+                                distance: distance,
+                                latitude: selectedBathroom.cord_latitud,
+                                longitude: selectedBathroom.cord_longitud,
+                                building: selectedBathroom.building?.nombre_edificio,
+                                floor: selectedBathroom.floor?.nombre_piso,
+                                tipo: selectedBathroom.tipo
+                              })
+                              setRouteWaypoints([])
+                              setRouteMapOpen(true)
+                              setBathroomDetailOpen(false)
+                            }}
+                            sx={{
+                              mt: 3,
+                              py: 1.5,
+                              borderRadius: 2.5,
+                              fontWeight: 700,
+                              textTransform: 'none',
+                              fontSize: '1rem',
+                              background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
+                              boxShadow: '0 6px 16px rgba(25,118,210,0.35)',
+                              '&:hover': {
+                                boxShadow: '0 8px 22px rgba(25,118,210,0.5)',
+                                transform: 'translateY(-2px)',
+                              },
+                            }}
+                        >
+                            Ver Ruta
+                        </Button>
                      </Box>
                 </Grid>
                </Grid>
             </DialogContent>
           </>
         )}
+      </Dialog>
+
+      {/* Diálogo Compartir Baño (QR + Link) */}
+      <Dialog
+        open={bathroomShareDialogOpen}
+        onClose={() => setBathroomShareDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Compartir ubicación</Typography>
+          <IconButton onClick={() => setBathroomShareDialogOpen(false)} size="small" sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ py: 4, px: 3, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {selectedBathroom && (
+            <>
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Código QR</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <QRCodeButton
+                    latitude={selectedBathroom.cord_latitud}
+                    longitude={selectedBathroom.cord_longitud}
+                    type="bathroom"
+                    id={selectedBathroom.id_bano}
+                    name={selectedBathroom.nombre || 'Baño'}
+                    size="small"
+                    fullWidth
+                  />
+                </Box>
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Escanea con tu celular para compartir la ubicación</Typography>
+              </Box>
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2 }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 'bold', textAlign: 'center', fontSize: '1.1rem' }}>Compartir Enlace</Typography>
+                <ShareLocationButton
+                  latitude={selectedBathroom.cord_latitud}
+                  longitude={selectedBathroom.cord_longitud}
+                  type="bathroom"
+                  id={selectedBathroom.id_bano}
+                  name={selectedBathroom.nombre || 'Baño'}
+                  size="small"
+                  fullWidth
+                />
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'rgba(255,255,255,0.7)', mt: 2 }}>Copia el enlace y comparte con tus amigos</Typography>
+              </Box>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
 
       {/* Modal para Imagen Completa (Zoom) */}
