@@ -249,28 +249,11 @@ export default function BathroomsAdmin() {
       alert('Por favor selecciona PNG o JPG')
       return
     }
-    
-    // Validar dimensiones de la imagen
-    const img = new Image()
     const reader = new FileReader()
-    
     reader.onload = (event) => {
-      img.onload = () => {
-        // Validar que las dimensiones estén en un rango razonable (entre 500 y 1800 píxeles)
-        const isValidWidth = img.width >= 500 && img.width <= 1800
-        const isValidHeight = img.height >= 500 && img.height <= 1800
-        
-        if (isValidWidth && isValidHeight) {
-          setImageFile(file)
-          setImagePreviewUrl(event.target.result)
-        } else {
-          alert(`La imagen debe tener dimensiones entre 500x500 y 1800x1800 píxeles. Imagen seleccionada: ${img.width}x${img.height} píxeles`)
-          e.target.value = '' // Limpiar el input
-        }
-      }
-      img.src = event.target.result
+      setImageFile(file)
+      setImagePreviewUrl(event.target.result)
     }
-    
     reader.readAsDataURL(file)
   }
 
@@ -634,7 +617,7 @@ export default function BathroomsAdmin() {
               <input hidden accept="image/png, image/jpeg" type="file" onChange={handleImageChange} />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              Dimensiones requeridas: 500-1800 píxeles (ancho y alto)
+              Acepta PNG o JPG (máximo 10MB)
             </Typography>
             {imagePreviewUrl && (
               <Box component="img" src={imagePreviewUrl} alt="Preview" sx={{ width: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 1, border: 1, borderColor: 'divider' }} />

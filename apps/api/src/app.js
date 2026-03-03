@@ -48,18 +48,16 @@ const upload = multer({
 
 // Función para subir imagen a Cloudinary
 async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight) {
-  const metadata = await sharp(buffer).metadata()
-  
-  // Validar que las dimensiones estén en un rango razonable (entre 500 y 1800 píxeles)
-  const minDimension = 500
+  // Redimensionar automáticamente si excede el máximo, manteniendo aspecto
   const maxDimension = 1800
-  const isValidWidth = metadata.width >= minDimension && metadata.width <= maxDimension
-  const isValidHeight = metadata.height >= minDimension && metadata.height <= maxDimension
-  
-  if (!isValidWidth || !isValidHeight) {
-    throw new Error(`La imagen debe tener dimensiones entre ${minDimension}x${minDimension} y ${maxDimension}x${maxDimension} píxeles. Imagen recibida: ${metadata.width}x${metadata.height} píxeles`)
+  const metadata = await sharp(buffer).metadata()
+  let processedBuffer = buffer
+  if (metadata.width > maxDimension || metadata.height > maxDimension) {
+    processedBuffer = await sharp(buffer)
+      .resize(maxDimension, maxDimension, { fit: 'inside', withoutEnlargement: true })
+      .toBuffer()
   }
-  
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -75,7 +73,7 @@ async function uploadToCloudinary(buffer, folder, expectedWidth, expectedHeight)
       }
     )
     
-    uploadStream.end(buffer)
+    uploadStream.end(processedBuffer)
   })
 }
 
