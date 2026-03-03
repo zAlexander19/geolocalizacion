@@ -45,6 +45,7 @@ import {
   ListItemText,
   MenuItem,
   Paper,
+  Popover,
   Select,
   Snackbar,
   Tab,
@@ -302,6 +303,8 @@ export default function HomePage() {
   const [mapCenter, setMapCenter] = useState(null) // Centro del mapa para enlaces compartidos
   const [sharedResourceId, setSharedResourceId] = useState(null) // ID del recurso compartido para filtrar marcadores
   const [sharedResourceType, setSharedResourceType] = useState(null) // Tipo del recurso compartido
+  const homeButtonRef = useRef(null) // Ref para el botón de la casita
+  const [showHomePopover, setShowHomePopover] = useState(false) // Estado para mostrar el popover de la casita
 
   // Callbacks estables para el mapa de ruta — identidad fija evita recrear RouteComponent
   const handleRouteFound = useCallback((info) => setRouteInfo(info), [])
@@ -755,6 +758,13 @@ export default function HomePage() {
     setSharedResourceId(sharedId)
     setSharedResourceType(sharedType)
     
+    // Mostrar popover de notificación cerca del botón de casita
+    if (typeof window !== 'undefined') {
+      setShowHomePopover(true)
+      // Auto-cerrar después de 5 segundos
+      setTimeout(() => setShowHomePopover(false), 5000)
+    }
+    
     // Solicitar ubicación automáticamente si no la tiene
     if (!userLocation && navigator.geolocation) {
       console.log('📍 Solicitando ubicación automáticamente para enlace compartido...')
@@ -885,14 +895,14 @@ export default function HomePage() {
         const { latitude, longitude, accuracy, timestamp } = position.coords
         
         // ✅ VALIDACIÓN: Precisión debe ser < 50 metros
-        if (accuracy > 50) {
-          setSnackbar({
-            open: true,
-            message: `⚠️ Precisión baja (${Math.round(accuracy)}m). Intenta en exterior.`,
-            severity: 'warning'
-          })
-          // Pero aun así guardar la ubicación
-        }
+        // if (accuracy > 50) {
+        //   setSnackbar({
+        //     open: true,
+        //     message: `⚠️ Precisión baja (${Math.round(accuracy)}m). Intenta en exterior.`,
+        //     severity: 'warning'
+        //   })
+        //   // Pero aun así guardar la ubicación
+        // }
 
         // ✅ VALIDACIÓN: Verificar que las coordenadas sean válidas
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -908,11 +918,6 @@ export default function HomePage() {
         })
         setLocationDialog(false)
         setLocationError(null)
-        setSnackbar({
-          open: true,
-          message: `✓ Ubicación activada (precisión: ${Math.round(accuracy)}m)`,
-          severity: 'success'
-        })
       },
       (error) => {
         clearTimeout(timeoutId)
@@ -1249,6 +1254,7 @@ export default function HomePage() {
                 },
                 '& .MuiButton-startIcon': { 
                   margin: { xs: 0, md: undefined },
+                  display: { xs: 'flex', md: 'none' },
                 },
               }}
               startIcon={<LoginIcon />}
@@ -1457,30 +1463,59 @@ export default function HomePage() {
                       top: 12, 
                       right: 12, 
                       zIndex: 1000,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 0.5,
                     }}>
-                      <Tooltip title="Ver todos los edificios">
-                        <IconButton
-                          onClick={() => {
-                            window.history.replaceState({}, document.title, window.location.pathname)
-                            setSharedResourceId(null)
-                            setSharedResourceType(null)
-                            setMapCenter(null)
-                          }}
-                          size="small"
-                          sx={{
-                            background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
-                            color: 'white',
-                            boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              boxShadow: '0 6px 16px rgba(33, 150, 243, 0.5)',
-                              transform: 'scale(1.1)',
-                            }
+                      <IconButton
+                        ref={homeButtonRef}
+                        onClick={() => {
+                          window.history.replaceState({}, document.title, window.location.pathname)
+                          setSharedResourceId(null)
+                          setSharedResourceType(null)
+                          setMapCenter(null)
+                        }}
+                        size="small"
+                        sx={{
+                          background: 'linear-gradient(135deg, #42A5F5 0%, #2196F3 100%)',
+                          color: 'white',
+                          boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: '0 6px 16px rgba(33, 150, 243, 0.5)',
+                            transform: 'scale(1.1)',
+                          }
+                        }}
+                      >
+                        <HomeIcon fontSize="small" />
+                      </IconButton>
+                      
+                      {/* Notificación debajo del botón */}
+                      <Box
+                        sx={{
+                          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                          border: '1px solid rgba(255, 255, 255, 0.4)',
+                          borderRadius: '6px',
+                          padding: '6px 10px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                          backdropFilter: 'blur(4px)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: '#fff',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            letterSpacing: '0.5px',
+                            display: 'block'
                           }}
                         >
-                          <HomeIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                          Toca para ver todos
+                        </Typography>
+                      </Box>
                     </Box>
                   )}
                   <MapContainer
