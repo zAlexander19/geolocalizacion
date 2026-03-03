@@ -5,6 +5,7 @@ import { getFullImageUrl } from '../../../utils/imageUrl'
 import {
   Box,
   Button,
+  Alert,
   Card,
   CardContent,
   CardMedia,
@@ -52,6 +53,7 @@ export default function FloorsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [floorToDelete, setFloorToDelete] = useState(null)
   const [deleteDependencies, setDeleteDependencies] = useState(null)
+  const [formError, setFormError] = useState(null)
 
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
@@ -100,6 +102,10 @@ export default function FloorsPage() {
       reset()
       setImageFile(null)
       setImagePreviewUrl(null)
+      setFormError(null)
+    },
+    onError: (error) => {
+      setFormError(error.response?.data?.message || error.message || 'Error al crear piso')
     },
   })
 
@@ -117,6 +123,10 @@ export default function FloorsPage() {
       setEditId(null)
       setImageFile(null)
       setImagePreviewUrl(null)
+      setFormError(null)
+    },
+    onError: (error) => {
+      setFormError(error.response?.data?.message || error.message || 'Error al actualizar piso')
     },
   })
 
@@ -526,8 +536,13 @@ export default function FloorsPage() {
             />
           </Box>
         </DialogContent>
+        {formError && (
+          <Alert severity="error" sx={{ mx: 2, mb: 1 }} onClose={() => setFormError(null)}>
+            {formError}
+          </Alert>
+        )}
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={() => { setOpen(false); setFormError(null) }}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit(onSubmit)}>
             {editId ? 'Guardar' : 'Crear'}
           </Button>
