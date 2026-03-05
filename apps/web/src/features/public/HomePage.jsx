@@ -7,6 +7,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
+import 'leaflet-rotate'
 import { getFullImageUrl } from '../../utils/imageUrl'
 
 // Normaliza texto eliminando tildes/diacríticos y caracteres similares (como ´) para búsqueda insensible a acentos
@@ -90,6 +91,8 @@ import api from '../../lib/api'
 import BuildingDetailsModal from '../../components/BuildingDetailsModal'
 import SearchBar from '../../components/SearchBar'
 import CompassGuide from '../../components/CompassGuide'
+import NavigationArrow from '../../components/NavigationArrow'
+import UserLocationMarker from '../../components/UserLocationMarker'
 import ShareLocationButton from '../../components/ShareLocationButton'
 import QRCodeButton from '../../components/QRCodeButton'
 import { useNotification } from '../../contexts/NotificationContext.jsx'
@@ -162,8 +165,9 @@ const RouteComponent = memo(function RouteComponent({ start, end, waypoints = EM
     const routingControl = L.Routing.control({
       waypoints: allWaypoints,
       router: L.Routing.osrmv1({
-        serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1',
-        profile: 'foot', // Usar el perfil 'foot' específico de OSRM
+          serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1',
+          profile: 'foot',
+          language: 'es', // Usar el perfil 'foot' específico de OSRM
         routingOptions: {
           alternatives: false,
           steps: true,
@@ -180,7 +184,7 @@ const RouteComponent = memo(function RouteComponent({ start, end, waypoints = EM
       addWaypoints: false,
       routeWhileDragging: false,
       draggableWaypoints: false,
-      fitSelectedRoutes: true,
+      fitSelectedRoutes: false,
       showAlternatives: false, // No buscar alternativas para evitar confusión
       createMarker: function() { return null; } // No crear marcadores adicionales
     })
@@ -228,8 +232,22 @@ const RouteLeafletMap = memo(function RouteLeafletMap({
   center, userLocation, routeDestination, routeDestinationName,
   routeWaypoints, destinationIcon, onRouteFound, onRouteError, isMobile
 }) {
+  const [routeStart, setRouteStart] = useState([userLocation?.latitude, userLocation?.longitude]);
+
+  useEffect(() => {
+    if (!userLocation) return;
+    if (!routeStart[0] || !routeStart[1]) {
+      setRouteStart([userLocation.latitude, userLocation.longitude]);
+      return;
+    }
+    const dist = L.latLng(userLocation.latitude, userLocation.longitude).distanceTo(L.latLng(routeStart[0], routeStart[1]));
+    if (dist > 15) {
+      setRouteStart([userLocation.latitude, userLocation.longitude]);
+    }
+  }, [userLocation?.latitude, userLocation?.longitude]);
+
   return (
-    <MapContainer
+    <MapContainer rotate={true}
       center={center}
       zoom={17}
       style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px', touchAction: 'none' }}
@@ -238,14 +256,12 @@ const RouteLeafletMap = memo(function RouteLeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
       />
-      <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon}>
-        <Popup>Tu ubicación</Popup>
-      </Marker>
+      <UserLocationMarker userLocation={userLocation} enableMapRotation={true} />
       <Marker position={[routeDestination.lat, routeDestination.lng]} icon={destinationIcon}>
         <Popup>{routeDestinationName}</Popup>
       </Marker>
       <RouteComponent
-        start={[userLocation.latitude, userLocation.longitude]}
+        start={routeStart}
         end={[routeDestination.lat, routeDestination.lng]}
         waypoints={routeWaypoints}
         onRouteFound={onRouteFound}
@@ -979,6 +995,18 @@ export default function HomePage() {
       requestUserLocation()
     }, 500)
   }
+
+  // EFECTO: Seguimiento real
+  useEffect(()=>{
+    let w;
+    if(routeMapOpen && !isTotemMode && navigator.geolocation) {
+      w = navigator.geolocation.watchPosition(p => {
+        if(p.coords.latitude < -90) return;
+        setUserLocation(prev => ({...prev, latitude: p.coords.latitude, longitude: p.coords.longitude, heading: p.coords.heading !== null ? p.coords.heading : prev?.heading}));
+      }, e => console.warn(e), {enableHighAccuracy: true, maximumAge: 0, timeout: 5000});
+    }
+    return () => { if(w) navigator.geolocation.clearWatch(w); };
+  }, [routeMapOpen, isTotemMode]);
 
   // Función para generar URL de Google Maps embed
   const getGoogleMapsEmbedUrl = () => {
@@ -3851,7 +3879,7 @@ export default function HomePage() {
                 minHeight: isMobile ? 300 : 'auto',
                 height: '100%',
               }}>
-                <RouteLeafletMap
+<RouteLeafletMap
                   center={routeMapCenter}
                   userLocation={userLocation}
                   routeDestination={routeDestination}
@@ -3862,6 +3890,8 @@ export default function HomePage() {
                   onRouteError={handleRouteError}
                   isMobile={isMobile}
                 />
+
+                  <NavigationArrow userLocation={userLocation} routeInfo={routeInfo} />
               </Box>
             </>
           )}
@@ -4044,69 +4074,14 @@ export default function HomePage() {
                  {/* Spacer to push content down */}
                  <Box sx={{ flexGrow: 1 }} />
 
-                 {/* Bottom Content (Button & Info) - Overlay */}
-                 <Box sx={{ 
-                    position: 'relative',
-                    zIndex: 2,
-                    p: 3,
-                    pt: 6,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0) 100%)'
-                 }}>
-                     {/* Infos */}
-                     <Box sx={{ display: 'flex', gap: 2, mb: 2, color: 'rgba(255,255,255,0.9)', flexWrap: 'wrap' }}>
-                        {routeDestinationData.capacity && (
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <PeopleIcon fontSize="small" />
-                                <Typography variant="body2">{routeDestinationData.capacity} pers.</Typography>
-                            </Box>
-                        )}
-                     </Box>
-                 </Box>
-
-                 <CompassGuide
-                   open={true}
-                   onClose={() => {}}
-                   userLocation={userLocation}
-                   destination={routeDestination}
-                   destinationName={routeDestinationName}
-                   destinationImage={routeDestinationData?.image}
-                   destinationType={routeDestinationData?.type}
-                   variant="overlay"
-                   placement="photo"
-                   routeDistance={routeInfo?.distance}
-                   routeNextPoint={routeInfo?.coordinates && routeInfo.coordinates.length > 5 ? routeInfo.coordinates[5] : (routeInfo?.coordinates?.[1] || null)}
-                 />
-              </Card>
-
-              {/* Mapa con OpenStreetMap y Leaflet Routing */}
-              <Box sx={{ 
-                flexGrow: 1, 
-                position: 'relative', 
-                borderRadius: 2, 
-                overflow: 'hidden',
-                minHeight: isMobile ? 300 : 'auto',
-                height: '100%',
-              }}>
-                <RouteLeafletMap
-                  center={routeMapCenter}
-                  userLocation={userLocation}
-                  routeDestination={routeDestination}
-                  routeDestinationName={routeDestinationName}
-                  routeWaypoints={routeWaypoints}
-                  destinationIcon={destinationIcon}
-                  onRouteFound={handleRouteFound}
-                  onRouteError={handleRouteError}
-                  isMobile={isMobile}
-                />
-
-                {/* Floating Info Overlay */}
+                 {/* Floating Info Overlay */}
                 <Box
                     sx={{
                         position: 'absolute',
-                        top: 16,
+                        bottom: 16,
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        zIndex: 1000,
+                        zIndex: 10,
                         bgcolor: 'rgba(255, 255, 255, 0.97)',
                         borderRadius: 50,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
@@ -4158,6 +4133,50 @@ export default function HomePage() {
                         </Box>
                     </Box>
                 </Box>
+                 {/* Bottom Content (Button & Info) - Overlay */}
+                 <Box sx={{ 
+                    position: 'relative',
+                    zIndex: 2,
+                    p: 3,
+                    pt: 6,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0) 100%)'
+                 }}>
+                     {/* Infos */}
+                     <Box sx={{ display: 'flex', gap: 2, mb: 2, color: 'rgba(255,255,255,0.9)', flexWrap: 'wrap' }}>
+                        {routeDestinationData.capacity && (
+                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <PeopleIcon fontSize="small" />
+                                <Typography variant="body2">{routeDestinationData.capacity} pers.</Typography>
+                            </Box>
+                        )}
+                     </Box>
+                 </Box>
+
+                 
+              </Card>
+
+              {/* Mapa con OpenStreetMap y Leaflet Routing */}
+              <Box sx={{ 
+                flexGrow: 1, 
+                position: 'relative', 
+                borderRadius: 2, 
+                overflow: 'hidden',
+                minHeight: isMobile ? 300 : 'auto',
+                height: '100%',
+              }}>
+                <RouteLeafletMap
+                  center={routeMapCenter}
+                  userLocation={userLocation}
+                  routeDestination={routeDestination}
+                  routeDestinationName={routeDestinationName}
+                  routeWaypoints={routeWaypoints}
+                  destinationIcon={destinationIcon}
+                  onRouteFound={handleRouteFound}
+                  onRouteError={handleRouteError}
+                  isMobile={isMobile}
+                />
+
+                <NavigationArrow userLocation={userLocation} routeInfo={routeInfo} />
               </Box>
             </>
           )}

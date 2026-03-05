@@ -56,6 +56,14 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: true, // Permitir conexiones desde Ngrok
+    proxy: {
+      '/api-local': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-local/, '')
+      }
+    }
   },
   build: {
     rollupOptions: {
