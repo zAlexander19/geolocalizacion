@@ -9,6 +9,10 @@ import 'leaflet-routing-machine'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import { getFullImageUrl } from '../../utils/imageUrl'
 
+// Normaliza texto eliminando tildes/diacríticos y caracteres similares (como ´) para búsqueda insensible a acentos
+const normalizeText = (str) =>
+  (str || '').normalize('NFD').replace(/[\u0300-\u036f´\']/g, '').toLowerCase()
+
 // Icono personalizado para la ubicación del usuario (Punto azul pulsante)
 const userLocationIcon = L.divIcon({
   className: 'user-location-marker',
@@ -55,6 +59,7 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  Fade,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
@@ -411,7 +416,7 @@ export default function HomePage() {
   const { data: searchResults, isLoading: isSearching } = useQuery({
     queryKey: ['search', searchType, searchQuery],
     queryFn: async () => {
-      const query = searchQuery.toLowerCase().trim()
+      const query = normalizeText(searchQuery.trim())
       let allResults = []
 
       // Si es "todo" Y hay búsqueda, buscar en todos los tipos
@@ -420,8 +425,8 @@ export default function HomePage() {
         const buildingsRes = await api.get('/buildings')
         const buildings = buildingsRes.data.data
         const buildingsFiltered = buildings.filter(item => {
-          const nombre = item.nombre_edificio?.toLowerCase() || ''
-          const acronimo = item.acronimo?.toLowerCase() || ''
+          const nombre = normalizeText(item.nombre_edificio)
+          const acronimo = normalizeText(item.acronimo)
           return nombre.includes(query) || acronimo.includes(query)
         }).map(item => ({ ...item, resultType: 'edificio' }))
 
@@ -429,8 +434,8 @@ export default function HomePage() {
         const roomsRes = await api.get('/rooms')
         const rooms = roomsRes.data.data
         const roomsFiltered = rooms.filter(item => {
-          const nombre = item.nombre_sala?.toLowerCase() || ''
-          const acronimo = item.acronimo?.toLowerCase() || ''
+          const nombre = normalizeText(item.nombre_sala)
+          const acronimo = normalizeText(item.acronimo)
           return (nombre.includes(query) || acronimo.includes(query)) && item.estado
         }).map(room => {
           const floor = allFloors?.find(f => f.id_piso === room.id_piso)
@@ -442,7 +447,7 @@ export default function HomePage() {
         const bathroomsRes = await api.get('/bathrooms')
         const bathrooms = bathroomsRes.data.data
         const bathroomsFiltered = bathrooms.filter(item => {
-          const nombre = item.nombre?.toLowerCase() || ''
+          const nombre = normalizeText(item.nombre)
           return nombre.includes(query) && item.estado
         }).map(bathroom => {
           const floor = allFloors?.find(f => f.id_piso === bathroom.id_piso)
@@ -454,8 +459,8 @@ export default function HomePage() {
         const facultiesRes = await api.get('/faculties')
         const faculties = facultiesRes.data.data
         const facultiesFiltered = faculties.filter(item => {
-          const nombre = item.nombre_facultad?.toLowerCase() || ''
-          const codigo = item.codigo_facultad?.toLowerCase() || ''
+          const nombre = normalizeText(item.nombre_facultad)
+          const codigo = normalizeText(item.codigo_facultad)
           return nombre.includes(query) || codigo.includes(query)
         }).map(item => ({ ...item, resultType: 'facultad' }))
 
@@ -546,8 +551,8 @@ export default function HomePage() {
           filtered = data.map(item => ({ ...item, resultType: 'edificio' }))
         } else {
           filtered = data.filter(item => {
-            const nombre = item.nombre_edificio?.toLowerCase() || ''
-            const acronimo = item.acronimo?.toLowerCase() || ''
+            const nombre = normalizeText(item.nombre_edificio)
+            const acronimo = normalizeText(item.acronimo)
             return nombre.includes(query) || acronimo.includes(query)
           }).map(item => ({ ...item, resultType: 'edificio' }))
         }
@@ -564,8 +569,8 @@ export default function HomePage() {
           filtered = data.filter(item => item.estado)
         } else {
           filtered = data.filter(item => {
-            const nombre = item.nombre_sala?.toLowerCase() || ''
-            const acronimo = item.acronimo?.toLowerCase() || ''
+            const nombre = normalizeText(item.nombre_sala)
+            const acronimo = normalizeText(item.acronimo)
             return (nombre.includes(query) || acronimo.includes(query)) && item.estado
           })
         }
@@ -589,7 +594,7 @@ export default function HomePage() {
           filtered = data.filter(item => item.estado)
         } else {
           filtered = data.filter(item => {
-            const nombre = item.nombre?.toLowerCase() || ''
+            const nombre = normalizeText(item.nombre)
             return nombre.includes(query) && item.estado
           })
         }
@@ -613,8 +618,8 @@ export default function HomePage() {
           filtered = data.map(item => ({ ...item, resultType: 'facultad' }))
         } else {
           filtered = data.filter(item => {
-            const nombre = item.nombre_facultad?.toLowerCase() || ''
-            const codigo = item.codigo_facultad?.toLowerCase() || ''
+            const nombre = normalizeText(item.nombre_facultad)
+            const codigo = normalizeText(item.codigo_facultad)
             return nombre.includes(query) || codigo.includes(query)
           }).map(item => ({ ...item, resultType: 'facultad' }))
         }
@@ -1087,52 +1092,128 @@ export default function HomePage() {
           zIndex: -1,
         }}
       />
-      {/* Diálogo de solicitud de ubicación - SIMPLIFICADO */}
+      {/* Diálogo de solicitud de ubicación - MODERNO */}
       <Dialog
         open={locationDialog}
         onClose={() => {}}
         disableEscapeKeyDown
-        maxWidth="sm"
+        maxWidth="xs"
         fullWidth
+        TransitionComponent={Fade}
+        transitionDuration={500}
         PaperProps={{
+          elevation: 24,
           sx: {
-            m: isMobile ? 2 : 3,
-            borderRadius: isMobile ? 2 : 3,
+            m: isMobile ? 2 : 'auto',
+            borderRadius: 4,
+            background: 'rgba(15, 30, 50, 0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            overflow: 'hidden',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
           }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <MyLocationIcon color="primary" />
-          Activar Ubicación
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Necesitamos acceso a tu ubicación para encontrar lugares cercanos.
-          </DialogContentText>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Box 
+            sx={{ 
+              width: 80, 
+              height: 80, 
+              mx: 'auto', 
+              mb: 3, 
+              borderRadius: '50%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, rgba(66, 165, 245, 0.15), rgba(21, 101, 192, 0.25))',
+              border: '2px solid rgba(66, 165, 245, 0.3)',
+              boxShadow: '0 0 20px rgba(66, 165, 245, 0.15)',
+              position: 'relative'
+            }}
+          >
+            <MyLocationIcon sx={{ fontSize: 36, color: '#64b5f6' }} />
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                inset: -6, 
+                borderRadius: '50%', 
+                border: '2px solid rgba(66, 165, 245, 0.2)', 
+                animation: 'pulse 2s infinite' 
+              }} 
+            />
+          </Box>
           
+          <Typography variant="h5" fontWeight="700" gutterBottom sx={{ color: 'white' }}>
+            Descubre tu Campus
+          </Typography>
+          
+          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)', mb: 4, lineHeight: 1.6 }}>
+            Accede a tu ubicación para encontrar lugares cercanos de forma instantánea.
+          </Typography>
+
           {locationError && (
-            <Alert severity="error" sx={{ my: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3, 
+                backgroundColor: 'rgba(211, 47, 47, 0.15)', 
+                color: '#ff8a80',
+                border: '1px solid rgba(211, 47, 47, 0.3)',
+                '& .MuiAlert-icon': { color: '#ff8a80' }
+              }}
+            >
               {locationError}
             </Alert>
           )}
-        </DialogContent>
-        <DialogActions sx={{ gap: 1, p: 2 }}>
-          <Button
-            onClick={handleRetryLocation}
-            variant="contained"
-            fullWidth
-            startIcon={<MyLocationIcon />}
-          >
-            Solicitar Ubicación
-          </Button>
-          <Button 
-            onClick={() => setLocationDialog(false)} 
-            fullWidth
-            variant="outlined"
-          >
-            Continuar sin ubicación
-          </Button>
-        </DialogActions>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button
+              onClick={handleRetryLocation}
+              variant="contained"
+              size="large"
+              fullWidth
+              startIcon={<MyLocationIcon />}
+              sx={{
+                py: 1.8,
+                borderRadius: 3,
+                fontSize: '1rem',
+                textTransform: 'none',
+                fontWeight: 600,
+                background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+                boxShadow: '0 8px 20px rgba(33, 150, 243, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #1565c0, #1e88e5)',
+                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.5)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              Activar Ubicación
+            </Button>
+            
+            <Button 
+              onClick={() => setLocationDialog(false)} 
+              fullWidth
+              variant="text"
+              sx={{
+                py: 1.5,
+                borderRadius: 3,
+                color: 'rgba(255,255,255,0.6)',
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                '&:hover': {
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'white'
+                }
+              }}
+            >
+              Continuar sin ubicación
+            </Button>
+          </Box>
+        </Box>
       </Dialog>
 
       {/* Snackbar para notificaciones */}
@@ -3211,7 +3292,7 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Detalle del Baño */}}
+      {/* Modal de Detalle del Baño */}
       <Dialog
         open={bathroomDetailOpen}
         onClose={() => {
