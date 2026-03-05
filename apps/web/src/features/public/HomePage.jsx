@@ -232,7 +232,7 @@ const RouteLeafletMap = memo(function RouteLeafletMap({
     <MapContainer
       center={center}
       zoom={17}
-      style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px' }}
+      style={{ height: '100%', width: '100%', minHeight: isMobile ? '300px' : '500px', touchAction: 'none' }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -1603,7 +1603,7 @@ export default function HomePage() {
                     center={mapCenter || (buildings[0]?.cord_latitud && buildings[0]?.cord_longitud ? [buildings[0].cord_latitud, buildings[0].cord_longitud] : userLocation ? [userLocation.latitude, userLocation.longitude] : [-20.241, -70.141])}
                     zoom={18}
                     maxZoom={18}
-                    style={{ height: '100%', width: '100%' }}
+                    style={{ height: '100%', width: '100%', touchAction: 'none' }}
                   >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -2350,7 +2350,7 @@ export default function HomePage() {
                             })()}
                             zoom={18}
                             maxZoom={18}
-                            style={{ height: '100%', width: '100%' }}
+                            style={{ height: '100%', width: '100%', touchAction: 'none' }}
                           >
                             <TileLayer
                               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

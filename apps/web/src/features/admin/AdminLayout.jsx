@@ -146,7 +146,7 @@ export default function AdminLayout() {
   )
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', margin: 0, padding: 0 }}>
+    <Box sx={{ display: 'flex', height: '100dvh', overflow: 'hidden', margin: 0, padding: 0 }}>
       <AppBar
         position="fixed"
         elevation={0}

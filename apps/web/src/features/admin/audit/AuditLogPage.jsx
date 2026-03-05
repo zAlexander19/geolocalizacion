@@ -93,7 +93,16 @@ export default function AuditLogPage() {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('es-ES', {
+    // Convierte el formato de fecha problemático de Postgres (e.g., 2024-03-04 15:30:00) 
+    // a un formato compatible con ISO 8601 (2024-03-04T15:30:00) si es necesario.
+    let parsedDate = dateString;
+    if (typeof dateString === 'string') {
+      parsedDate = dateString.replace(' ', 'T');
+    }
+    const d = new Date(parsedDate);
+    if (isNaN(d.getTime())) return dateString;
+
+    return d.toLocaleString('es-ES', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

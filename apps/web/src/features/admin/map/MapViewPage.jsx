@@ -258,7 +258,7 @@ export default function MapViewPage() {
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
-              style={{ height: '100%', width: '100%' }}
+              style={{ height: '100%', width: '100%', touchAction: 'none' }}
               scrollWheelZoom={true}
             >
               <MapUpdater center={mapCenter} zoom={mapZoom} />

@@ -120,7 +120,7 @@ export default function MapLocationPicker({ latitude, longitude, onChange }) {
           <MapContainer
             center={position}
             zoom={18}
-            style={{ height: '100%', width: '100%' }}
+            style={{ height: '100%', width: '100%', touchAction: 'none' }}
             ref={mapRef}
           >
             <TileLayer
