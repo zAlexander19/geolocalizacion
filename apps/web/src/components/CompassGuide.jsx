@@ -7,7 +7,6 @@ import {
   IconButton,
   Box,
   Typography,
-  Button,
   Alert,
   useMediaQuery,
   useTheme,
@@ -30,19 +29,18 @@ export default function CompassGuide({
   destinationImage, 
   destinationType,
   variant = 'dialog',
+  placement = 'map',
   // New props for route integration
   routeDistance = null, // External distance (from OSRM) in meters
   routeNextPoint = null // External target point {lat, lng} for arrow direction
 }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const [heading, setHeading] = useState(0) // Orientación del dispositivo
   const [bearing, setBearing] = useState(0) // Dirección hacia el destino
   const [distance, setDistance] = useState(0)
   const [error, setError] = useState(null)
-  const [permission, setPermission] = useState('prompt')
   const [hasArrived, setHasArrived] = useState(false)
-  const animationRef = useRef(null)
+  const [showFollowHint, setShowFollowHint] = useState(false)
   const watchIdRef = useRef(null)
 
   // Calcular el ángulo hacia el destino
@@ -69,24 +67,6 @@ export default function CompassGuide({
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return Math.round(R * c)
-  }
-
-  // Solicitar permisos de orientación (iOS 13+)
-  const requestOrientationPermission = async () => {
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-      try {
-        const permission = await DeviceOrientationEvent.requestPermission()
-        setPermission(permission)
-        if (permission !== 'granted') {
-          setError('Permiso de orientación denegado')
-        }
-      } catch (err) {
-        setError('Error al solicitar permisos: ' + err.message)
-      }
-    } else {
-      setPermission('granted')
-    }
   }
 
   // Efecto para rastrear ubicación en tiempo real
@@ -169,14 +149,30 @@ export default function CompassGuide({
   }, [routeDistance])
 
   useEffect(() => {
+    if (!open) return
+
+    setShowFollowHint(true)
+    const timeoutId = window.setTimeout(() => {
+      setShowFollowHint(false)
+    }, 4500) // Changed to 4.5 seconds for better read time
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [open])
+
+  useEffect(() => {
     if (!open || !userLocation || !destination) return
+
+    const targetLat = routeNextPoint ? routeNextPoint.lat : destination.lat
+    const targetLng = routeNextPoint ? routeNextPoint.lng : destination.lng
 
     // Calcular bearing inicial
     const initialBearing = calculateBearing(
       userLocation.latitude,
       userLocation.longitude,
-      destination.lat,
-      destination.lng
+      targetLat,
+      targetLng
     )
     setBearing(initialBearing)
 
@@ -188,58 +184,13 @@ export default function CompassGuide({
       destination.lng
     )
     setDistance(dist)
+  }, [open, userLocation, destination, routeNextPoint])
 
-    // Handler para la orientación del dispositivo
-    const handleOrientation = (event) => {
-      let alpha = event.alpha // Rotación alrededor del eje Z
-      let beta = event.beta   // Rotación alrededor del eje X
-      let gamma = event.gamma // Rotación alrededor del eje Y
-
-      if (alpha !== null) {
-        // Ajustar para iOS (webkitCompassHeading) si está disponible
-        if (event.webkitCompassHeading !== undefined) {
-          alpha = event.webkitCompassHeading
-        } else {
-          // Normalizar para Android
-          alpha = 360 - alpha
-        }
-
-        // Usar requestAnimationFrame para animación suave
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current)
-        }
-
-        animationRef.current = requestAnimationFrame(() => {
-          setHeading(alpha)
-        })
-      }
-    }
-
-    // Solicitar permisos si es necesario
-    if (permission === 'prompt') {
-      requestOrientationPermission()
-    }
-
-    if (permission === 'granted' || permission === 'prompt') {
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true)
-      window.addEventListener('deviceorientation', handleOrientation, true)
-    }
-
-    return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation, true)
-      window.removeEventListener('deviceorientation', handleOrientation, true)
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-    }
-  }, [open, userLocation, destination, permission])
-
-  // Calcular el ángulo de la flecha (diferencia entre bearing y heading)
-  const arrowAngle = bearing - heading
+  // Calcular el ángulo de la flecha siguiendo la dirección de la ruta
+  const arrowAngle = bearing
 
   const handleClose = () => {
     setError(null)
-    setPermission('prompt')
     setHasArrived(false)
     if (watchIdRef.current) {
       navigator.geolocation.clearWatch(watchIdRef.current)
@@ -251,100 +202,138 @@ export default function CompassGuide({
 
   if (variant === 'overlay') {
     return (
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 24,
-          left: 16,
-          zIndex: 1000, 
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 1,
-          pointerEvents: 'auto'
-        }}
-      >
-        {permission === 'prompt' && (
-           <Button 
-             variant="contained" 
-             size="small" 
-             color="secondary" 
-             onClick={requestOrientationPermission}
-             sx={{ 
-               whiteSpace: 'nowrap', 
-               fontSize: '0.7rem',
-               bgcolor: 'rgba(0,0,0,0.8)',
-               backdropFilter: 'blur(4px)',
-               '&:hover': { bgcolor: 'rgba(0,0,0,0.9)' }
-             }}
-           >
-             Activar Brújula
-           </Button>
-        )}
+      <>
+        {/* Hint Card (Tarjeta Emergente) */}
+        {(!isMobile || showFollowHint) && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: { xs: '50%', sm: 'auto' }, // Centered vertically on mobile photo
+              bottom: { xs: 'auto', sm: 134 }, // Above the compass ball on desktop (32 + 86 + 16)
+              left: '50%', 
+              transform: { xs: 'translate(-50%, -50%)', sm: 'translateX(-50%)' },
+              zIndex: 9999,
+              display: 'flex',
+              pointerEvents: 'auto'
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 1.5,
+                pr: 3,
+                borderRadius: 4,
+                bgcolor: 'rgba(15, 23, 42, 0.95)', // Dark navy background
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+                cursor: 'pointer',
+                animation: 'floatCard 3s ease-in-out infinite',
+                '@keyframes floatCard': {
+                  '0%, 100%': { transform: { xs: 'translate(-50%, -50%)', sm: 'translateY(0)' } },
+                  '50%': { transform: { xs: 'translate(-50%, calc(-50% - 6px))', sm: 'translateY(-6px)' } }
+                }
+              }}
+            >
+              {/* Thumbnail Image */}
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  position: 'relative'
+                }}
+              >
+                {destinationImage ? (
+                  <Box
+                    component="img"
+                    src={getFullImageUrl(destinationImage)}
+                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BuildingIcon sx={{ color: 'rgba(255,255,255,0.5)' }} />
+                  </Box>
+                )}
+                {/* Subtle inner shadow overlay on image */}
+                <Box sx={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)', borderRadius: 2 }} />
+              </Box>
 
-        {permission === 'denied' && (
-           <Box sx={{ bgcolor: 'rgba(0,0,0,0.8)', p: 1, borderRadius: 1 }}>
-              <Typography variant="caption" sx={{ color: '#ff9800' }}>
-                 ⚠️ Sin permiso de orientación
-              </Typography>
-           </Box>
-        )}
-
-        {permission === 'granted' && (
-          <Box sx={{ 
-             bgcolor: 'rgba(0,0,0,0.8)', 
-             backdropFilter: 'blur(4px)',
-             p: 1.5, 
-             borderRadius: 3,
-             display: 'flex',
-             flexDirection: 'column',
-             alignItems: 'center',
-             border: '1px solid rgba(255,255,255,0.2)',
-             boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
-          }}>
-             <Box
-               sx={{
-                 position: 'relative',
-                 width: 80,
-                 height: 80,
-                 borderRadius: '50%',
-                 border: '2px solid #444',
-                 bgcolor: '#0a0a0a',
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 mb: 0.5,
-                 boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)'
-               }}
-             >
-                <Typography sx={{ position: 'absolute', top: 4, color: '#f44336', fontSize: '0.75rem', fontWeight: 900 }}>N</Typography>
-                <Typography sx={{ position: 'absolute', bottom: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>S</Typography>
-                <Typography sx={{ position: 'absolute', left: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>O</Typography>
-                <Typography sx={{ position: 'absolute', right: 4, color: '#666', fontSize: '0.6rem', fontWeight: 'bold' }}>E</Typography>
+              {/* Text Content */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#60A5FA', letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                    ¡Sigue la flecha!
+                  </Typography>
+                </Box>
                 
-                <NavigationIcon
-                  sx={{
-                    fontSize: 48,
-                    color: hasArrived ? '#FFD700' : '#4CAF50',
-                    transform: `rotate(${arrowAngle}deg)`,
-                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    filter: 'drop-shadow(0 0 4px rgba(76, 175, 80, 0.6))',
-                  }}
-                />
-             </Box>
-             
-             <Typography variant="caption" sx={{ color: hasArrived ? '#FFD700' : '#4CAF50', fontWeight: 'bold', fontSize: '0.9rem', mt: 0.5 }}>
-                {distance < 1000 ? `${distance}m` : `${(distance / 1000).toFixed(2)}km`}
-             </Typography>
-             
-             {hasArrived && (
-               <Typography variant="caption" sx={{ color: '#aaa', fontSize: '0.65rem' }}>
-                 ¡Llegaste!
-               </Typography>
-             )}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography sx={{ fontSize: '0.85rem', color: '#E2E8F0', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    Avanza hacia tu destino
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
           </Box>
         )}
+
+        {/* Compass Ball */}
+        <Box
+          sx={{
+            position: { xs: 'fixed', sm: 'absolute' },
+            bottom: { xs: 40, sm: 32 }, // map bottom for mobile (fixed to dialog), card bottom for desktop (absolute)
+            left: { xs: 20, sm: '50%' }, // Bottom-left on mobile, center on desktop
+            transform: { xs: 'none', sm: 'translateX(-50%)' },
+            zIndex: 9999, // ensures it's above map controls
+            display: 'flex',
+            pointerEvents: 'auto',
+          }}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              width: 86,
+              height: 86,
+              borderRadius: '50%',
+              bgcolor: 'rgba(15, 23, 42, 0.4)', // highly translucent
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 2px 20px rgba(255,255,255,0.05)',
+              '&::after': { // subtle top highlight
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: '10%',
+                right: '10%',
+                height: '30%',
+                background: 'linear-gradient(to bottom, rgba(255,255,255,0.1), transparent)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }
+            }}
+          >
+            <NavigationIcon
+              sx={{
+                fontSize: 56,
+                color: hasArrived ? '#FFD700' : '#4ade80', // Vibrant green
+                transform: `rotate(${arrowAngle}deg)`,
+                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              filter: `drop-shadow(0 0 12px ${hasArrived ? 'rgba(255, 215, 0, 0.8)' : 'rgba(74, 222, 128, 0.8)'})`,
+            }}
+          />
+        </Box>
       </Box>
+      </>
     )
   }
 
@@ -394,25 +383,7 @@ export default function CompassGuide({
           </Alert>
         )}
 
-        {permission === 'prompt' && (
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body1" sx={{ mb: 2, color: '#fff' }}>
-              Para usar la brújula digital, necesitamos acceso a los sensores de orientación de tu dispositivo.
-            </Typography>
-            <Button variant="contained" onClick={requestOrientationPermission}>
-              Activar Sensores
-            </Button>
-          </Box>
-        )}
-
-        {permission === 'denied' && (
-          <Alert severity="warning" sx={{ width: '100%' }}>
-            Los permisos de orientación fueron denegados. Por favor, habilítalos en la configuración de tu navegador.
-          </Alert>
-        )}
-
-        {permission === 'granted' && (
-          <>
+        <>
             {/* Alerta de llegada al destino */}
             {hasArrived && (
               <Alert 
@@ -504,57 +475,6 @@ export default function CompassGuide({
                 boxShadow: '0 0 30px rgba(76, 175, 80, 0.3)',
               }}
             >
-              {/* Marcas cardinales */}
-              <Typography
-                sx={{
-                  position: 'absolute',
-                  top: 10,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  color: '#f44336',
-                  fontWeight: 'bold',
-                  fontSize: '1.2rem'
-                }}
-              >
-                N
-              </Typography>
-              <Typography
-                sx={{
-                  position: 'absolute',
-                  bottom: 10,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  color: '#666',
-                  fontWeight: 'bold'
-                }}
-              >
-                S
-              </Typography>
-              <Typography
-                sx={{
-                  position: 'absolute',
-                  left: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#666',
-                  fontWeight: 'bold'
-                }}
-              >
-                O
-              </Typography>
-              <Typography
-                sx={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#666',
-                  fontWeight: 'bold'
-                }}
-              >
-                E
-              </Typography>
-
               {/* Flecha direccional */}
               <NavigationIcon
                 sx={{
@@ -572,12 +492,8 @@ export default function CompassGuide({
               <Typography variant="body2" sx={{ color: '#aaa' }}>
                 La flecha verde apunta hacia tu destino
               </Typography>
-              <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 1 }}>
-                Mueve tu dispositivo para calibrar
-              </Typography>
             </Box>
-          </>
-        )}
+        </>
       </DialogContent>
     </Dialog>
   )
