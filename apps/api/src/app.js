@@ -375,8 +375,8 @@ export function createApp() {
       const allBuildings = await buildingsRepo.findAll()
       const existingLocation = allBuildings.find(existing => 
         existing.estado && 
-        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
-        Math.abs(existing.cord_longitud - lng) < 0.0001
+        Math.abs(existing.cord_latitud - lat) < 0.000001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.000001
       )
       
       if (existingLocation) {
@@ -441,8 +441,8 @@ export function createApp() {
       const existingLocation = allBuildings.find(existing => 
         existing.id_edificio !== id &&
         existing.estado && 
-        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
-        Math.abs(existing.cord_longitud - lng) < 0.0001
+        Math.abs(existing.cord_latitud - lat) < 0.000001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.000001
       )
       
       if (existingLocation) {
@@ -742,8 +742,8 @@ export function createApp() {
       const allRooms = await roomsRepo.findAll()
       const existingLocation = allRooms.find(existing => 
         existing.estado && 
-        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
-        Math.abs(existing.cord_longitud - lng) < 0.0001
+        Math.abs(existing.cord_latitud - lat) < 0.000001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.000001
       )
       
       if (existingLocation) {
@@ -805,8 +805,8 @@ export function createApp() {
       const existingLocation = allRooms.find(existing => 
         existing.id_sala !== id &&
         existing.estado && 
-        Math.abs(existing.cord_latitud - lat) < 0.0001 && 
-        Math.abs(existing.cord_longitud - lng) < 0.0001
+        Math.abs(existing.cord_latitud - lat) < 0.000001 && 
+        Math.abs(existing.cord_longitud - lng) < 0.000001
       )
       
       if (existingLocation) {
