@@ -51,6 +51,23 @@ export default function BathroomsAdmin() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
+
+  // Obtener ubicación del usuario para nuevos baños
+  useEffect(() => {
+    if (!editId && open && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+        },
+        (error) => {
+          console.warn("Error obteniendo ubicación:", error)
+        }
+      )
+    }
+  }, [editId, open])
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [bathroomToDelete, setBathroomToDelete] = useState(null)
   const [form, setForm] = useState({

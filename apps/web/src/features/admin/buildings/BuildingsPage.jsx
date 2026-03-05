@@ -60,6 +60,24 @@ export default function BuildingsPage() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [mapCoordinates, setMapCoordinates] = useState({ latitude: -33.0367, longitude: -71.5963 })
+
+  // Obtener ubicación del usuario para nuevos edificios
+  useEffect(() => {
+    if (!editId && open && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+        },
+        (error) => {
+          console.warn("Error obteniendo ubicación:", error)
+        }
+      )
+    }
+  }, [editId, open])
+
   const [dependenciasModalOpen, setDependenciasModalOpen] = useState(false)
   const [dependenciasData, setDependenciasData] = useState(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -68,11 +86,12 @@ export default function BuildingsPage() {
   const buildingSchema = z.object({
     nombre_edificio: z.string().min(1, 'El nombre del edificio es requerido').max(100, 'Máximo 100 caracteres'),
     acronimo: z.string().min(1, 'El acrónimo es requerido').max(50, 'Máximo 50 caracteres'),
-    descripcion: z.string().max(500, 'Máximo 500 caracteres').optional(),
-    cord_latitud: z.number({ invalid_type_error: 'La latitud debe ser un número' })
+    descripcion: z.string().max(500, 'Máximo 500 caracteres').optional(), // Se permite undefined o string
+
+    cord_latitud: z.coerce.number({ invalid_type_error: 'La latitud debe ser un número' })
       .min(-90, 'Latitud mínima: -90')
       .max(90, 'Latitud máxima: 90'),
-    cord_longitud: z.number({ invalid_type_error: 'La longitud debe ser un número' })
+    cord_longitud: z.coerce.number({ invalid_type_error: 'La longitud debe ser un número' })
       .min(-180, 'Longitud mínima: -180')
       .max(180, 'Longitud máxima: 180'),
     disponibilidad: z.string().min(1, 'La disponibilidad es requerida'),
@@ -152,8 +171,7 @@ export default function BuildingsPage() {
       setConfirmDeleteOpen(false)
       setBuildingToDelete(null)
     },
-    onError: (error) => {
-      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
+    onError: (error) => {        console.error('DELETE ERROR LOG:', error, error.response?.data);      if (error.response?.data?.error === 'DEPENDENCIAS_ENCONTRADAS') {
         setConfirmDeleteOpen(false)
         setDependenciasData(error.response.data.dependencias)
         setDependenciasModalOpen(true)
@@ -209,8 +227,10 @@ export default function BuildingsPage() {
     const formData = new FormData()
     formData.append('nombre_edificio', data.nombre_edificio)
     formData.append('acronimo', data.acronimo)
-    if (data.descripcion) {
+    if (data.descripcion !== undefined && data.descripcion !== null) {
       formData.append('descripcion', data.descripcion)
+    } else {
+      formData.append('descripcion', '')
     }
     formData.append('cord_latitud', data.cord_latitud)
     formData.append('cord_longitud', data.cord_longitud)
@@ -563,7 +583,10 @@ export default function BuildingsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSubmit(onSubmit)}>
+          <Button variant="contained" onClick={handleSubmit(onSubmit, (errs) => {
+            console.error('FORM ERRORS:', errs);
+            alert('Por favor verifica los campos resaltados en rojo y asegúrate de que las coordenadas sean válidas. Revisa la consola para más detalles.');
+          })}>
             {editId ? 'Guardar' : 'Crear'}
           </Button>
         </DialogActions>

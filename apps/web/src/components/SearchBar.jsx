@@ -18,7 +18,6 @@ import {
   Search as SearchIcon,
   Business as BuildingIcon,
   MeetingRoom as RoomIcon,
-  School as SchoolIcon,
   Wc as BathroomIcon,
   KeyboardArrowDown as ArrowDownIcon
 } from '@mui/icons-material'
@@ -27,7 +26,6 @@ const searchTypes = [
   { value: 'todo', label: 'Todo', icon: <SearchIcon /> },
   { value: 'edificio', label: 'Edificio', icon: <BuildingIcon /> },
   { value: 'sala', label: 'Sala', icon: <RoomIcon /> },
-  { value: 'facultad', label: 'Facultad', icon: <SchoolIcon /> },
   { value: 'bano', label: 'Baño', icon: <BathroomIcon /> },
 ]
 
@@ -116,7 +114,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
             onFocus={() => setIsFocused(true)}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isMobile ? 'Buscar...' : 'Busca edificios, salas, facultades...'}
+            placeholder={isMobile ? 'Buscar...' : 'Buscar edificios, salas y baños'}
             variant="standard"
             InputProps={{
               disableUnderline: true,

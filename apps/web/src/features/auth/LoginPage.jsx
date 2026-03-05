@@ -1,29 +1,29 @@
 import { useState } from 'react'
 import {
-  Avatar,
   Box,
   Button,
-  Container,
-  Paper,
   TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
   Alert,
   CircularProgress,
+  InputAdornment,
+  IconButton,
 } from '@mui/material'
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -36,19 +36,16 @@ export default function LoginPage() {
 
     if (result.success) {
       const user = result.data.usuario
-      
       if (user.rol === 'totem') {
-        // Redirigir a la home pública con el estado del totem
-        navigate('/', { 
-          replace: true, 
-          state: { 
-            isTotem: true, 
+        navigate('/', {
+          replace: true,
+          state: {
+            isTotem: true,
             totemLocation: user.totem,
-            totemName: user.totem?.nombre_totem 
-          } 
+            totemName: user.totem?.nombre_totem,
+          },
         })
       } else {
-        // Redirigir a admin si no es totem
         const from = location.state?.from?.pathname || '/admin'
         navigate(from, { replace: true })
       }
@@ -60,130 +57,229 @@ export default function LoginPage() {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      width: '100%',
-      position: 'relative',
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
-      {/* Background con degradado UNAP (azul marino) y patrón */}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        background: 'linear-gradient(135deg, #0a2540 0%, #0d3460 50%, #0a2540 100%)',
+        willChange: 'auto',
+      }}
+    >
+      {/* Panel izquierdo — branding (solo desktop) */}
       <Box
         sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `
-            radial-gradient(ellipse at 20% 30%, rgba(22, 78, 133, 0.3) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 70%, rgba(13, 51, 90, 0.3) 0%, transparent 50%),
-            linear-gradient(135deg, #0a2540 0%, #0d335a 25%, #164e85 50%, #1a5a9e 75%, #0d335a 100%)
-          `,
-          backgroundSize: '100% 100%, 100% 100%, cover',
-          backgroundAttachment: 'fixed',
-          zIndex: -2,
+          display: { xs: 'none', md: 'flex' },
+          flex: 1,
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 6,
+          position: 'relative',
+          borderRight: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        {/* Patrón de puntos decorativo */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `
-              radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-              radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
-            backgroundPosition: '0 0, 25px 25px',
-            opacity: 0.4,
-          }}
-        />
+        {/* Círculos decorativos estáticos — sin blur, sin animación */}
+        <Box sx={{
+          position: 'absolute', width: 400, height: 400,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.03)',
+          top: '10%', left: '-10%',
+          pointerEvents: 'none',
+        }} />
+        <Box sx={{
+          position: 'absolute', width: 300, height: 300,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.03)',
+          bottom: '10%', right: '-5%',
+          pointerEvents: 'none',
+        }} />
+
+        <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 420 }}>
+          <Box
+            component="img"
+            src="/unap-logo-new.png"
+            alt="UNAP"
+            sx={{ width: 140, mb: 4, filter: 'brightness(0) invert(1)', opacity: 0.9 }}
+          />
+          <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, mb: 2, lineHeight: 1.3 }}>
+            GeoCampus UNAP
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
+            Plataforma de geolocalización del campus universitario. Gestiona edificios, salas y servicios.
+          </Typography>
+        </Box>
       </Box>
-      
-      {/* Overlay adicional con difuminado sutil */}
+
+      {/* Panel derecho — formulario */}
       <Box
         sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(180deg, rgba(10, 37, 64, 0.4) 0%, rgba(13, 51, 90, 0.6) 50%, rgba(10, 37, 64, 0.7) 100%)',
-          backdropFilter: 'blur(2px)',
-          zIndex: -1,
-        }}
-      />
-
-      <Paper 
-        elevation={6} 
-        sx={{ 
-          p: isMobile ? 2.5 : 4, 
-          width: isMobile ? 'calc(100% - 32px)' : 400,
-          maxWidth: isMobile ? 'calc(100% - 32px)' : 400,
-          mx: 2,
+          flex: { xs: 1, md: '0 0 440px' },
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          borderRadius: 2,
+          justifyContent: 'center',
+          px: { xs: 3, sm: 5 },
+          py: 6,
+          background: 'rgba(255,255,255,0.04)',
         }}
       >
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2, width: '100%' }}>
-            <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56 }}>
-              <LockOutlinedIcon sx={{ fontSize: 32 }} />
-            </Avatar>
-            <Typography component="h1" variant={isMobile ? "h6" : "h5"} sx={{ fontWeight: 'bold' }}>
-              Iniciar sesión
-            </Typography>
-          </Box>
-          <Box component="form" onSubmit={onSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
-            {error && (
-              <Alert severity="error" sx={{ width: '100%' }}>
-                {error}
-              </Alert>
-            )}
+        {/* Logo visible solo en mobile */}
+        <Box
+          component="img"
+          src="/unap-logo-new.png"
+          alt="UNAP"
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            width: 90, mb: 4,
+            filter: 'brightness(0) invert(1)',
+            opacity: 0.85,
+          }}
+        />
+
+        <Box sx={{ width: '100%', maxWidth: 360 }}>
+          {/* Encabezado */}
+          <Typography variant="h5" sx={{ color: 'white', fontWeight: 700, mb: 0.5 }}>
+            Bienvenido
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.45)', mb: 4 }}>
+            Ingresa tus credenciales para continuar
+          </Typography>
+
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3, borderRadius: 2,
+                bgcolor: 'rgba(211,47,47,0.15)',
+                color: '#ff8a80',
+                border: '1px solid rgba(211,47,47,0.3)',
+                '& .MuiAlert-icon': { color: '#ff8a80' },
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <TextField
-              label="Correo"
+              label="Correo electrónico"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               fullWidth
               required
               disabled={loading}
+              autoComplete="email"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailOutlinedIcon sx={{ color: 'rgba(255,255,255,0.35)', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={fieldSx}
             />
+
             <TextField
               label="Contraseña"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               fullWidth
               required
               disabled={loading}
+              autoComplete="current-password"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon sx={{ color: 'rgba(255,255,255,0.35)', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((v) => !v)}
+                      edge="end"
+                      tabIndex={-1}
+                      sx={{ color: 'rgba(255,255,255,0.35)' }}
+                    >
+                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={fieldSx}
             />
-            <Button 
-              type="submit" 
-              variant="contained" 
-              fullWidth 
-              sx={{ mt: 1 }}
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
               disabled={loading}
+              sx={{
+                mt: 0.5,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 700,
+                fontSize: '1rem',
+                textTransform: 'none',
+                background: 'linear-gradient(90deg, #1565c0, #1976d2)',
+                boxShadow: '0 4px 16px rgba(21,101,192,0.4)',
+                transition: 'opacity 0.2s, transform 0.1s',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #1565c0, #1976d2)',
+                  opacity: 0.9,
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 6px 20px rgba(21,101,192,0.5)',
+                },
+                '&:active': { transform: 'translateY(0)' },
+                '&.Mui-disabled': { opacity: 0.5, background: 'linear-gradient(90deg, #1565c0, #1976d2)' },
+              }}
             >
-              {loading ? <CircularProgress size={24} /> : 'Entrar'}
+              {loading ? <CircularProgress size={22} sx={{ color: 'white' }} /> : 'Iniciar sesión'}
             </Button>
-            <Button 
-              variant="text" 
-              fullWidth 
+
+            <Button
+              variant="text"
+              fullWidth
               onClick={() => navigate('/')}
               disabled={loading}
+              startIcon={<ArrowBackIcon fontSize="small" />}
+              sx={{
+                color: 'rgba(255,255,255,0.4)',
+                textTransform: 'none',
+                fontWeight: 400,
+                '&:hover': { color: 'rgba(255,255,255,0.7)', background: 'transparent' },
+              }}
             >
-              Volver
+              Volver al inicio
             </Button>
           </Box>
-        </Paper>
+        </Box>
+      </Box>
     </Box>
   )
+}
+
+// Estilos reutilizables para los TextField oscuros
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 2,
+    color: 'white',
+    background: 'rgba(255,255,255,0.06)',
+    transition: 'background 0.2s',
+    '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.35)' },
+    '&.Mui-focused fieldset': { borderColor: '#42a5f5' },
+    '&:hover': { background: 'rgba(255,255,255,0.09)' },
+    '&.Mui-focused': { background: 'rgba(255,255,255,0.09)' },
+  },
+  '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.4)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#42a5f5' },
+  '& input:-webkit-autofill': {
+    WebkitBoxShadow: '0 0 0 100px #0d2d55 inset',
+    WebkitTextFillColor: 'white',
+    caretColor: 'white',
+  },
 }

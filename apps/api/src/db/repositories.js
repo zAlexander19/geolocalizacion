@@ -63,6 +63,9 @@ export const buildingsRepo = {
   },
 
   async update(id, building) {
+    // Helper para evitar undefined
+    const val = (v) => v === undefined ? null : v
+    
     const result = await pool.query(`
       UPDATE buildings SET
         nombre_edificio = COALESCE($1, nombre_edificio),
@@ -76,14 +79,14 @@ export const buildingsRepo = {
       WHERE id_edificio = $9
       RETURNING *
     `, [
-      building.nombre_edificio,
-      building.acronimo,
-      building.descripcion,
-      building.imagen,
-      building.cord_latitud,
-      building.cord_longitud,
-      building.estado,
-      building.disponibilidad,
+      val(building.nombre_edificio),
+      val(building.acronimo),
+      val(building.descripcion),
+      val(building.imagen),
+      val(building.cord_latitud),
+      val(building.cord_longitud),
+      val(building.estado),
+      val(building.disponibilidad),
       id
     ])
     return result.rows[0]

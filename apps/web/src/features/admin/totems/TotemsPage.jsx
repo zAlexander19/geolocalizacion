@@ -49,10 +49,10 @@ export default function TotemsPage() {
   const totemSchema = useMemo(() => z.object({
     nombre_totem: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
     descripcion: z.string().max(500, 'Máximo 500 caracteres').optional(),
-    cord_latitud: z.number({ invalid_type_error: 'La latitud debe ser un número' })
+    cord_latitud: z.coerce.number({ invalid_type_error: 'La latitud debe ser un número' })
       .min(-90, 'Latitud mínima: -90')
       .max(90, 'Latitud máxima: 90'),
-    cord_longitud: z.number({ invalid_type_error: 'La longitud debe ser un número' })
+    cord_longitud: z.coerce.number({ invalid_type_error: 'La longitud debe ser un número' })
       .min(-180, 'Longitud mínima: -180')
       .max(180, 'Longitud máxima: 180'),
     email: !editId 

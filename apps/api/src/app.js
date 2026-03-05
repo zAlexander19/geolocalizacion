@@ -423,10 +423,16 @@ export function createApp() {
   app.put('/buildings/:id', upload.single('imagen'), async (req, res) => {
     try {
       const id = Number(req.params.id)
-      const prev = await buildingsRepo.findById(id)
-      if (!prev) return res.status(404).json({ message: 'Not found' })
-      
+      console.log(`[PUT /buildings/${id}] Iniciando actualizacion de datos...`)
+      if (req.body) console.log('Datos recibidos:', JSON.stringify(req.body))
+
       const b = req.body || {}
+
+      // Obtener el edificio previo para poder comparar y hacer fallback
+      const prev = await buildingsRepo.findById(id)
+      if (!prev) {
+        return res.status(404).json({ message: 'Edificio no encontrado' })
+      }
       
       // Validar que no exista otro edificio activo en la misma ubicación (excluyendo este edificio)
       const lat = b.cord_latitud !== undefined ? Number(b.cord_latitud) : prev.cord_latitud
@@ -891,7 +897,8 @@ export function createApp() {
     try {
       const b = req.body || {}
       
-      // Validar que no exista otro baño activo en la misma ubicación
+      /*
+      // Validar que no exista otro baño activo en la misma ubicación - DESACTIVADO para permitir múltiples baños
       const lat = Number(b.cord_latitud) || 0
       const lng = Number(b.cord_longitud) || 0
       const allBathrooms = await bathroomsRepo.findAll()
@@ -906,6 +913,7 @@ export function createApp() {
           message: `Ya existe un baño en esta ubicación: ${existingLocation.nombre_bano || existingLocation.identificador}` 
         })
       }
+      */
       
       let imagenUrl = b.imagen || ''
       if (req.file) {
