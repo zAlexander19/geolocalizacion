@@ -3211,7 +3211,7 @@ export default function HomePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Detalle del Baño */}}
+      {/* Modal de Detalle del Baño */}
       <Dialog
         open={bathroomDetailOpen}
         onClose={() => {
@@ -3981,6 +3981,20 @@ export default function HomePage() {
                         )}
                      </Box>
                  </Box>
+
+                 <CompassGuide
+                   open={true}
+                   onClose={() => {}}
+                   userLocation={userLocation}
+                   destination={routeDestination}
+                   destinationName={routeDestinationName}
+                   destinationImage={routeDestinationData?.image}
+                   destinationType={routeDestinationData?.type}
+                   variant="overlay"
+                   placement="photo"
+                   routeDistance={routeInfo?.distance}
+                   routeNextPoint={routeInfo?.coordinates && routeInfo.coordinates.length > 5 ? routeInfo.coordinates[5] : (routeInfo?.coordinates?.[1] || null)}
+                 />
               </Card>
 
               {/* Mapa con OpenStreetMap y Leaflet Routing */}
@@ -4063,20 +4077,6 @@ export default function HomePage() {
                         </Box>
                     </Box>
                 </Box>
-
-                {/* Compass Overlay */}
-                <CompassGuide
-                  open={true}
-                  onClose={() => {}}
-                  userLocation={userLocation}
-                  destination={routeDestination}
-                  destinationName={routeDestinationName}
-                  destinationImage={routeDestinationData?.image}
-                  destinationType={routeDestinationData?.type}
-                  variant="overlay"
-                  routeDistance={routeInfo?.distance}
-                  routeNextPoint={routeInfo?.coordinates && routeInfo.coordinates.length > 5 ? routeInfo.coordinates[5] : (routeInfo?.coordinates?.[1] || null)}
-                />
               </Box>
             </>
           )}
