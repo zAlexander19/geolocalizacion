@@ -263,8 +263,8 @@ export default function UsersPage() {
     email: u.email,
     rol: u.rol,
     estado: u.estado,
-    created_at: new Date(u.created_at).toLocaleDateString(),
-    ultimo_acceso: u.ultimo_acceso ? new Date(u.ultimo_acceso).toLocaleDateString() : 'Nunca',
+    created_at: new Date(String(u.created_at).replace(' ', 'T')).toLocaleDateString(),
+    ultimo_acceso: u.ultimo_acceso ? new Date(String(u.ultimo_acceso).replace(' ', 'T')).toLocaleDateString() : 'Nunca',
   }))
 
   const adminRows = mapUsersToRows(adminUsers)

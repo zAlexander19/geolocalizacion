@@ -91,7 +91,7 @@ export default function StatisticsPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `estadisticas_${new Date().toISOString()}.csv`
+      a.download = `estadisticas_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
