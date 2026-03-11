@@ -66,7 +66,7 @@ async function getStatistics(req, res) {
     const params = []
 
     if (startDate && endDate) {
-      dateFilter = `WHERE created_at BETWEEN $1 AND $2`
+      dateFilter = `WHERE created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'`
       params.push(startDate, endDate)
     }
 
@@ -78,15 +78,15 @@ async function getStatistics(req, res) {
     `
     const totalResult = await pool.query(totalQuery, params)
 
-    // Búsquedas por tipo
+    // Búsquedas por tipo (usando result_type para precisión)
     const byTypeQuery = `
       SELECT 
-        search_type,
+        COALESCE(result_type, search_type) as search_type,
         COUNT(*) as count,
-        ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM search_logs ${dateFilter}), 2) as percentage
+        ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM search_logs ${dateFilter}), 0), 2) as percentage
       FROM search_logs
       ${dateFilter}
-      GROUP BY search_type
+      GROUP BY COALESCE(result_type, search_type)
       ORDER BY count DESC
     `
     const byTypeResult = await pool.query(byTypeQuery, params)
@@ -98,7 +98,7 @@ async function getStatistics(req, res) {
         result_id as id,
         COUNT(*) as searches
       FROM search_logs
-      WHERE result_type = 'sala' ${startDate && endDate ? 'AND created_at BETWEEN $1 AND $2' : ''}
+      WHERE result_type = 'sala' ${startDate && endDate ? `AND created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'` : ''}
       GROUP BY result_name, result_id
       ORDER BY searches DESC
       LIMIT 10
@@ -112,7 +112,7 @@ async function getStatistics(req, res) {
         result_id as id,
         COUNT(*) as searches
       FROM search_logs
-      WHERE result_type = 'edificio' ${startDate && endDate ? 'AND created_at BETWEEN $1 AND $2' : ''}
+      WHERE result_type = 'edificio' ${startDate && endDate ? `AND created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'` : ''}
       GROUP BY result_name, result_id
       ORDER BY searches DESC
       LIMIT 10
@@ -126,24 +126,37 @@ async function getStatistics(req, res) {
         result_id as id,
         COUNT(*) as searches
       FROM search_logs
-      WHERE result_type = 'bano' ${startDate && endDate ? 'AND created_at BETWEEN $1 AND $2' : ''}
+      WHERE result_type = 'bano' ${startDate && endDate ? `AND created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'` : ''}
       GROUP BY result_name, result_id
       ORDER BY searches DESC
       LIMIT 10
     `
     const topBathroomsResult = await pool.query(topBathroomsQuery, params)
 
-    // Búsquedas por día (últimos 30 días)
-    const byDayQuery = `
-      SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as searches
-      FROM search_logs
-      WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-    `
-    const byDayResult = await pool.query(byDayQuery)
+    // Búsquedas por día (últimos 30 días, respetando el filtro si existe)
+    let byDayQuery = ''
+    if (startDate && endDate) {
+      byDayQuery = `
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as searches
+        FROM search_logs
+        WHERE created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+      `
+    } else {
+      byDayQuery = `
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as searches
+        FROM search_logs
+        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+      `
+    }
+    const byDayResult = await pool.query(byDayQuery, params.length ? params : [])
 
     // Búsquedas por hora del día
     const byHourQuery = `
@@ -164,7 +177,7 @@ async function getStatistics(req, res) {
         COUNT(*) as count
       FROM search_logs
       WHERE search_query IS NOT NULL AND search_query != ''
-      ${startDate && endDate ? 'AND created_at BETWEEN $1 AND $2' : ''}
+      ${startDate && endDate ? `AND created_at >= $1::timestamp AND created_at < $2::timestamp + interval '1 day'` : ''}
       GROUP BY search_query
       ORDER BY count DESC
       LIMIT 20
