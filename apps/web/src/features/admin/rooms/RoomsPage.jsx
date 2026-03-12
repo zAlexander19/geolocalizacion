@@ -570,6 +570,7 @@ export default function RoomsPage() {
                     <MenuItem value="">-- Seleccionar --</MenuItem>
                     <MenuItem value="Aula">Aula</MenuItem>
                     <MenuItem value="Laboratorio">Laboratorio</MenuItem>
+                    <MenuItem value="Oficina">Oficina</MenuItem>
                   </Select>
                 </FormControl>
               )}

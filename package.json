@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "js-logger": "^1.6.1",
+    "leaflet-rotate": "^0.2.8",
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.577.0",
     "react": "^19.1.1",

@@ -18,6 +18,7 @@ import {
   Search as SearchIcon,
   Business as BuildingIcon,
   MeetingRoom as RoomIcon,
+  Work as OfficeIcon,
   Wc as BathroomIcon,
   KeyboardArrowDown as ArrowDownIcon
 } from '@mui/icons-material'
@@ -26,6 +27,7 @@ const searchTypes = [
   { value: 'todo', label: 'Todo', icon: <SearchIcon /> },
   { value: 'edificio', label: 'Edificio', icon: <BuildingIcon /> },
   { value: 'sala', label: 'Sala', icon: <RoomIcon /> },
+  { value: 'oficina', label: 'Oficina', icon: <OfficeIcon /> },
   { value: 'bano', label: 'Baño', icon: <BathroomIcon /> },
 ]
 

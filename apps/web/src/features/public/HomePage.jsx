@@ -70,6 +70,7 @@ import {
   Business as BuildingIcon,
   MeetingRoom as RoomIcon,
   School as SchoolIcon,
+  Work as WorkIcon,
   Wc as BathroomIcon,
   LocationOn as LocationIcon,
   MyLocation as MyLocationIcon,
@@ -464,17 +465,31 @@ export default function HomePage() {
           return nombre.includes(query) || acronimo.includes(query)
         }).map(item => ({ ...item, resultType: 'edificio' }))
 
-        // Buscar en salas
+        // Buscar en salas (solo aula y laboratorio)
         const roomsRes = await api.get('/rooms')
         const rooms = roomsRes.data.data
         const roomsFiltered = rooms.filter(item => {
           const nombre = normalizeText(item.nombre_sala)
           const acronimo = normalizeText(item.acronimo)
-          return (nombre.includes(query) || acronimo.includes(query)) && item.estado
+          const type = normalizeText(item.tipo_sala || '')
+          const validSalaType = type === 'aula' || type === 'laboratorio'
+          return (nombre.includes(query) || acronimo.includes(query)) && item.estado && validSalaType
         }).map(room => {
           const floor = allFloors?.find(f => f.id_piso === room.id_piso)
           const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
           return { ...room, floor, building, resultType: 'sala' }
+        })
+
+        // Buscar en oficinas (solo oficina)
+        const oficinasFiltered = rooms.filter(item => {
+          const nombre = normalizeText(item.nombre_sala)
+          const acronimo = normalizeText(item.acronimo)
+          const type = normalizeText(item.tipo_sala || '')
+          return (nombre.includes(query) || acronimo.includes(query)) && item.estado && type === 'oficina'
+        }).map(room => {
+          const floor = allFloors?.find(f => f.id_piso === room.id_piso)
+          const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
+          return { ...room, floor, building, resultType: 'oficina' }
         })
 
         // Buscar en baños
@@ -502,6 +517,7 @@ export default function HomePage() {
         allResults = [
           ...buildingsFiltered,
           ...roomsFiltered,
+          ...oficinasFiltered,
           ...bathroomsFiltered,
           ...facultiesFiltered
         ]
@@ -515,6 +531,9 @@ export default function HomePage() {
               lat = item.cord_latitud
               lng = item.cord_longitud
             } else if (item.resultType === 'sala') {
+              lat = item.cord_latitud
+              lng = item.cord_longitud
+            } else if (item.resultType === 'oficina') {
               lat = item.cord_latitud
               lng = item.cord_longitud
             } else if (item.resultType === 'bano') {
@@ -562,6 +581,9 @@ export default function HomePage() {
         case 'sala':
           endpoint = '/rooms'
           break
+        case 'oficina':
+          endpoint = '/rooms'
+          break
         case 'bano':
           endpoint = '/bathrooms'
           break
@@ -598,14 +620,19 @@ export default function HomePage() {
           return nombreA.localeCompare(nombreB)
         })
       } else if (searchType === 'sala') {
-        // Si no hay query, mostrar todos
+        // Si no hay query, mostrar todos (filtrados por tipo aula|laboratorio)
         if (!query) {
-          filtered = data.filter(item => item.estado)
+          filtered = data.filter(item => {
+            const type = normalizeText(item.tipo_sala || '')
+            return item.estado && (type === 'aula' || type === 'laboratorio')
+          })
         } else {
           filtered = data.filter(item => {
             const nombre = normalizeText(item.nombre_sala)
             const acronimo = normalizeText(item.acronimo)
-            return (nombre.includes(query) || acronimo.includes(query)) && item.estado
+            const type = normalizeText(item.tipo_sala || '')
+            const validSalaType = type === 'aula' || type === 'laboratorio'
+            return (nombre.includes(query) || acronimo.includes(query)) && item.estado && validSalaType
           })
         }
         
@@ -614,6 +641,35 @@ export default function HomePage() {
           const floor = allFloors?.find(f => f.id_piso === room.id_piso)
           const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
           return { ...room, floor, building, resultType: 'sala' }
+        })
+        
+        // Ordenar alfabéticamente por nombre
+        filtered = filtered.sort((a, b) => {
+          const nombreA = a.nombre_sala?.toLowerCase() || ''
+          const nombreB = b.nombre_sala?.toLowerCase() || ''
+          return nombreA.localeCompare(nombreB)
+        })
+      } else if (searchType === 'oficina') {
+        // Si no hay query, mostrar todos (filtrados por oficina)
+        if (!query) {
+          filtered = data.filter(item => {
+            const type = normalizeText(item.tipo_sala || '')
+            return item.estado && type === 'oficina'
+          })
+        } else {
+          filtered = data.filter(item => {
+            const nombre = normalizeText(item.nombre_sala)
+            const acronimo = normalizeText(item.acronimo)
+            const type = normalizeText(item.tipo_sala || '')
+            return (nombre.includes(query) || acronimo.includes(query)) && item.estado && type === 'oficina'
+          })
+        }
+        
+        // Agregar información de edificio y piso para oficinas
+        filtered = filtered.map(room => {
+          const floor = allFloors?.find(f => f.id_piso === room.id_piso)
+          const building = buildings?.find(b => b.id_edificio === floor?.id_edificio)
+          return { ...room, floor, building, resultType: 'oficina' }
         })
         
         // Ordenar alfabéticamente por nombre
@@ -675,6 +731,9 @@ export default function HomePage() {
             lat = item.cord_latitud
             lng = item.cord_longitud
           } else if (searchType === 'sala') {
+            lat = item.cord_latitud
+            lng = item.cord_longitud
+          } else if (searchType === 'oficina') {
             lat = item.cord_latitud
             lng = item.cord_longitud
           } else if (searchType === 'bano') {
@@ -1717,8 +1776,8 @@ export default function HomePage() {
                   gap: 1,
                 }}
               >
-                {displayedSearchQuery ? 'Resultados de búsqueda' : (displayedSearchType === 'edificio' ? 'Todos los Edificios' : displayedSearchType === 'sala' ? 'Todas las Salas' : displayedSearchType === 'bano' ? 'Todos los Baños' : displayedSearchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
-                {displayedSearchQuery && displayedSearchType !== 'todo' && ` - ${displayedSearchType === 'edificio' ? 'Edificios' : displayedSearchType === 'sala' ? 'Salas' : displayedSearchType === 'bano' ? 'Baños' : 'Facultades'}`}
+                {displayedSearchQuery ? 'Resultados de búsqueda' : (displayedSearchType === 'edificio' ? 'Todos los Edificios' : displayedSearchType === 'sala' ? 'Todas las Salas' : displayedSearchType === 'oficina' ? 'Todas las Oficinas' : displayedSearchType === 'bano' ? 'Todos los Baños' : displayedSearchType === 'facultad' ? 'Todas las Facultades' : 'Resultados')}
+                {displayedSearchQuery && displayedSearchType !== 'todo' && ` - ${displayedSearchType === 'edificio' ? 'Edificios' : displayedSearchType === 'sala' ? 'Salas' : displayedSearchType === 'oficina' ? 'Oficinas' : displayedSearchType === 'bano' ? 'Baños' : 'Facultades'}`}
               </Typography>
             )}
 
@@ -2186,6 +2245,285 @@ export default function HomePage() {
                   </Box>
                 )}
 
+                {/* Oficinas */}
+                {displayedSearchResults.filter(r => displayedSearchType === 'oficina' || (displayedSearchType === 'todo' && r.resultType === 'oficina')).length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    {searchType === 'todo' && (
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1, color: 'white', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                        <ImageIcon sx={{ color: 'white', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                        Oficinas
+                      </Typography>
+                    )}
+                    <Grid container spacing={3}>
+                      {/* Resultados para OFICINAS */}
+                      {displayedSearchResults.filter(r => displayedSearchType === 'oficina' || (displayedSearchType === 'todo' && r.resultType === 'oficina')).map((room) => (
+                  <Grid item xs={12} md={6} lg={4} key={room.id_sala}>
+                    <Card 
+                      sx={{ 
+                        height: 320,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                        cursor: 'default',
+                        background: '#0a1929', 
+                        '&:hover': {
+                          transform: 'translateY(-8px)',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                          '& .room-details-overlay': {
+                            opacity: 1,
+                            transform: 'translateY(0)',
+                          },
+                          '& .room-title-overlay': {
+                            opacity: 0, 
+                          }
+                        }
+                      }}
+                    >
+                      <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
+                        {/* Imagen de fondo */}
+                        {room.imagen && !/via\.placeholder\.com/.test(room.imagen) ? (
+                            <CardMedia
+                                component="img"
+                                image={getFullImageUrl(room.imagen)}
+                                alt={room.nombre_sala}
+                                sx={{ 
+                                    height: '100%', 
+                                    width: '100%', 
+                                    objectFit: 'cover',
+                                }}
+                            />
+                        ) : (
+                            <Box
+                                sx={{
+                                    height: '100%',
+                                    width: '100%',
+                                    bgcolor: 'grey.800',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <ImageIcon sx={{ fontSize: 80, color: 'grey.600' }} />
+                            </Box>
+                        )}
+
+                        {/* Gradientes */}
+                        <Box sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '50%',
+                          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+                        <Box sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: '40%',
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                          zIndex: 1
+                        }} />
+
+                        {/* Cinta de Mantenimiento */}
+                        {room.disponibilidad === 'En mantenimiento' && (
+                             <Box
+                               sx={{
+                                 position: 'absolute',
+                                 top: '22%',
+                                 left: '50%',
+                                 width: '150%',
+                                 transform: 'translate(-50%, -50%) rotate(-10deg)',
+                                 background: 'linear-gradient(90deg, rgba(220,38,38,0.95) 0%, rgba(185,28,28,0.95) 100%)',
+                                 color: 'white',
+                                 py: 1,
+                                 textAlign: 'center',
+                                 fontWeight: 900,
+                                 fontSize: '1rem',
+                                 letterSpacing: 4,
+                                 textTransform: 'uppercase',
+                                 zIndex: 10,
+                                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                 borderTop: '2px solid rgba(255,255,255,0.3)',
+                                 borderBottom: '2px solid rgba(255,255,255,0.3)',
+                               }}
+                             >
+                               EN MANTENIMIENTO
+                             </Box>
+                        )}
+
+                        {/* Title Overlay (Visible por defecto, desaparece en hover) */}
+                         <Box 
+                           className="room-title-overlay"
+                           sx={{ 
+                             position: 'absolute',
+                             top: 20,
+                             left: 20,
+                             right: 20,
+                             zIndex: 2,
+                             transition: 'opacity 0.3s ease-in-out',
+                           }}
+                         >
+                            {/* Tags/Chips Pequeños */}
+                            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                                {room.acronimo && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid rgba(13, 71, 161, 0.8)', 
+                                        px: 1.5,
+                                        py: 0.2,
+                                        color: '#42a5f5', 
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        bgcolor: 'rgba(13, 71, 161, 0.2)'
+                                    }}>
+                                        {room.acronimo}
+                                    </Box>
+                                )}
+                                {room.tipo_sala && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid rgba(171, 71, 188, 0.8)', 
+                                        px: 1.5,
+                                        py: 0.2,
+                                        color: '#e1bee7', 
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                        bgcolor: 'rgba(171, 71, 188, 0.2)'
+                                    }}>
+                                        {room.tipo_sala}
+                                    </Box>
+                                )}
+                            </Box>
+
+                           <Typography 
+                             variant="h4" 
+                             sx={{ 
+                               fontWeight: 900, 
+                               color: 'white', 
+                               textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                               fontSize: '2rem',
+                               lineHeight: 1
+                             }}
+                           >
+                             {room.nombre_sala}
+                           </Typography>
+                         </Box>
+
+                        {/* Detalles Overlay (Visible en Hover, Fondo Oscuro) */}
+                        <Box
+                            className="room-details-overlay"
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                bgcolor: 'rgba(0, 5, 16, 0.92)', 
+                                opacity: 0,
+                                transform: 'translateY(20px)',
+                                transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                p: 3,
+                            }}
+                        >
+                             {/* Chips Superiores (Duplicados para visualización en hover) */}
+                            <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+                                {room.acronimo && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid #1565c0', 
+                                        px: 2,
+                                        py: 0.4,
+                                        color: '#42a5f5', 
+                                        fontSize: '0.9rem',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {room.acronimo}
+                                    </Box>
+                                )}
+                                {room.tipo_sala && (
+                                    <Box sx={{ 
+                                        borderRadius: '50px', 
+                                        border: '1px solid #7b1fa2', 
+                                        px: 2,
+                                        py: 0.4,
+                                        color: '#e1bee7', 
+                                        fontSize: '0.9rem',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {room.tipo_sala}
+                                    </Box>
+                                )}
+                            </Box>
+
+                            {/* Lista de Detalles */}
+                            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <BuildingIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Edificio:</span> {room.building?.nombre_edificio || "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <RoomIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Piso:</span> {room.floor?.nombre_piso || "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <PeopleIcon sx={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography variant="body1" sx={{ color: 'white', fontSize: '1rem' }}>
+                                        <span style={{ fontWeight: 800, marginRight: 6 }}>Capacidad:</span> {room.capacidad} personas
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+
+                        {/* Botones de acción (Siempre Visibles, encima de todo) */}
+                        <Box sx={{ 
+                            position: 'absolute',
+                            bottom: 20,
+                            left: 20,
+                            right: 20,
+                            zIndex: 10 // Encima del overlay
+                        }}>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  logSearch('oficina', room.id_sala, room.nombre_sala)
+                                  setSelectedRoom(room)
+                                  setRoomDetailOpen(true)
+                                }}
+                                sx={{
+                                   borderRadius: 2,
+                                   background: 'linear-gradient(135deg, #0288d1 0%, #1565c0 100%)', 
+                                   textTransform: 'none',
+                                   fontWeight: 'bold',
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                   height: 44,
+                                   '&:hover': {
+                                      background: 'linear-gradient(135deg, #0277bd 0%, #0d47a1 100%)',
+                                   }
+                                }}
+                              >
+                                VER MÁS
+                              </Button>
+                         </Box>
+
+                      </Box>
+                    </Card>
+                  </Grid>
+                ))}
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* Facultades */}
                 {/* Facultades */}
                 {displayedSearchResults.filter(r => displayedSearchType === 'facultad' || (displayedSearchType === 'todo' && r.resultType === 'facultad')).length > 0 && (
                   <Box sx={{ mb: 4 }}>
