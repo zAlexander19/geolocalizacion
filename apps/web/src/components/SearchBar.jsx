@@ -116,7 +116,7 @@ export default function SearchBar({ onSearch, initialType = 'todo' }) {
             onFocus={() => setIsFocused(true)}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isMobile ? 'Buscar...' : 'Buscar edificios, salas y baños'}
+            placeholder={isMobile ? 'Buscar...' : 'Busca edificios, salas, oficinas o baños'}
             variant="standard"
             InputProps={{
               disableUnderline: true,

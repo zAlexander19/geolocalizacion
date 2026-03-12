@@ -1556,7 +1556,7 @@ export default function HomePage() {
               mx: 'auto',
             }}
           >
-            Busca edificios, salas, facultades o baños
+            Busca edificios, salas, oficinas o baños
           </Typography>
 
           {/* Search Bar con efecto glassmorphism mejorado */}
