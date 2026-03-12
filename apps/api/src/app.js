@@ -22,6 +22,7 @@ import statisticsRoutes from './routes/statistics.routes.js'
 import auditRoutes from './routes/audit.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import logsRoutes from './routes/logs.routes.js'
+import appRatingsRoutes from './routes/appRatings.routes.js'
 import { logAudit } from './services/audit.service.js'
 import { getUserFromRequest } from './utils/auth-helper.js'
 import { errorLogger } from './middlewares/error-logger.middleware.js'
@@ -125,6 +126,9 @@ export function createApp() {
 
   // ==================== APPLICATION LOGS ====================
   app.use('/logs', logsRoutes)
+
+  // ==================== RATINGS ====================
+  app.use('/ratings', appRatingsRoutes)
 
   // DEBUG endpoint
   app.get('/debug/floor/:id', async (req, res) => {

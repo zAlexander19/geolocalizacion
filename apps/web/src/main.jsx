@@ -20,6 +20,7 @@ import DeletedPage from './features/admin/deleted/DeletedPage.jsx'
 import AuditLogPage from './features/admin/audit/AuditLogPage.jsx'
 import TotemsPage from './features/admin/totems/TotemsPage.jsx'
 import BulkUploadPage from './features/admin/bulk-upload/BulkUploadPage.jsx'
+import RatingsPage from './features/admin/ratings/RatingsPage.jsx'
 import FPSCounter from './components/FPSCounter.jsx'
 
 import './index.css'
@@ -52,6 +53,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="historial" element={<AuditLogPage />} />
               <Route path="totems" element={<TotemsPage />} />
               <Route path="carga-masiva" element={<BulkUploadPage />} />
+              <Route path="valoraciones" element={<RatingsPage />} />
 
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

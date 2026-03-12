@@ -26,6 +26,7 @@ import {
   Delete as DeleteIcon,
   History as HistoryIcon,
   Signpost as SignpostIcon,
+  Star as StarIcon,
 } from '@mui/icons-material'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -58,6 +59,7 @@ export default function AdminLayout() {
     { label: 'Pisos', icon: <LayersIcon />, path: '/admin/pisos' },
     { label: 'Salas', icon: <RoomIcon />, path: '/admin/salas' },
     { label: 'Tótems', icon: <SignpostIcon />, path: '/admin/totems' },
+    { label: 'Valoraciones', icon: <StarIcon />, path: '/admin/valoraciones' },
 
     { label: 'Facultades', icon: <BuildingIcon />, path: '/admin/facultades' },
     { label: 'Baños', icon: <BathroomIcon />, path: '/admin/banos' },

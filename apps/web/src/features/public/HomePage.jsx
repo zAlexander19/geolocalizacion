@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
+import RatingModal from '../../components/RatingModal.jsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -321,6 +322,7 @@ export default function HomePage() {
   const [fullImageAlt, setFullImageAlt] = useState('')
   const [routeInfo, setRouteInfo] = useState(null) // Estado para información de navegación (tiempo, distancia)
   const [isAnyPopupOpen, setIsAnyPopupOpen] = useState(false)
+  const [ratingModalOpen, setRatingModalOpen] = useState(false) // MODAL DE RATING
   const [mapCenter, setMapCenter] = useState(null) // Centro del mapa para enlaces compartidos
   const [sharedResourceId, setSharedResourceId] = useState(null) // ID del recurso compartido para filtrar marcadores
   const [sharedResourceType, setSharedResourceType] = useState(null) // Tipo del recurso compartido
@@ -330,6 +332,22 @@ export default function HomePage() {
   // Callbacks estables para el mapa de ruta — identidad fija evita recrear RouteComponent
   const handleRouteFound = useCallback((info) => setRouteInfo(info), [])
   const handleRouteError = useCallback((err) => console.warn('Route error', err), [])
+
+  // Rating Modal Timer
+  useEffect(() => {
+    let timer;
+    if (routeMapOpen) {
+      const hasRated = localStorage.getItem('geo_campus_has_rated');
+      if (!hasRated) {
+        timer = setTimeout(() => {
+          setRatingModalOpen(true);
+        }, 20000); // 20 segundos
+      }
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [routeMapOpen]);
 
   // Congela Leaflet cuando hay cualquier modal abierto — elimina el render loop del mapa de fondo
   const isAnyModalOpen = buildingDetailOpen || routeMapOpen || roomDetailOpen || bathroomDetailOpen || fullImageOpen || facultyDetailOpen || compassGuideOpen
@@ -4452,7 +4470,7 @@ export default function HomePage() {
         </Container>
       </Box>
 
-
+      <RatingModal open={ratingModalOpen} onClose={() => setRatingModalOpen(false)} />
     </>
   )
 }
